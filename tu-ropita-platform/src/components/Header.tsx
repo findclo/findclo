@@ -8,7 +8,7 @@ const Header = () => {
     <header className="border-b">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="text-xl font-bold">
-          StyleSpot
+          TuRopita
         </Link>
         <nav className="hidden md:flex">
           <Button asChild>
