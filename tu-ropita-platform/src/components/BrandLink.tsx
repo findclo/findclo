@@ -20,7 +20,7 @@ export default function BrandLink({ brandId, brandName, brandImage }: BrandLinkP
         height={40}
         className="rounded-full mr-2"
       />
-      <span>Ver perfil de {brandName}</span>
+      <span>Ver perfil de <strong>{brandName}</strong></span>
     </Link>
   );
 }

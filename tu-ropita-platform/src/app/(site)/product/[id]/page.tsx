@@ -1,6 +1,7 @@
 import BrandLink from '@/components/BrandLink';
 import ImageGallery from '@/components/ImageGallery';
 import ShareButtons from '@/components/ShareButtons';
+import { ShoppingCart } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 // Simulating a server-side data fetch
@@ -43,9 +44,12 @@ export default async function ProductPage({ params }: { params: { id: string } }
           <h2 className="text-xl font-semibold mb-2">{product.brand}</h2>
           <p className="text-2xl font-bold mb-4">${product.price.toFixed(2)}</p>
           <p className="mb-6">{product.description}</p>
-          <button className="w-full bg-black text-white py-3 px-4 rounded mb-4">
-            Comprar
-          </button>
+          <div className="group">
+            <button className="w-full bg-black text-white py-3 px-4 rounded mb-4 flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-green-600 hover:scale-105 hover:shadow-lg">
+              <ShoppingCart className="mr-2 transition-transform duration-300 ease-in-out group-hover:rotate-12" size={20} />
+              Comprar
+            </button>
+          </div>
 
           <BrandLink
             brandId={product.brandId}
