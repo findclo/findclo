@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { FaFacebookF, FaLink, FaTwitter, FaWhatsapp } from 'react-icons/fa';
+import { FaFacebookF, FaLink, FaWhatsapp } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6';
 
 interface ShareButtonsProps {
   productId: string;
@@ -40,7 +41,7 @@ export default function ShareButtons({ productId, productName }: ShareButtonsPro
         <FaFacebookF size={16} />
       </button>
       <button onClick={shareOnTwitter} className="text-gray-700 hover:text-black p-2 rounded-full border border-gray-300 hover:border-gray-500">
-        <FaTwitter size={16} />
+        <FaXTwitter size={16} />
       </button>
       <button onClick={shareOnWhatsApp} className="text-gray-700 hover:text-black p-2 rounded-full border border-gray-300 hover:border-gray-500">
         <FaWhatsapp size={16} />
