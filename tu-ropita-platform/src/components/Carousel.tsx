@@ -55,15 +55,15 @@ export function Carousel({ items }: CarouselProps) {
   return (
     <div className="relative mb-8 overflow-hidden pb-16">
       <div className="flex justify-center items-center">
-        <div className="flex -space-x-16">
+        <div className="flex -space-x-8 sm:-space-x-12 md:-space-x-16">
           {getVisibleItems().map((item, index) => {
             let className = "relative transition-all duration-300 ease-in-out rounded-lg overflow-hidden ";
             if (item.position === 0) {
-              className += "w-80 h-96 z-30 scale-100 opacity-100 shadow-2xl";
+              className += "w-48 h-64 sm:w-64 sm:h-80 md:w-80 md:h-96 z-30 scale-100 opacity-100 shadow-2xl";
             } else if (Math.abs(item.position) === 1) {
-              className += "w-64 h-80 scale-90 opacity-85 z-20 shadow-xl";
+              className += "w-40 h-56 sm:w-52 sm:h-68 md:w-64 md:h-80 scale-90 opacity-85 z-20 shadow-xl";
             } else {
-              className += "w-48 h-64 scale-75 opacity-70 z-10 shadow-lg";
+              className += "w-32 h-48 sm:w-40 sm:h-56 md:w-48 md:h-64 scale-75 opacity-70 z-10 shadow-lg";
             }
             return (
               <div 
