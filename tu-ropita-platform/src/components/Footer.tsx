@@ -2,7 +2,7 @@ import { Separator } from "@/components/ui/separator";
 
 const Footer = () => {
     return (
-      <footer className="bg-background text-foreground p-8 mt-8">
+      <footer className="bg-background text-foreground p-8 mt-auto">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm">&copy; {new Date().getFullYear()} Tu Ropita. Todos los derechos reservados.</p>

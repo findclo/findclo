@@ -56,7 +56,7 @@ export default function ImageGallery({ images, productName }: ImageGalleryProps)
 
   return (
     <div>
-      <div className="bg-gray-200 aspect-square relative mb-4" onClick={toggleFullScreen}>
+      <div className="bg-gray-200 aspect-square relative mb-4 rounded-lg overflow-hidden" onClick={toggleFullScreen}>
         <Image
           src={images[currentImageIndex]}
           alt={`${productName} ${currentImageIndex + 1}`}
@@ -69,7 +69,7 @@ export default function ImageGallery({ images, productName }: ImageGalleryProps)
         {images.map((img, index) => (
           <div 
             key={index}
-            className={`w-20 h-20 relative cursor-pointer ${index === currentImageIndex ? 'border-2 border-black' : ''}`}
+            className={`w-20 h-20 relative cursor-pointer rounded-md overflow-hidden ${index === currentImageIndex ? 'border-2 border-black' : ''}`}
             onClick={() => setMainImage(index)}
           >
             <Image
