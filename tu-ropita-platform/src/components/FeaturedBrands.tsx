@@ -20,9 +20,9 @@ export function FeaturedBrands() {
       <h2 className="text-xl font-semibold mb-4">Marcas destacadas</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {brands.map((brand, index) => (
-          <Card key={index}>
-            <CardContent className="p-4">
-              <Image src={brand.src} alt={brand.alt} width={100} height={100} />
+          <Card key={index} className="flex items-center justify-center">
+            <CardContent className="p-6">
+              <Image src={brand.src} alt={brand.alt} width={150} height={150} objectFit="contain" />
             </CardContent>
           </Card>
         ))}

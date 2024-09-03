@@ -17,9 +17,7 @@ interface RelatedProductsProps {
 }
 
 export default function RelatedProducts({ brandName, products }: RelatedProductsProps) {
-  const [startIndex, setStartIndex] = useState(0); // Add this state
-  const [isAnimating, setIsAnimating] = useState(false);
-
+  const [startIndex, setStartIndex] = useState(0);
   const displayedProducts = products.slice(startIndex, startIndex + 4);
   const hasMoreProducts = products.length > startIndex + 4;
   const hasPreviousProducts = startIndex > 0;
@@ -38,7 +36,7 @@ export default function RelatedProducts({ brandName, products }: RelatedProducts
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {displayedProducts.map((product) => (
           <Link href={`/product/${product.id}`} key={product.id} className="group">
-            <div className={`border rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-lg ${isAnimating ? 'animate-card' : ''}`}>
+            <div className={`border rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-lg`}>
               <Image
                 src={product.image}
                 alt={product.name}
