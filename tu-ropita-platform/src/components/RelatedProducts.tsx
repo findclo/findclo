@@ -2,18 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react'; // Add this import
+import { useState } from 'react';
+import {IProduct} from "@/lib/backend/models/interfaces/product.interface"; // Add this import
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-}
 
 interface RelatedProductsProps {
   brandName: string;
-  products: Product[];
+  products: IProduct[];
 }
 
 export default function RelatedProducts({ brandName, products }: RelatedProductsProps) {
@@ -38,7 +33,7 @@ export default function RelatedProducts({ brandName, products }: RelatedProducts
           <Link href={`/product/${product.id}`} key={product.id} className="group">
             <div className={`border rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-lg`}>
               <Image
-                src={product.image}
+                src={product.images[0]}
                 alt={product.name}
                 width={300}
                 height={300}

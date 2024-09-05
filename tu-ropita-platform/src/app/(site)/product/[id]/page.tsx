@@ -4,6 +4,8 @@ import RelatedProducts from '@/components/RelatedProducts';
 import ShareButtons from '@/components/ShareButtons';
 import { ShoppingCart } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import globalSettings from "@/lib/settings";
 
 // Simulating a server-side data fetch
 async function getProductData(id: string) {
@@ -26,20 +28,17 @@ async function getProductData(id: string) {
     }
   };
 }
+async function getProducts(): Promise<IProduct[]> {
+  const res = await fetch(`${globalSettings.BASE_URL}/api/products`, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error('Failed to fetch users');
+  }
+  return res.json();
+}
 
-// New function to fetch related products
+
 async function getRelatedProducts(brandId: string, currentProductId: string) {
-  // Simulated data fetch - replace with actual API call
-  return [
-    { id: '2', name: 'Summer Blouse', price: 39.99, image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3VtbWVyJTIwYmxvdXNlfGVufDB8fDB8fHww' },
-    { id: '3', name: 'Floral Skirt', price: 29.99, image: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZmxvcmFsJTIwc2tpcnR8ZW58MHx8MHx8fDA%3D' },
-    { id: '4', name: 'Striped Tee', price: 24.99, image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3RyaXBlZCUyMHRlZXxlbnwwfHwwfHx8MA%3D%3D' },
-    { id: '5', name: 'Denim Jacket', price: 59.99, image: 'https://images.unsplash.com/photo-1544642899-f0d6e5f6ed6f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZGVuaW0lMjBqYWNrZXR8ZW58MHx8MHx8fDA%3D' },
-    { id: '6', name: 'Boho Dress', price: 49.99, image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Ym9obyUyMGRyZXNzfGVufDB8fDB8fHww' },
-    { id: '7', name: 'Leather Boots', price: 89.99, image: 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bGVhdGhlciUyMGJvb3RzfGVufDB8fDB8fHww' },
-    { id: '8', name: 'Silk Scarf', price: 19.99, image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2lsayUyMHNjYXJmfGVufDB8fDB8fHww' },
-    { id: '9', name: 'Vintage Sunglasses', price: 34.99, image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dmludGFnZSUyMHN1bmdsYXNzZXN8ZW58MHx8MHx8fDA%3D' },
-  ];
+  return getProducts();
 }
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
