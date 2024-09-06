@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
-import globalSettings from "@/lib/settings";
+// @ts-ignore
+import globalSettings from "../../settings.ts";
 
 const pool = new Pool({
     user: globalSettings.PSQL_CONFIG.DATABASE_USER,

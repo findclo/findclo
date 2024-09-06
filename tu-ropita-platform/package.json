@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate:up": "tsx src/lib/backend/migrations/runMigrations.ts up",
+    "migrate:down": "tsx src/lib/backend/migrations/runMigrations.ts down"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.1",
@@ -16,23 +18,24 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.437.0",
     "next": "14.2.7",
+    "pg": "^8.12.0",
     "react": "^18",
     "react-dom": "^18",
     "react-icons": "^5.3.0",
     "tailwind-merge": "^2.5.2",
-    "tailwindcss-animate": "^1.0.7",
-    "pg": "^8.12.0"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",
     "@types/node": "^20",
+    "@types/pg": "^8.11.8",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.7",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5",
-    "@types/pg": "^8.11.8"
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4"
   }
 }
