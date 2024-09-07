@@ -20,9 +20,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Header />
-        <main className="container mx-auto px-4 py-8 mt-4">
+        <main className="container mx-auto mt-4">
           {children}
         </main>
+
+        {/* Spacer div to prevent content from being hidden under the mobile footer */}
+        <div className="h-12 md:hidden"></div>
+        
         <Footer />
       </body>
     </html>

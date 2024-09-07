@@ -2,10 +2,7 @@
 
 import { Carousel } from "@/components/Carousel";
 import { FeaturedBrands } from "@/components/FeaturedBrands";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { SearchBar } from "@/components/SearchBar";
 
 const carouselItems = [
   {
@@ -46,38 +43,17 @@ const carouselItems = [
 ];
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8">
+    <>
       <Carousel items={carouselItems} />
       
-      <div className="mb-4 mt-8 flex justify-center">
-        <form onSubmit={handleSearch} className="w-3/4 relative">
-          <Input 
-            type="search" 
-            placeholder="¿Qué estás buscando hoy?" 
-            className="w-full pl-12 pr-4 py-3 text-lg border-2 border-primary rounded-full shadow-lg focus:ring-4 focus:ring-primary/20 transition-all duration-300"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button type="submit" className="absolute right-4 top-1/2 transform -translate-y-1/2">
-            <Search className="text-primary w-6 h-6" />
-          </button>
-        </form>
+      <div className="flex justify-center">
+        <SearchBar />
       </div>
       
       <div className="flex justify-center">
         <FeaturedBrands />
       </div>
-    </div>
+    </>
   );
 }

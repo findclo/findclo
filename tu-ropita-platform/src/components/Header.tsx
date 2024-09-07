@@ -15,6 +15,9 @@ const Header = () => {
         </div>
       </header>
 
+      {/* Spacer div to prevent content from being hidden under the mobile header */}
+      <div className="h-12 md:hidden"></div>
+
       {/* Existing header for desktop */}
       <header className="border-b hidden md:block">
         <div className="container flex h-16 items-center justify-between">
@@ -43,6 +46,7 @@ const Header = () => {
 
     {/* Bottom navigation for mobile */}
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden shadow-2xl z-50">
+      
       <div className="flex justify-around items-center h-16">
         <Link href="/" className="flex flex-col items-center">
           <Home className="h-6 w-6" />

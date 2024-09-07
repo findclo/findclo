@@ -39,7 +39,7 @@ export function Carousel({ items }: CarouselProps) {
   };
 
   return (
-    <div className="relative mb-8 overflow-hidden pb-16">
+    <div className="relative overflow-hidden mt-8 pb-16">
       <div className="flex justify-center items-center">
         <div className="flex -space-x-8 sm:-space-x-12 md:-space-x-16">
           {getVisibleItems().map((item: any, index) => {

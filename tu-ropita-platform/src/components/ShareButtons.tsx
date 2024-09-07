@@ -13,7 +13,7 @@ export default function ShareButtons({ productId, productName }: ShareButtonsPro
   const [copied, setCopied] = useState(false);
 
 // TODO: Change this to the actual website URL
-  const shareUrl = `https://yourwebsite.com/product/${productId}`;
+  const shareUrl = `https://e942-190-31-49-239.ngrok-free.app/product/${productId}`;
   const shareText = `Check out this ${productName}!`;
 
   const shareOnFacebook = () => {

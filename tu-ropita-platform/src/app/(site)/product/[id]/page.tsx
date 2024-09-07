@@ -2,10 +2,10 @@ import BrandLink from '@/components/BrandLink';
 import ImageGallery from '@/components/ImageGallery';
 import RelatedProducts from '@/components/RelatedProducts';
 import ShareButtons from '@/components/ShareButtons';
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import globalSettings from "@/lib/settings";
 import { ShoppingCart } from 'lucide-react';
 import { notFound } from 'next/navigation';
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
-import globalSettings from "@/lib/settings";
 
 // Simulating a server-side data fetch
 async function getProductData(id: string) {
@@ -81,12 +81,14 @@ export default async function ProductPage({ params }: { params: { id: string } }
         </div>
       </div>
 
-      <div className="mt-12">
-        <RelatedProducts 
-          brandName={product.brand.name} 
-          products={relatedProducts} 
-        />
-      </div>
+      {relatedProducts.length > 0 && (
+        <div className="mt-12">
+          <RelatedProducts 
+            brandName={product.brand.name} 
+            products={relatedProducts} 
+          />
+        </div>
+      )}
     </div>
   );
 }
