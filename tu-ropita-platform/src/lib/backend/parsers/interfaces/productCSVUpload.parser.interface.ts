@@ -1,5 +1,5 @@
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
 
 export interface IProductCSVUploadParser {
-    parse(file:File): Promise<IProduct[]>;
+    parse(file:File): Promise<IProductDTO[]>;
 }

@@ -4,6 +4,7 @@ import {IProductRepository} from "@/lib/backend/persistance/interfaces/products.
 import {productRepository} from "@/lib/backend/persistance/products.repository";
 import {IProductCSVUploadParser} from "@/lib/backend/parsers/interfaces/productCSVUpload.parser.interface";
 import {ProductCSVUploadParser} from "@/lib/backend/parsers/productCSVUpload.parser";
+import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
 
 class ProductService implements IProductService{
     private repository: IProductRepository;
@@ -20,8 +21,11 @@ class ProductService implements IProductService{
     }
 
     public async uploadProductsFromCSV(file : File){
-        const products : IProduct[] = await this.parser.parse(file);
-        console.log(products);
+        const products : IProductDTO[] = await this.parser.parse(file);
+
+        const dbRes = await this.repository.bulkProductInsert(products,1);
+
+        console.log(`db insert result ${dbRes}`);
     }
 }
 

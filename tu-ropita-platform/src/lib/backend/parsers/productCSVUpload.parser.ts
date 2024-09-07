@@ -1,6 +1,7 @@
 import {IProductCSVUploadParser} from "@/lib/backend/parsers/interfaces/productCSVUpload.parser.interface";
 import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
 import Papa from 'papaparse';
+import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
 
 const REQUIRED_HEADERS = ['name', 'price', 'description', 'images'];
 const MANDATORY_FIELDS = ['id', 'name', 'price'];
@@ -12,7 +13,7 @@ const MANDATORY_FIELDS = ['id', 'name', 'price'];
 export class ProductCSVUploadParser implements IProductCSVUploadParser {
 
 
-    async parse(file: File): Promise<IProduct[]> {
+    async parse(file: File): Promise<IProductDTO[]> {
         return new Promise(async (resolve, reject) => {
             const fileBuffer = await file.arrayBuffer();
             const csvData = Buffer.from(fileBuffer).toString('utf-8');
@@ -23,17 +24,11 @@ export class ProductCSVUploadParser implements IProductCSVUploadParser {
                 complete: (results) => {
                     try {
                         this.validateHeaders(results.meta.fields);
-                        const products: IProduct[] = results.data.map((row: any) => ({
-                            id: parseInt(row.id), // TODO REMOVE THIS
+                        const products: IProductDTO[] = results.data.map((row: any) => ({
                             name: row.name as string,
                             price: parseFloat(row.price),
                             description: row.description as string,
                             images: (row.images ? row.images.split(';') : []) as string [],
-                            brand: { // TODO REMOVE THIS
-                                id: 1,
-                                name: '',
-                                image: ''
-                            }
                         }));
                         resolve(products);
                     } catch (error) {

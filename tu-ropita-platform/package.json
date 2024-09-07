@@ -18,6 +18,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.437.0",
     "next": "14.2.7",
+    "papaparse": "^5.4.1",
     "pg": "^8.12.0",
     "react": "^18",
     "react-dom": "^18",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",
     "@types/node": "^20",
+    "@types/papaparse": "^5.3.14",
     "@types/pg": "^8.11.8",
     "@types/react": "^18",
     "@types/react-dom": "^18",
