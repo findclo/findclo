@@ -16,6 +16,10 @@ export function SearchBar() {
     if (searchQuery.trim()) {
       const queryParams = new URLSearchParams({ q: searchQuery.trim(), ...filters });
       router.push(`/search?${queryParams}`);
+      // Close the keyboard by blurring the active element
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
     }
   }, [searchQuery, filters, router]);
 
@@ -28,7 +32,8 @@ export function SearchBar() {
             placeholder="¿Qué estás buscando hoy?"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-grow text-base"
+            className="flex-grow text-base placeholder:text-sm md:placeholder:text-base"
+            enterKeyHint="search"
           />
           <Button type="submit" size="sm" className="h-10 w-10 p-0">
             <Search className="h-4 w-4" />

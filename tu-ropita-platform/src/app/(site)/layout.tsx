@@ -18,14 +18,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} flex flex-col min-h-screen`}>
         <Header />
-        <main className="container mx-auto mt-4">
+        <main className="container mx-auto mt-4 flex-grow px-4">
           {children}
         </main>
-
-        {/* Spacer div to prevent content from being hidden under the mobile footer */}
-        <div className="h-12 md:hidden"></div>
+        
+        {/* Spacer div to prevent content from being hidden under the mobile header */}
+      <div className="h-12 md:hidden"></div>
         
         <Footer />
       </body>
