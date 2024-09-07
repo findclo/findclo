@@ -71,11 +71,12 @@ class ProductsRepository implements IProductRepository{
         let query = `SELECT * FROM products`;
         let values: any[] = [];
         if (search && search.trim().length > 1) {
-            let sanitizedSearch = search.replace(/[\[\]'"]/g, '');
-            sanitizedSearch = sanitizedSearch.replace(/[^a-zA-Z0-9\s]/g, '&') + '*';
+            let sanitizedSearch = search.replace(/\s+/g, '*');
+            sanitizedSearch = sanitizedSearch.replace(/[^a-zA-Z0-9\s]/g, '*&') + '*';
             query += `
                 WHERE tsv @@ to_tsquery('spanish', $1);
             `;
+            console.log(sanitizedSearch)
             values.push(sanitizedSearch);
         }else{
             query +=';';

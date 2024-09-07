@@ -4,6 +4,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const queryParams = new URLSearchParams(url.search);
     const searchParam = queryParams.get('search') == null? '': queryParams.get('search')!;
+
     try {
         const products = await productService.listProducts({search:searchParam});
         return new Response(JSON.stringify(products), { status: 200 });
