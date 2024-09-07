@@ -3,13 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Filter, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function SearchBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({});
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +38,7 @@ export function SearchBar() {
           className="flex w-full items-center space-x-2 bg-white shadow-lg rounded-full p-2 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 transition-shadow"
         >
           <Input
+            ref={inputRef}
             type="search"
             placeholder="¿Qué estás buscando hoy?"
             value={searchQuery}
@@ -38,6 +46,7 @@ export function SearchBar() {
             className="flex-grow text-base placeholder:text-sm md:placeholder:text-base border-none focus:outline-none focus:ring-0 focus:ring-offset-0 !important"
             style={{ boxShadow: 'none' }}
             enterKeyHint="search"
+            autoFocus
           />
           <Button type="submit" size="sm" className="h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90">
             <Search className="h-4 w-4 text-white" />
