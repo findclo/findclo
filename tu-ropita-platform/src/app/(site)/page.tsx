@@ -45,10 +45,10 @@ const carouselItems = [
 export default function Home() {
   return (
     <>
-      <Carousel items={carouselItems} />
+      <SearchBar />
       
       <div className="flex justify-center">
-        <SearchBar />
+        <Carousel items={carouselItems} />
       </div>
       
       <div className="flex justify-center">

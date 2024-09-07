@@ -26,24 +26,24 @@ export function SearchBar() {
   return (
     <div className="w-full max-w-3xl mx-auto">
       <div className="flex justify-center w-full mb-4">
-        <form onSubmit={handleSearch} className="flex w-full items-center space-x-2">
+        <form onSubmit={handleSearch} className="flex w-full items-center space-x-2 bg-white shadow-lg rounded-full p-2">
           <Input
             type="search"
             placeholder="¿Qué estás buscando hoy?"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-grow text-base placeholder:text-sm md:placeholder:text-base"
+            className="flex-grow text-base placeholder:text-sm md:placeholder:text-base border-none focus:ring-0"
             enterKeyHint="search"
           />
-          <Button type="submit" size="sm" className="h-10 w-10 p-0">
-            <Search className="h-4 w-4" />
+          <Button type="submit" size="sm" className="h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90">
+            <Search className="h-4 w-4 text-white" />
             <span className="sr-only">Buscar</span>
           </Button>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-10 w-10 p-0"
+            className="h-10 w-10 p-0 rounded-full border-2 border-gray-300 hover:bg-gray-100"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             aria-label={isFilterOpen ? 'Ocultar Filtros' : 'Mostrar Filtros'}
           >
