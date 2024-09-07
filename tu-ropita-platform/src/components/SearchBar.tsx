@@ -26,13 +26,17 @@ export function SearchBar() {
   return (
     <div className="w-full max-w-3xl mx-auto">
       <div className="flex justify-center w-full mb-4">
-        <form onSubmit={handleSearch} className="flex w-full items-center space-x-2 bg-white shadow-lg rounded-full p-2">
+        <form 
+          onSubmit={handleSearch} 
+          className="flex w-full items-center space-x-2 bg-white shadow-lg rounded-full p-2 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 transition-shadow"
+        >
           <Input
             type="search"
             placeholder="¿Qué estás buscando hoy?"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-grow text-base placeholder:text-sm md:placeholder:text-base border-none focus:ring-0"
+            className="flex-grow text-base placeholder:text-sm md:placeholder:text-base border-none focus:outline-none focus:ring-0 focus:ring-offset-0 !important"
+            style={{ boxShadow: 'none' }}
             enterKeyHint="search"
           />
           <Button type="submit" size="sm" className="h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90">

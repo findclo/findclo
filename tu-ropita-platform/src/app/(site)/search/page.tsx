@@ -36,7 +36,7 @@ export default function SearchPage() {
     }, [filters]); // Remove query from dependency array
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <>
             <div className="mb-8">
                 <SearchBar />
             </div>
@@ -76,6 +76,6 @@ export default function SearchPage() {
                     <SearchResults products={recommendedProducts} />
                 </div>
             </div>
-        </div>
+        </>
     );
 }
