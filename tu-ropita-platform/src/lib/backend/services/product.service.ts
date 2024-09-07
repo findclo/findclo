@@ -5,6 +5,9 @@ import {productRepository} from "@/lib/backend/persistance/products.repository";
 import {IProductCSVUploadParser} from "@/lib/backend/parsers/interfaces/productCSVUpload.parser.interface";
 import {ProductCSVUploadParser} from "@/lib/backend/parsers/productCSVUpload.parser";
 import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
+import {
+    IListProductsParams,
+} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
 
 class ProductService implements IProductService{
     private repository: IProductRepository;
@@ -16,8 +19,8 @@ class ProductService implements IProductService{
     }
 
 
-    public async listProducts(): Promise<IProduct[]>{
-        return this.repository.listProducts(undefined);
+    public async listProducts(params: IListProductsParams): Promise<IProduct[]>{
+        return this.repository.listProducts(params);
     }
 
     public async uploadProductsFromCSV(file : File){

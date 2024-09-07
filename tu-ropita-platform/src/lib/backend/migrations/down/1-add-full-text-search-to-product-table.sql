@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS product_tsv_idx;
+
+ALTER TABLE Products DROP COLUMN IF EXISTS tsv;

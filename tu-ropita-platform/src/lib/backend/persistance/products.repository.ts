@@ -3,30 +3,41 @@ import pool from "@/lib/backend/conf/db.connections";
 import {IProductRepository} from "@/lib/backend/persistance/interfaces/products.repository.interface";
 import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
 import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
+import {IAIService} from "@/lib/backend/services/interfaces/AI.service.interface";
+import {openAIService} from "@/lib/backend/services/openAI.service";
+import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
 
 class ProductsRepository implements IProductRepository{
     private db: Pool;
+    private aiProvider : IAIService;
 
-    constructor(db: Pool) {
+    constructor(db: Pool, aiProvider: IAIService ) {
         this.db = db;
+        this.aiProvider = aiProvider;
     }
 
-    // TODO make params an interface with (brand, tags, etc.)
-    public async listProducts(params: any) : Promise<IProduct[]>{
-        const data = await this.db.query(`SELECT * FROM products`);
-        console.log("repository")
-        return data.rows.map(row => ({
-            id: row.id,
-            name: row.name,
-            price: parseFloat(row.price),
-            description: row.description,
-            images: row.images,
-            brand: {
-                id: row.brandId,
-                name: '',
-                image: ''
-            }
-        }));
+    public async listProducts(params: IListProductsParams) : Promise<IProduct[]>{
+
+        const {query, values} = this.constructListQuery(params);
+        try {
+            const res = await this.db.query(query, values);
+            return res.rows.map(row => ({
+                id: row.id,
+                name: row.name,
+                price: parseFloat(row.price),
+                description: row.description,
+                images: row.images,
+                brand: {
+                    id: row.brandId,
+                    name: '',
+                    image: ''
+                }
+            }));
+        } catch (err) {
+            console.error('Error executing query:', err);
+            throw err;
+        }
+
     }
 
     public async bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>{
@@ -53,7 +64,25 @@ class ProductsRepository implements IProductRepository{
             return -1;
         }
     }
+
+    private constructListQuery(params: IListProductsParams): { query: string, values: any[] } {
+        const search = params.search.trim();
+
+        let query = `SELECT * FROM products`;
+        let values: any[] = [];
+        if (search && search.trim().length > 1) {
+            let sanitizedSearch = search.replace(/[\[\]'"]/g, '');
+            sanitizedSearch = sanitizedSearch.replace(/[^a-zA-Z0-9\s]/g, '&') + '*';
+            query += `
+                WHERE tsv @@ to_tsquery('spanish', $1);
+            `;
+            values.push(sanitizedSearch);
+        }else{
+            query +=';';
+        }
+        return { query, values };
+    }
 }
 
 
-export const productRepository = new ProductsRepository(pool);
+export const productRepository = new ProductsRepository(pool,openAIService);

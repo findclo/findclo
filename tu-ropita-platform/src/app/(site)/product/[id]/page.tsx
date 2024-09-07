@@ -29,7 +29,7 @@ async function getProductData(id: string) {
   };
 }
 async function getProducts(): Promise<IProduct[]> {
-  const res = await fetch(`${globalSettings.BASE_URL}/api/products`, { cache: 'no-store' });
+  const res = await fetch(`${globalSettings.BASE_URL}/api/products?search=[blusa,mangas]'`, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error('Failed to fetch users');
   }
