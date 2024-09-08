@@ -3,17 +3,14 @@ import pool from "@/lib/backend/conf/db.connections";
 import {IProductRepository} from "@/lib/backend/persistance/interfaces/products.repository.interface";
 import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
 import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
-import {IAIService} from "@/lib/backend/services/interfaces/AI.service.interface";
 import {openAIService} from "@/lib/backend/services/openAI.service";
 import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
 
 class ProductsRepository implements IProductRepository{
     private db: Pool;
-    private aiProvider : IAIService;
 
-    constructor(db: Pool, aiProvider: IAIService ) {
+    constructor(db: Pool ) {
         this.db = db;
-        this.aiProvider = aiProvider;
     }
 
     public async listProducts(params: IListProductsParams) : Promise<IProduct[]>{
@@ -94,4 +91,4 @@ class ProductsRepository implements IProductRepository{
 }
 
 
-export const productRepository = new ProductsRepository(pool,openAIService);
+export const productRepository = new ProductsRepository(pool);
