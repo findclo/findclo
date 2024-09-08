@@ -1,12 +1,17 @@
 import {productService} from "@/lib/backend/services/product.service";
+import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
 
 export async function GET(req: Request) {
     const url = new URL(req.url);
     const queryParams = new URLSearchParams(url.search);
-    const searchParam = queryParams.get('search') == null? '': queryParams.get('search')!;
+
+    const listProductParams: IListProductsParams = {
+        search: queryParams.get('search') || undefined,
+        brandId: queryParams.has('brandId') ? Number(queryParams.get('brandId')) : undefined,
+    };
 
     try {
-        const products = await productService.listProducts({search:searchParam});
+        const products = await productService.listProducts(listProductParams);
         return new Response(JSON.stringify(products), { status: 200 });
 
     } catch (error) {

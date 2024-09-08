@@ -66,23 +66,30 @@ class ProductsRepository implements IProductRepository{
     }
 
     private constructListQuery(params: IListProductsParams): { query: string, values: any[] } {
-        const search = params.search.trim();
-
         let query = `SELECT * FROM products`;
-        let values: any[] = [];
-        if (search && search.trim().length > 1) {
-            let sanitizedSearch = search.replace(/\s+/g, '*');
-            sanitizedSearch = sanitizedSearch.replace(/[^a-zA-Z0-9\s]/g, '*&') + '*';
-            query += `
-                WHERE tsv @@ to_tsquery('spanish', $1);
-            `;
-            console.log(sanitizedSearch)
+        const conditions: string[] = [];
+        const values: any[] = [];
+
+        if (params.search && params.search.trim().length > 1) {
+            const sanitizedSearch = params.search.replace(/\s+/g, ':*').replace(/[^a-zA-Z0-9\s]/g, '*') + ':*';
+            conditions.push(`tsv @@ to_tsquery('spanish', $${values.length + 1})`);
             values.push(sanitizedSearch);
-        }else{
-            query +=';';
         }
+
+        if (params.brandId) {
+            conditions.push(`brand_id = $${values.length + 1}`);
+            values.push(params.brandId);
+        }
+
+        if (conditions.length > 0) {
+            query += ` WHERE ` + conditions.join(' AND ');
+        }
+
+        query += `;`;
+
         return { query, values };
     }
+
 }
 
 

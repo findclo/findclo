@@ -1,4 +1,5 @@
 export interface  IListProductsParams {
-    search:string;
+    search?:string;
+    brandId?:number;
 }
 // TODO ADD (brand, tags, etc.)
