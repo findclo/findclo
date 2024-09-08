@@ -18,7 +18,8 @@ async function getProducts(query: string, filters: any): Promise<IProduct[]> {
 const mockBrand: IBrand = {
   id: 1,
   name: 'Zara',
-  image: 'https://images.unsplash.com/photo-1578401079419-1ab3f3b339ae?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  image: 'https://images.unsplash.com/photo-1578401079419-1ab3f3b339ae?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  websiteUrl:'https://www.zara.com/ar/'
 };
 
 const mockProductsOfBrand: IProduct[] = [

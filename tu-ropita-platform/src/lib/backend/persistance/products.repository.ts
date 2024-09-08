@@ -30,7 +30,8 @@ class ProductsRepository implements IProductRepository{
                 brand: {
                     id: row.brandId,
                     name: '',
-                    image: ''
+                    image: '',
+                    websiteUrl: ''
                 }
             }));
         } catch (err) {
