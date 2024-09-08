@@ -1,9 +1,8 @@
 "use client"
 
-import Image from 'next/image';
-import Link from 'next/link';
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface"; // Add this import
 import { useState } from 'react';
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface"; // Add this import
+import ProductCard from './ProductCard'; // Add this import
 
 
 interface RelatedProductsProps {
@@ -30,21 +29,7 @@ export default function RelatedProducts({ brandName, products }: RelatedProducts
       <h2 className="text-2xl mb-6">Otros productos de <span className="font-bold">{brandName}</span></h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {displayedProducts.map((product) => (
-          <Link href={`/product/${product.id}`} key={product.id} className="group">
-            <div className={`border rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-lg`}>
-              <Image
-                src={product.images[0]}
-                alt={product.name}
-                width={300}
-                height={300}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
-                <p className="text-gray-600">${product.price.toFixed(2)}</p>
-              </div>
-            </div>
-          </Link>
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
       {hasPreviousProducts && (
