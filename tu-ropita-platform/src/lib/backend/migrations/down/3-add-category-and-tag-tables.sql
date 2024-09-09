@@ -1,0 +1,5 @@
+DROP INDEX IF EXISTS idx_tag_category_id;
+
+DROP TABLE IF EXISTS Tags;
+
+DROP TABLE IF EXISTS Category;
