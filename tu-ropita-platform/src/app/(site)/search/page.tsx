@@ -7,6 +7,7 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import globalSettings from "@/lib/settings";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from 'next/navigation'; // Add this import
 import { useEffect, useState } from "react";
 
 async function getProducts(query: string, filters: any): Promise<IProduct[]> {
@@ -22,18 +23,17 @@ export default function SearchPage() {
     const [recommendedProducts, setRecommendedProducts] = useState<IProduct[]>([]);
     const [filters, setFilters] = useState({});
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const searchParams = useSearchParams();
 
     useEffect(() => {
-        // Fetch products whenever the filters change
         const fetchProducts = async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const query = urlParams.get('q') || '';
+            const query = searchParams.get('q') || '';
             const products = await getProducts(query, filters);
             setRecommendedProducts(products.slice(0, 4));
         };
 
         fetchProducts();
-    }, [filters]); // Remove query from dependency array
+    }, [filters, searchParams]);
 
     return (
         <>
