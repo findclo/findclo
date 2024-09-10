@@ -8,18 +8,23 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   return (
-    <Link href={`/product/${product.id}`} className="group">
-      <div className={`border rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-lg`}>
-        <Image
-          src={product.images[0]}
-          alt={product.name}
-          width={300}
-          height={300}
-          className="w-full h-48 object-cover"
-        />
-        <div className="p-4">
-          <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
-          <p className="text-gray-600">${product.price.toFixed(2)}</p>
+    <Link href={`/product/${product.id}`} className="group block">
+      <div className="flex flex-col h-full transition-transform duration-300 ease-in-out transform hover:scale-102 hover:shadow-md">
+        {/* Image container with reduced zoom effect */}
+        <div className="relative aspect-square overflow-hidden mb-2">
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            layout="fill"
+            objectFit="cover"
+            className="transition-transform duration-300 ease-in-out transform group-hover:scale-105"
+          />
+        </div>
+        {/* Text content */}
+        <div className="flex-grow p-2">
+          <h3 className="font-medium text-sm mb-1">{product.name}</h3>
+          <p className="text-xs text-gray-600 mb-1">{product.description}</p>
+          <p className="font-semibold text-sm">$ {product.price.toFixed(2)}</p>
         </div>
       </div>
     </Link>

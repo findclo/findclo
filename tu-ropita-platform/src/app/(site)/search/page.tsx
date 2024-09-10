@@ -1,13 +1,12 @@
 "use client";
 
-import { SearchBar } from "@/components/SearchBar"; // Add this import
+import ProductCard from "@/components/ProductCard"; // Add this import
+import { SearchBar } from "@/components/SearchBar";
 import SearchFilters from "@/components/SearchFilters";
 import SearchResults from "@/components/SearchResults";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import globalSettings from "@/lib/settings";
-import Image from "next/image";
-import Link from "next/link";
-import { useSearchParams } from 'next/navigation'; // Add this import
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from "react";
 
 async function getProducts(query: string, filters: any): Promise<IProduct[]> {
@@ -52,25 +51,11 @@ export default function SearchPage() {
                 )}
                 <div className={`w-full ${isFilterOpen ? 'md:w-3/4' : 'md:w-full'}`}>
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-0">
-                        <h2 className="text-2xl sm:text-3xl mt-4 sm:mt-0">🚀 Recomendados</h2>
+                        <h2 className="text-2xl sm:text-3xl mt-4 sm:mt-0">Nosotros recomendamos</h2>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                         {recommendedProducts.map((product) => (
-                            <Link href={`/product/${product.id}`} key={product.id} className="group">
-                                <div className={`border rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-lg`}>
-                                    <Image
-                                        src={product.images[0]}
-                                        alt={product.name}
-                                        width={300}
-                                        height={300}
-                                        className="w-full h-48 object-cover"
-                                    />
-                                    <div className="p-4">
-                                        <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
-                                        <p className="text-gray-600">${product.price.toFixed(2)}</p>
-                                    </div>
-                                </div>
-                            </Link>
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                     <SearchResults products={recommendedProducts} />
