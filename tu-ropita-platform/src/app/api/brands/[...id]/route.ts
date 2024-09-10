@@ -9,9 +9,8 @@ export async function GET(req: Request, {params}: {params: {id:string}}) {
 
         const brand: IBrand = await brandService.getBrandById(Number(params.id));
         return new Response(JSON.stringify(brand), { status: 200 });
-    } catch (error) {
-        console.log(error)
-        return new Response(null, { status: 500 });
+    } catch (error:any) {
+        return new Response(null, { status: error.statusCode? error.statusCode : 500  });
     }
 
 }

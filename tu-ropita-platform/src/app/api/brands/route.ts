@@ -6,9 +6,8 @@ export async function GET(req: Request) {
         const brands : IBrand[] = await brandService.listBrands();
         return new Response(JSON.stringify(brands), { status: 200 });
 
-    } catch (error) {
-        console.log(error)
-        return new Response(null, { status: 500 });
+    } catch (error:any) {
+        return new Response(null, { status: error.statusCode? error.statusCode : 500  });
     }
 
 }

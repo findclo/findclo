@@ -1,0 +1,2 @@
+ALTER TABLE Products
+    ADD COLUMN has_tags_generated BOOLEAN DEFAULT FALSE;
