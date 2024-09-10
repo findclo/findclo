@@ -1,7 +1,7 @@
-import {IBrandService} from "@/lib/backend/services/interfaces/brand.service.interface";
-import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
-import {IBrandRepository} from "@/lib/backend/persistance/interfaces/brand.repository.interface";
-import {brandRepository} from "@/lib/backend/persistance/brand.repository";
+import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { brandRepository } from "@/lib/backend/persistance/brand.repository";
+import { IBrandRepository } from "@/lib/backend/persistance/interfaces/brand.repository.interface";
+import { IBrandService } from "@/lib/backend/services/interfaces/brand.service.interface";
 
 class BrandService implements IBrandService {
     private repository: IBrandRepository;

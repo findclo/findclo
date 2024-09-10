@@ -1,6 +1,5 @@
-import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
-import {brandService} from "@/lib/backend/services/brand.service";
-import {isNumber} from "node:util";
+import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { brandService } from "@/lib/backend/services/brand.service";
 
 export async function GET(req: Request, {params}: {params: {id:string}}) {
     try {

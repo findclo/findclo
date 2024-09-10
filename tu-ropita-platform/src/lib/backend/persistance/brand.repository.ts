@@ -1,8 +1,8 @@
-import {IBrandRepository} from "@/lib/backend/persistance/interfaces/brand.repository.interface";
-import {Pool} from "pg";
-import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
 import pool from "@/lib/backend/conf/db.connections";
-import {BrandNotFoundException} from "@/lib/backend/exceptions/brandNotFound.exception";
+import { BrandNotFoundException } from "@/lib/backend/exceptions/brandNotFound.exception";
+import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { IBrandRepository } from "@/lib/backend/persistance/interfaces/brand.repository.interface";
+import { Pool } from "pg";
 
 class BrandRepository implements IBrandRepository {
     constructor(private readonly db: Pool) {}
