@@ -5,4 +5,5 @@ import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProd
 export interface IProductRepository {
     listProducts(params: IListProductsParams) : Promise<IProduct[]>;
     bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>;
+    markProductAsTagged(productId: string): Promise<void>
 };

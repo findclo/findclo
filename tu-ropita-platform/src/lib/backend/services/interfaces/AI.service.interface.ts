@@ -1,3 +1,3 @@
 export interface IAIService {
-    getProductTagsFromGPT(description: string): Promise<string[]>;
+    runAssistant(prompt: string): Promise<IAITagsResponse>;
 }

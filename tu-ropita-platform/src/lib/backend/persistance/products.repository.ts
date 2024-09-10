@@ -3,7 +3,6 @@ import pool from "@/lib/backend/conf/db.connections";
 import {IProductRepository} from "@/lib/backend/persistance/interfaces/products.repository.interface";
 import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
 import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
-import {openAIService} from "@/lib/backend/services/openAI.service";
 import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
 
 class ProductsRepository implements IProductRepository{
@@ -14,7 +13,6 @@ class ProductsRepository implements IProductRepository{
     }
 
     public async listProducts(params: IListProductsParams) : Promise<IProduct[]>{
-
         const {query, values} = this.constructListQuery(params);
         try {
             const res = await this.db.query(query, values);
@@ -35,7 +33,6 @@ class ProductsRepository implements IProductRepository{
             console.error('Error executing query:', err);
             throw err;
         }
-
     }
 
     public async bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>{
@@ -63,6 +60,26 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
+    async markProductAsTagged(productId: string): Promise<void> {
+        const query: string = `UPDATE Products
+            SET has_tags_generated = TRUE
+            WHERE id = $1;`;
+
+        try {
+            const result = await pool.query(query, [productId]);
+
+            if (result.rowCount === 0) {
+                // TODO HANDLE THIS
+                throw new Error(`Product with ID ${productId} not found.`);
+            }
+
+            console.log(`Product with ID ${productId} has been marked as tagged.`);
+        } catch (error) {
+            console.error(`Error marking product as tagged: ${error.message}`);
+            throw error;
+        }
+    }
+
     private constructListQuery(params: IListProductsParams): { query: string, values: any[] } {
         let query = `SELECT * FROM products`;
         const conditions: string[] = [];
@@ -79,9 +96,15 @@ class ProductsRepository implements IProductRepository{
             values.push(params.brandId);
         }
 
+        if(params.tagged){
+            conditions.push(`has_tags_generated = $${values.length + 1}`);
+            values.push(params.tagged);
+        }
+
         if (conditions.length > 0) {
             query += ` WHERE ` + conditions.join(' AND ');
         }
+
 
         query += `;`;
 
