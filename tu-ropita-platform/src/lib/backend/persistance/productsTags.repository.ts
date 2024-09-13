@@ -11,10 +11,15 @@ class ProductsTagsRepository implements IProductsTagsRepository {
         this.db = db;
     }
 
-    async insertTagsToProduct(tags: ITag[], productId: number): Promise<void> {
+    async insertTagsToProduct(tags: ITag[], productId: string): Promise<void> {
         const values: any[] = [];
         const valuePlaceholders: string[] = [];
-
+        tags.forEach((tag:ITag)=>{
+            // @ts-ignore
+            if (tag.id === undefined){
+                throw new Error("Invalid tag ");
+            }
+        })
         tags.forEach((tag, index) => {
             const offset = index * 2;
             valuePlaceholders.push(`($${offset + 1}, $${offset + 2})`);
@@ -27,9 +32,13 @@ class ProductsTagsRepository implements IProductsTagsRepository {
         `;
 
         try {
-            const res = await pool.query(query, values);
+            const res = await this.db.query(query, values);
             console.log('ProductsTags inserted successfully');
-        } catch (error) {
+        } catch (error:any) {
+            // CODE 23505 is repeteaded
+            if(error.code == '23505'){
+                return ;
+            }
             console.error('Error inserting productsTags:', error);
             throw error;
         }

@@ -10,30 +10,31 @@ class TagsRepository implements ITagRepository {
         this.db = db;
     }
 
-    async insertTagsByCategoryId(tags : ITag[], categoryId : number): Promise<void>{
+    async insertTagsByCategoryId(tags : string[], categoryId : number): Promise<void>{
 
         if (tags.length === 0){
             return ;
         }
         const values: any[] = [];
         const valuePlaceholders: string[] = [];
-        const insertQuery = `
-                INSERT INTO tags (name, category_id) 
-                VALUES ${valuePlaceholders.join(', ')}
-            `;
 
 
         tags.forEach((tag, index) => {
             const offset = index * 2;
             valuePlaceholders.push(`($${offset + 1}, $${offset + 2})`);
-            values.push(tag.name, categoryId);
+            values.push(tag, categoryId);
         });
 
+        const insertQuery = `
+                INSERT INTO tags (name, category_id) 
+                VALUES ${valuePlaceholders.join(', ')}
+            `;
         try {
             const res = await this.db.query(insertQuery, values);
             console.log('Tags inserted successfully');
 
         } catch (error) {
+            console.error(insertQuery)
             console.error('Error inserting tags:', error);
             throw error;
         }
