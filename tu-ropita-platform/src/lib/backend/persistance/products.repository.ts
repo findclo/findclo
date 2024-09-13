@@ -36,19 +36,29 @@ class ProductsRepository implements IProductRepository{
     }
 
     public async bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>{
-        const values: any[] = [];
-        const valuePlaceholders: string[] = [];
 
-        products.forEach((product, index) => {
-            const offset = index * 5;
-            valuePlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
-            values.push(product.name, product.price, product.description, product.images,brandId);
+        const valuePlaceholders = products.map((_, index) => {
+            const offset = index * 7;
+            return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, 
+            to_tsvector('spanish', coalesce($${offset + 6}, '') || ' ' || coalesce($${offset + 7}, ''))
+        )`;
         });
 
+        const values = products.flatMap(product => [
+            product.name,
+            product.price,
+            product.description,
+            product.images,
+            brandId,
+            product.name,
+            product.description
+        ]);
+
         const query = `
-        INSERT INTO Products (name, price, description, images, brand_id)
-        VALUES ${valuePlaceholders.join(', ')}
-    `;
+            INSERT INTO Products (name, price, description, images, brand_id, tsv)
+            VALUES ${valuePlaceholders.join(', ')}
+        `;
+
 
         try {
             const res = await pool.query(query, values);
@@ -86,8 +96,14 @@ class ProductsRepository implements IProductRepository{
         const values: any[] = [];
 
         if (params.search && params.search.trim().length > 1) {
-            const sanitizedSearch = params.search.replace(/\s+/g, ':*').replace(/[^a-zA-Z0-9\s]/g, '*') + ':*';
-            conditions.push(`tsv @@ to_tsquery('spanish', $${values.length + 1})`);
+            console.log(params.search)
+            const sanitizedSearch = params.search
+                .trim()
+                .replace(/[^a-zA-Z0-9\s]/g, '')
+                .split(/\s+/)
+                .map(word => word + ':*')
+                .join(' & ');conditions.push(`tsv @@ to_tsquery('spanish', $${values.length + 1})`);
+
             values.push(sanitizedSearch);
         }
 
