@@ -14,6 +14,14 @@ class TagsService implements ITagsService {
         return this.repository.getTagsByName(names);
     }
 
+    async getAvailableTagsForProducts(productsId: string[], excludeTags: ITag[] | undefined): Promise<ITag[]>{
+
+        if(productsId.length > 0) {
+            return this.repository.getAvailableTagsForProducts(productsId, excludeTags);
+        }
+        return [];
+    }
+
 }
 
 export const tagsService : ITagsService = new TagsService(tagsRepository);

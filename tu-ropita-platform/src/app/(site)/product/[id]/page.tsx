@@ -6,6 +6,7 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import globalSettings from "@/lib/settings";
 import { ShoppingCart } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
 
 // Simulating a server-side data fetch
 async function getProductData(id: string) {
@@ -28,7 +29,7 @@ async function getProductData(id: string) {
     }
   };
 }
-async function getProducts(): Promise<IProduct[]> {
+async function getProducts(): Promise<IListProductResponseDto> {
   const res = await fetch(`${globalSettings.BASE_URL}/api/products?search=[blusa,mangas]'`, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error('Failed to fetch users');
@@ -43,7 +44,7 @@ async function getRelatedProducts(brandId: string, currentProductId: string) {
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
   const product = await getProductData(params.id);
-  const relatedProducts = await getRelatedProducts(product.brand.id, product.id);
+  const relatedProducts = (await getRelatedProducts(product.brand.id, product.id)).products;
 
   // Handle case where product is not found
   if (!product) {

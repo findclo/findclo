@@ -6,8 +6,9 @@ import { SearchBar } from "@/components/SearchBar";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import globalSettings from "@/lib/settings";
 import { Suspense, useEffect, useState } from "react";
+import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
 
-async function getFeaturedProducts(): Promise<IProduct[]> {
+async function getFeaturedProducts(): Promise<IListProductResponseDto> {
   const res = await fetch(`${globalSettings.BASE_URL}/api/products?featured=true`, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error('Failed to fetch featured products');
@@ -42,7 +43,7 @@ export default function Home() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const featuredProducts = await getFeaturedProducts();
+        const featuredProducts = (await getFeaturedProducts()).products;
         const mappedItems = mapProductsToCarouselItems(featuredProducts);
         setCarouselItems(mappedItems);
       } catch (error) {

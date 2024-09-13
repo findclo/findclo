@@ -11,6 +11,7 @@ import {
 import {ITagsService} from "@/lib/backend/services/interfaces/tags.service.interface";
 import {tagsService} from "@/lib/backend/services/tags.service";
 import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
+import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
 
 class ProductService implements IProductService{
     private repository: IProductRepository;
@@ -24,13 +25,23 @@ class ProductService implements IProductService{
     }
 
 
-    public async listProducts(params: IListProductsParams): Promise<IProduct[]>{
+    public async listProducts(params: IListProductsParams): Promise<IListProductResponseDto>{
+
         let tags : ITag[] | undefined;
         if(params.tags){
             tags = await this.tagService.getTagsByName(params.tags);
         }
+        const products : IProduct[] = await this.repository.listProducts(params,tags);
 
-        return this.repository.listProducts(params,tags);
+        return {
+            appliedTags: tags,
+            availableTags: await this.tagService.getAvailableTagsForProducts(products.map(p=>p.id),tags),
+            pageNum: 1,
+            pageSize: products.length,
+            products: await this.repository.listProducts(params,tags),
+            totalPages: 1
+        };
+
     }
 
     public async uploadProductsFromCSV(file : File){

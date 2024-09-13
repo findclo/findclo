@@ -96,6 +96,44 @@ class TagsRepository implements ITagRepository {
             throw new Error(`Failed to retrieve tags for name: ${name}`);
         }
     }
+
+
+    async getAvailableTagsForProducts(productsId: string[], excludeTags: ITag[] | undefined): Promise<ITag[]> {
+
+        const productPlaceholders = productsId.map((_, idx) => `$${idx + 1}`).join(", ");
+
+        let excludeCondition = "";
+        let values = [...productsId];
+
+        if (excludeTags && excludeTags.length > 0) {
+            const excludeTagIds = excludeTags.map(tag => tag.id);
+            const excludePlaceholders = excludeTagIds.map((_, idx) => `$${productsId.length + idx + 1}`).join(", ");
+            excludeCondition = `AND t.id NOT IN (${excludePlaceholders})`;
+            values = [...productsId, ...excludeTagIds];
+        }
+
+        const query = `SELECT t.id as "tagId", t.name as "tagName", t.category_id as "categoryId"
+                                FROM tags t
+                                JOIN product_tags pt ON t.id = pt.tag_id
+                                WHERE pt.product_id IN (${productPlaceholders})
+                                ${excludeCondition}
+                                GROUP BY t.id, t.name, t.category_id;`;
+
+        try {
+            const result = await this.db.query(query, values);
+
+            return result.rows.map((row) => ({
+                id: row.tagId,
+                name: row.tagName,
+                category_id: row.categoryId
+            }));
+
+        } catch (error) {
+            console.error('Error fetching available tags:', error);
+            throw new Error('Failed to retrieve available tags.');
+        }
+    }
+
 }
 
 export const tagsRepository : ITagRepository = new TagsRepository(pool);

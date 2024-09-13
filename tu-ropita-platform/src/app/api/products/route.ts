@@ -1,5 +1,6 @@
 import {productService} from "@/lib/backend/services/product.service";
 import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
+import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
 
 export async function GET(req: Request) {
     const url = new URL(req.url);
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
     };
 
     try {
-        const products = await productService.listProducts(listProductParams);
+        const products : IListProductResponseDto = await productService.listProducts(listProductParams);
         return new Response(JSON.stringify(products), { status: 200 });
 
     } catch (error) {

@@ -8,8 +8,9 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import globalSettings from "@/lib/settings";
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from "react";
+import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
 
-async function getProducts(query: string, filters: any): Promise<IProduct[]> {
+async function getProducts(query: string, filters: any): Promise<IListProductResponseDto> {
     const queryParams = new URLSearchParams({ search: query, ...filters });
     const res = await fetch(`${globalSettings.BASE_URL}/api/products?${queryParams}`, { cache: 'no-store' });
     if (!res.ok) {
@@ -27,7 +28,7 @@ export default function SearchPage() {
     useEffect(() => {
         const fetchProducts = async () => {
             const query = searchParams.get('q') || '';
-            const products = await getProducts(query, filters);
+            const products = (await getProducts(query, filters)).products;
             setRecommendedProducts(products.slice(0, 4));
         };
 

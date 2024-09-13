@@ -5,9 +5,10 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import globalSettings from '@/lib/settings';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation'; // Add this import
+import { notFound } from 'next/navigation';
+import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface"; // Add this import
 
-async function getProducts(query: string, filters: any): Promise<IProduct[]> {
+async function getProducts(query: string, filters: any): Promise<IListProductResponseDto> {
     const queryParams = new URLSearchParams({ search: query, ...filters });
     const res = await fetch(`${globalSettings.BASE_URL}/api/products?${queryParams}`, { cache: 'no-store' });
     if (!res.ok) {
@@ -28,7 +29,7 @@ async function getBrand(id: string): Promise<IBrand> {
 async function BrandPage({ params }: { params: { id: string } }) {
   try {
     const brand = await getBrand(params.id);
-    const products = await getProducts('', { brandId: params.id });
+    const products = (await getProducts('', { brandId: params.id })).products;
 
     return (
       <div className="container mx-auto px-4 py-8">
