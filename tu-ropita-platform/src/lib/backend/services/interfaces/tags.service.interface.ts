@@ -1,0 +1,5 @@
+import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
+
+export interface ITagsService {
+    getTagsByName(names: string[]): Promise<ITag[]>;
+}

@@ -4,4 +4,5 @@ export interface ITagRepository {
     insertTagsByCategoryId(tags : string[], categoryId : number): Promise<void>;
     getTagsByCategoryId(categoryId: number): Promise<ITag[]>;
     getTagByName(tagName: string): Promise<ITag>;
+    getTagsByName(tagsName: string[]): Promise<ITag[]>;
 }

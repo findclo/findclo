@@ -8,19 +8,29 @@ import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
 import {
     IListProductsParams,
 } from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
+import {ITagsService} from "@/lib/backend/services/interfaces/tags.service.interface";
+import {tagsService} from "@/lib/backend/services/tags.service";
+import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
 
 class ProductService implements IProductService{
     private repository: IProductRepository;
     private parser: IProductCSVUploadParser;
+    private tagService : ITagsService;
 
-    constructor(repository: IProductRepository, parser: IProductCSVUploadParser) {
+    constructor(repository: IProductRepository, parser: IProductCSVUploadParser, tagsService : ITagsService) {
         this.repository = repository;
         this.parser = parser;
+        this.tagService = tagsService;
     }
 
 
     public async listProducts(params: IListProductsParams): Promise<IProduct[]>{
-        return this.repository.listProducts(params);
+        let tags : ITag[] | undefined;
+        if(params.tags){
+            tags = await this.tagService.getTagsByName(params.tags);
+        }
+
+        return this.repository.listProducts(params,tags);
     }
 
     public async uploadProductsFromCSV(file : File){
@@ -32,4 +42,4 @@ class ProductService implements IProductService{
     }
 }
 
-export const productService : ProductService = new ProductService(productRepository, new ProductCSVUploadParser());
+export const productService : ProductService = new ProductService(productRepository, new ProductCSVUploadParser(), tagsService);

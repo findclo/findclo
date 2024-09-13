@@ -44,6 +44,7 @@ class ProductsTagsRepository implements IProductsTagsRepository {
         }
     }
 
+
 }
 
 export const productTagsRepository : IProductsTagsRepository = new ProductsTagsRepository(pool);

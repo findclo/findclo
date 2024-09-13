@@ -79,6 +79,23 @@ class TagsRepository implements ITagRepository {
             throw new Error(`Failed to retrieve tags for name: ${name}`);
         }
     }
+
+    async getTagsByName(tagsName: string[]): Promise<ITag[]>{
+        const placeholders = tagsName.map((_, idx) => `$${idx + 1}`).join(", ");
+        const query = `SELECT id, name, category_id FROM tags WHERE name IN (${placeholders})`;
+        try {
+            const result = await this.db.query(query, tagsName);
+
+            return result.rows.map((row) => ({
+                id: row.id,
+                name: row.name,
+                category_id: row.category_id
+            }));
+        } catch (error) {
+            console.error('Error fetching tags by name:', error);
+            throw new Error(`Failed to retrieve tags for name: ${name}`);
+        }
+    }
 }
 
 export const tagsRepository : ITagRepository = new TagsRepository(pool);

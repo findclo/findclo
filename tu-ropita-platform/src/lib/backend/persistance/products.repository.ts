@@ -4,6 +4,7 @@ import {IProductRepository} from "@/lib/backend/persistance/interfaces/products.
 import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
 import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
 import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
+import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
 
 class ProductsRepository implements IProductRepository{
     private db: Pool;
@@ -12,8 +13,8 @@ class ProductsRepository implements IProductRepository{
         this.db = db;
     }
 
-    public async listProducts(params: IListProductsParams) : Promise<IProduct[]>{
-        const {query, values} = this.constructListQuery(params);
+    public async listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>{
+        const {query, values} = this.constructListQuery(params,tags);
         try {
             const res = await this.db.query(query, values);
             return res.rows.map(row => ({
@@ -90,10 +91,19 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
-    private constructListQuery(params: IListProductsParams): { query: string, values: any[] } {
-        let query = `SELECT * FROM products`;
+    private constructListQuery(params: IListProductsParams, tags?: ITag[]): { query: string, values: any[] } {
+        let query = `SELECT p.* FROM products p`;
         const conditions: string[] = [];
         const values: any[] = [];
+
+        if (tags && tags.length > 0) {
+            query += ` JOIN Product_Tags pt ON p.id = pt.product_id
+                       JOIN Tags t ON pt.tag_id = t.id`;
+            const tagNames = tags.map(tag => tag.name);
+            const tagPlaceholders = tagNames.map((_, idx) => `$${values.length + idx + 1}`);
+            conditions.push(`t.name IN (${tagPlaceholders.join(', ')})`);
+            values.push(...tagNames);
+        }
 
         if (params.search && params.search.trim().length > 1) {
             console.log(params.search)
@@ -108,12 +118,12 @@ class ProductsRepository implements IProductRepository{
         }
 
         if (params.brandId) {
-            conditions.push(`brand_id = $${values.length + 1}`);
+            conditions.push(`p.brand_id = $${values.length + 1}`);
             values.push(params.brandId);
         }
 
         if(params.tagged){
-            conditions.push(`has_tags_generated = $${values.length + 1}`);
+            conditions.push(`p.has_tags_generated = $${values.length + 1}`);
             values.push(params.tagged);
         }
 
