@@ -1,6 +1,5 @@
 import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { ITagRepository } from "@/lib/backend/persistance/interfaces/tags.repository.interface";
-import { tagsRepository } from "@/lib/backend/persistance/tags.repository";
+import { ITagRepository, tagsRepository } from "@/lib/backend/persistance/tags.repository";
 
 export interface ITagsService {
     getTagsByName(names: string[]): Promise<ITag[]>;

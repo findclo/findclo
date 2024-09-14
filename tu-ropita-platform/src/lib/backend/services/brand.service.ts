@@ -1,6 +1,5 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
-import { brandRepository } from "@/lib/backend/persistance/brand.repository";
-import { IBrandRepository } from "@/lib/backend/persistance/interfaces/brand.repository.interface";
+import { brandRepository, IBrandRepository } from "@/lib/backend/persistance/brand.repository";
 
 export interface IBrandService {
     getBrandById(brandId:number): Promise<IBrand>;

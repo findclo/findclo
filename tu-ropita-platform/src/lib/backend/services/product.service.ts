@@ -2,13 +2,8 @@ import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { IProductCSVUploadParser } from "@/lib/backend/parsers/interfaces/productCSVUpload.parser.interface";
-import { ProductCSVUploadParser } from "@/lib/backend/parsers/productCSVUpload.parser";
-import {
-    IListProductsParams,
-} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
-import { IProductRepository } from "@/lib/backend/persistance/interfaces/products.repository.interface";
-import { productRepository } from "@/lib/backend/persistance/products.repository";
+import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/parsers/productCSVUpload.parser";
+import { IListProductsParams, IProductRepository, productRepository } from "@/lib/backend/persistance/products.repository";
 import { IAIService, openAIService } from "@/lib/backend/services/openAI.service";
 import { ITagsService, tagsService } from "@/lib/backend/services/tags.service";
 
