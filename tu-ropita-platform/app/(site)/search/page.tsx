@@ -1,23 +1,13 @@
 "use client";
 
-import ProductCard from "@/components/ProductCard"; // Add this import
+import { productsApiWrapper } from "@/api-wrappers/products";
+import ProductCard from "@/components/ProductCard";
 import { SearchBar } from "@/components/SearchBar";
 import SearchFilters from "@/components/SearchFilters";
 import SearchResults from "@/components/SearchResults";
-import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import globalSettings from "@/lib/settings";
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from "react";
-
-async function getProducts(query: string, filters: any): Promise<IListProductResponseDto> {
-    const queryParams = new URLSearchParams({ search: query, ...filters });
-    const res = await fetch(`${globalSettings.BASE_URL}/api/products?${queryParams}`, { cache: 'no-store' });
-    if (!res.ok) {
-        throw new Error('Failed to fetch products');
-    }
-    return res.json();
-}
 
 export default function SearchPage() {
     const [products, setProducts] = useState<IProduct[]>([]);
@@ -34,7 +24,7 @@ export default function SearchPage() {
             setNoProductsFound(false);
             const query = searchParams.get('q') || '';
             try {
-                const result = await getProducts(query, filters);
+                const result = await productsApiWrapper.getFilteredProducts(query, filters);
                 console.log(result);
                 if (result.products.length === 0) {
                     setNoProductsFound(true);

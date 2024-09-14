@@ -1,43 +1,17 @@
+import { brandsApiWrapper } from '@/api-wrappers/brands';
+import { productsApiWrapper } from '@/api-wrappers/products';
 import BrandLink from '@/components/BrandLink';
 import ImageGallery from '@/components/ImageGallery';
 import RelatedProducts from '@/components/RelatedProducts';
 import ShareButtons from '@/components/ShareButtons';
-import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
-import { IBrand } from '@/lib/backend/models/interfaces/brand.interface';
-import globalSettings from "@/lib/settings";
 import { ShoppingCart } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
-async function getProduct(productId: string) {
-  const res = await fetch(`${globalSettings.BASE_URL}/api/products?productId=${productId}`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch users');
-  }
-  return res.json();
-}
-
-async function getProductsOfBrand(brandId: number): Promise<IListProductResponseDto> {
-  const res = await fetch(`${globalSettings.BASE_URL}/api/products?brandId=${brandId}`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch users');
-  }
-  return res.json();
-}
-
-async function getBrand(brandId: string): Promise<IBrand> {
-  const res = await fetch(`${globalSettings.BASE_URL}/api/brands/${brandId}`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch users');
-  }
-  return res.json();
-}
-
 export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = (await getProduct(params.id)).products[0];
-  const brand = await getBrand(product.brand_id);
-  const relatedProducts = (await getProductsOfBrand(brand.id)).products;
+  const product = (await productsApiWrapper.getProductById(params.id)).products[0];
+  const brand = await brandsApiWrapper.getBrandById(product.brand_id);
+  const relatedProducts = (await productsApiWrapper.getProductsByBrandId(brand.id.toString())).products;
 
-  // Handle case where product is not found
   if (!product) {
     notFound();
   }

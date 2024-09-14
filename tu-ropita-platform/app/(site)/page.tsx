@@ -1,20 +1,11 @@
 "use client";
 
+import { productsApiWrapper } from "@/api-wrappers/products";
 import { Carousel } from "@/components/Carousel";
 import { FeaturedBrands } from "@/components/FeaturedBrands";
 import { SearchBar } from "@/components/SearchBar";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import globalSettings from "@/lib/settings";
 import { Suspense, useEffect, useState } from "react";
-import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
-
-async function getFeaturedProducts(): Promise<IListProductResponseDto> {
-  const res = await fetch(`${globalSettings.BASE_URL}/api/products?featured=true`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch featured products');
-  }
-  return res.json();
-}
 
 interface CarouselItem {
   id: string;
@@ -43,7 +34,7 @@ export default function Home() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const featuredProducts = (await getFeaturedProducts()).products;
+        const featuredProducts = (await productsApiWrapper.getFeaturedProducts()).products;
         const mappedItems = mapProductsToCarouselItems(featuredProducts);
         setCarouselItems(mappedItems);
       } catch (error) {

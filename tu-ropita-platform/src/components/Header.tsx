@@ -10,7 +10,7 @@ const Header = () => {
       <header className="border-b md:hidden fixed top-0 left-0 right-0 bg-white z-50">
         <div className="container flex h-12 items-center justify-center">
           <Link href="/" className="text-xl font-bold">
-            TuRopita
+            FindClo
           </Link>
         </div>
       </header>
@@ -22,7 +22,7 @@ const Header = () => {
       <header className="border-b hidden md:block">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="text-xl font-bold">
-            TuRopita
+            FindClo
           </Link>
           <nav className="hidden md:flex">
             <Button asChild>
