@@ -3,5 +3,6 @@ export interface  IListProductsParams {
     brandId?:number;
     tagged?: boolean;
     tagsIds?: string[];
+    productId?: number;
 }
 // TODO ADD (brand, tags, etc.)

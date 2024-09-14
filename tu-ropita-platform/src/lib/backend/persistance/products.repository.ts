@@ -13,6 +13,19 @@ class ProductsRepository implements IProductRepository{
         this.db = db;
     }
 
+    public async getProductById(productId: number): Promise<IProduct | null> {
+        const query = `SELECT * FROM Products WHERE id = $1`;
+        const values = [productId];
+
+        try {
+            const res = await this.db.query(query, values);
+            return res.rows[0] || null;
+        } catch (error) {
+            console.error('Error executing query:', error);
+            throw error;
+        }
+    }
+
     public async listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>{
         const {query, values} = this.constructListQuery(params,tags);
         try {

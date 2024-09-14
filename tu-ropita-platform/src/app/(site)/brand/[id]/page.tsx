@@ -1,15 +1,14 @@
 import ProductCard from '@/components/ProductCard'; // Add this import
 import { Button } from "@/components/ui/button";
+import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface"; // Add this import
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
-import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import globalSettings from '@/lib/settings';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface"; // Add this import
 
-async function getProducts(query: string, filters: any): Promise<IListProductResponseDto> {
-    const queryParams = new URLSearchParams({ search: query, ...filters });
+async function getProductsByBrand(brandId: string): Promise<IListProductResponseDto> {
+    const queryParams = new URLSearchParams({ brandId: brandId });
     const res = await fetch(`${globalSettings.BASE_URL}/api/products?${queryParams}`, { cache: 'no-store' });
     if (!res.ok) {
         throw new Error('Failed to fetch products');
@@ -29,7 +28,8 @@ async function getBrand(id: string): Promise<IBrand> {
 async function BrandPage({ params }: { params: { id: string } }) {
   try {
     const brand = await getBrand(params.id);
-    const products = (await getProducts('', { brandId: params.id })).products;
+    console.log(brand);
+    const products = (await getProductsByBrand(params.id)).products;
 
     return (
       <div className="container mx-auto px-4 py-8">

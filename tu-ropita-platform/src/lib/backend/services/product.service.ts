@@ -31,6 +31,22 @@ class ProductService implements IProductService{
 
     public async listProducts(params: IListProductsParams): Promise<IListProductResponseDto>{
         let tags : ITag[] = [];
+
+        if(params.productId){
+            const product = await this.repository.getProductById(params.productId);
+            if(!product){
+                throw new Error(`Product not found. [productId=${params.productId}]`);
+            }
+            return {
+                appliedTags: [],
+                availableTags: [],
+                pageNum: 1,
+                pageSize: 1,
+                products: [product],
+                totalPages: 1
+            }
+        }
+
         if(params.tagsIds){
             tags = await this.tagService.getTagsByIds(params.tagsIds);
         }

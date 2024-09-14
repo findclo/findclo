@@ -1,6 +1,6 @@
-import {productService} from "@/lib/backend/services/product.service";
-import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
-import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
+import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
+import { IListProductsParams } from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
+import { productService } from "@/lib/backend/services/product.service";
 
 export async function GET(req: Request) {
     const url = new URL(req.url);
@@ -10,7 +10,8 @@ export async function GET(req: Request) {
     const listProductParams: IListProductsParams = {
         search: queryParams.get('search') || undefined,
         brandId: queryParams.has('brandId') ? Number(queryParams.get('brandId')) : undefined,
-        tagsIds: queryParams.has('tagsIds') ? queryParams.get('tagsIds')!.split(',') : undefined
+        tagsIds: queryParams.has('tagsIds') ? queryParams.get('tagsIds')!.split(',') : undefined,
+        productId: queryParams.has('productId') ? Number(queryParams.get('productId')) : undefined
     };
 
     try {

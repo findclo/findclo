@@ -12,7 +12,7 @@ class BrandRepository implements IBrandRepository {
             id: b.id,
             name: b.name,
             image: b.image,
-            websiteUrl: b.websiteUrl,
+            websiteUrl: b.websiteurl,
         };
     }
 
