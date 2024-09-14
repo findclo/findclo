@@ -1,7 +1,11 @@
-import {IProductCSVUploadParser} from "@/lib/backend/parsers/interfaces/productCSVUpload.parser.interface";
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import Papa from 'papaparse';
-import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
+
+export interface IProductCSVUploadParser {
+    parse(file:File): Promise<IProductDTO[]>;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const REQUIRED_HEADERS = ['name', 'price', 'description', 'images'];
 const MANDATORY_FIELDS = ['id', 'name', 'price'];
