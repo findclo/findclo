@@ -2,6 +2,7 @@ import {ITagRepository} from "@/lib/backend/persistance/interfaces/tags.reposito
 import {Pool} from "pg";
 import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
 import pool from "@/lib/backend/conf/db.connections";
+import {TagNotFoundException} from "@/lib/backend/exceptions/tagNotFound.exception";
 
 class TagsRepository implements ITagRepository {
     private db: Pool;
@@ -42,59 +43,28 @@ class TagsRepository implements ITagRepository {
 
     async getTagsByCategoryId(categoryId: number): Promise<ITag[]> {
         const query = 'SELECT id, name, category_id FROM tags WHERE category_id = $1';
-        const values = [categoryId];
-
-        try {
-            const result = await this.db.query(query, values);
-
-            const tags: ITag[] = result.rows.map((row) => ({
-                id: row.id,
-                name: row.name,
-                category_id: row.category_id
-            }));
-
-            return tags;
-        } catch (error) {
-            console.error('Error fetching tags by category_id:', error);
-            throw new Error(`Failed to retrieve tags for category_id: ${categoryId}`);
-        }
+        return this.queryTags(query, [categoryId]);
     }
 
-    async getTagByName(tagName: string): Promise<ITag>{
+    async getTagByName(tagName: string): Promise<ITag> {
         const query = 'SELECT id, name, category_id FROM tags WHERE name = $1';
-        const values = [tagName];
-
-        try {
-            const result = await this.db.query(query, values);
-
-            const tags: ITag = result.rows.map((row) => ({
-                id: row.id,
-                name: row.name,
-                category_id: row.category_id
-            }))[0];
-
-            return tags;
-        } catch (error) {
-            console.error('Error fetching tags by name:', error);
-            throw new Error(`Failed to retrieve tags for name: ${name}`);
+        const tags = await this.queryTags(query, [tagName]);
+        if(tags && tags.length > 0){
+            return tags[0];
         }
+        throw  new TagNotFoundException(tagName);
     }
 
-    async getTagsByName(tagsName: string[]): Promise<ITag[]>{
+    async getTagsByName(tagsName: string[]): Promise<ITag[]> {
         const placeholders = tagsName.map((_, idx) => `$${idx + 1}`).join(", ");
         const query = `SELECT id, name, category_id FROM tags WHERE name IN (${placeholders})`;
-        try {
-            const result = await this.db.query(query, tagsName);
+        return this.queryTags(query, tagsName);
+    }
 
-            return result.rows.map((row) => ({
-                id: row.id,
-                name: row.name,
-                category_id: row.category_id
-            }));
-        } catch (error) {
-            console.error('Error fetching tags by name:', error);
-            throw new Error(`Failed to retrieve tags for name: ${name}`);
-        }
+    async getTagsByIds(tagIds: string[]): Promise<ITag[]> {
+        const placeholders = tagIds.map((_, idx) => `$${idx + 1}`).join(", ");
+        const query = `SELECT id, name, category_id FROM tags WHERE id IN (${placeholders})`;
+        return this.queryTags(query, tagIds);
     }
 
 
@@ -131,6 +101,21 @@ class TagsRepository implements ITagRepository {
         } catch (error) {
             console.error('Error fetching available tags:', error);
             throw new Error('Failed to retrieve available tags.');
+        }
+    }
+
+
+    private async queryTags(query: string, values: any[]): Promise<ITag[]> {
+        try {
+            const result = await this.db.query(query, values);
+            return result.rows.map((row) => ({
+                id: row.id || row.tagId,
+                name: row.name || row.tagName,
+                category_id: row.category_id || row.categoryId
+            }));
+        } catch (error) {
+            console.error('Error executing query:', query);
+            throw error;
         }
     }
 

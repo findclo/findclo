@@ -6,11 +6,11 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const queryParams = new URLSearchParams(url.search);
 
-    // example of url : BASEURL/api/products?search=xxx&brandId=xxx&tags=seda,blusa,verano
+    // example of url : BASEURL/api/products?search=xxx&brandId=xxx&tagsIds=1,12,32
     const listProductParams: IListProductsParams = {
         search: queryParams.get('search') || undefined,
         brandId: queryParams.has('brandId') ? Number(queryParams.get('brandId')) : undefined,
-        tags: queryParams.has('tags') ? queryParams.get('tags')!.split(',') : undefined
+        tagsIds: queryParams.has('tagsIds') ? queryParams.get('tagsIds')!.split(',') : undefined
     };
 
     try {

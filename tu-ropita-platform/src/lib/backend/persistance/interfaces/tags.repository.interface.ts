@@ -6,4 +6,5 @@ export interface ITagRepository {
     getTagByName(tagName: string): Promise<ITag>;
     getTagsByName(tagsName: string[]): Promise<ITag[]>;
     getAvailableTagsForProducts(productsId: string[], excludeTags: ITag[] | undefined): Promise<ITag[]>;
+    getTagsByIds(tagIds: string[]): Promise<ITag[]>;
 }

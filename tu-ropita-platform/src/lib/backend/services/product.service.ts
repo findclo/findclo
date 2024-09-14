@@ -28,8 +28,8 @@ class ProductService implements IProductService{
     public async listProducts(params: IListProductsParams): Promise<IListProductResponseDto>{
 
         let tags : ITag[] | undefined;
-        if(params.tags){
-            tags = await this.tagService.getTagsByName(params.tags);
+        if(params.tagsIds){
+            tags = await this.tagService.getTagsByIds(params.tagsIds);
         }
         const products : IProduct[] = await this.repository.listProducts(params,tags);
 
