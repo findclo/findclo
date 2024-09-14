@@ -1,10 +1,10 @@
-import {Pool} from "pg";
 import pool from "@/lib/backend/conf/db.connections";
-import {IProductRepository} from "@/lib/backend/persistance/interfaces/products.repository.interface";
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
-import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
-import {IListProductsParams} from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
-import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
+import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
+import { IListProductsParams } from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
+import { IProductRepository } from "@/lib/backend/persistance/interfaces/products.repository.interface";
+import { Pool } from "pg";
 
 class ProductsRepository implements IProductRepository{
     private db: Pool;
@@ -92,7 +92,7 @@ class ProductsRepository implements IProductRepository{
     }
 
     private constructListQuery(params: IListProductsParams, tags?: ITag[]): { query: string, values: any[] } {
-        let query = `SELECT p.* FROM products p`;
+        let query = `SELECT DISTINCT p.* FROM products p`;
         const conditions: string[] = [];
         const values: any[] = [];
 
@@ -132,8 +132,7 @@ class ProductsRepository implements IProductRepository{
             query += ` WHERE ` + conditions.join(' AND ');
         }
 
-
-        query += `;`;
+        query += ` GROUP BY p.id;`;
 
         return { query, values };
     }

@@ -1,19 +1,19 @@
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
-import {IProductService} from "@/lib/backend/services/interfaces/product.service.interface";
-import {IProductRepository} from "@/lib/backend/persistance/interfaces/products.repository.interface";
-import {productRepository} from "@/lib/backend/persistance/products.repository";
-import {IProductCSVUploadParser} from "@/lib/backend/parsers/interfaces/productCSVUpload.parser.interface";
-import {ProductCSVUploadParser} from "@/lib/backend/parsers/productCSVUpload.parser";
-import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
+import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
+import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
+import { IProductCSVUploadParser } from "@/lib/backend/parsers/interfaces/productCSVUpload.parser.interface";
+import { ProductCSVUploadParser } from "@/lib/backend/parsers/productCSVUpload.parser";
 import {
     IListProductsParams,
 } from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
-import {ITagsService} from "@/lib/backend/services/interfaces/tags.service.interface";
-import {tagsService} from "@/lib/backend/services/tags.service";
-import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
-import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
-import {IAIService} from "@/lib/backend/services/interfaces/AI.service.interface";
-import {openAIService} from "@/lib/backend/services/openAI.service";
+import { IProductRepository } from "@/lib/backend/persistance/interfaces/products.repository.interface";
+import { productRepository } from "@/lib/backend/persistance/products.repository";
+import { IAIService } from "@/lib/backend/services/interfaces/AI.service.interface";
+import { IProductService } from "@/lib/backend/services/interfaces/product.service.interface";
+import { ITagsService } from "@/lib/backend/services/interfaces/tags.service.interface";
+import { openAIService } from "@/lib/backend/services/openAI.service";
+import { tagsService } from "@/lib/backend/services/tags.service";
 
 class ProductService implements IProductService{
     private repository: IProductRepository;
@@ -30,7 +30,6 @@ class ProductService implements IProductService{
 
 
     public async listProducts(params: IListProductsParams): Promise<IListProductResponseDto>{
-
         let tags : ITag[] = [];
         if(params.tagsIds){
             tags = await this.tagService.getTagsByIds(params.tagsIds);

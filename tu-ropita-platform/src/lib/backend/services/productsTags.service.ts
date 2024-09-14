@@ -1,16 +1,17 @@
-import {IProductsTagsService} from "@/lib/backend/services/interfaces/productsTags.service.interface";
-import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
-import {IProductRepository} from "@/lib/backend/persistance/interfaces/products.repository.interface";
-import {IProductsTagsRepository} from "@/lib/backend/persistance/interfaces/productsTags.repository.interface";
-import {IAIService} from "@/lib/backend/services/interfaces/AI.service.interface";
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
-import {productTagsRepository} from "@/lib/backend/persistance/productsTags.repository";
-import {productRepository} from "@/lib/backend/persistance/products.repository";
-import {openAIService} from "@/lib/backend/services/openAI.service";
-import {ITagRepository} from "@/lib/backend/persistance/interfaces/tags.repository.interface";
-import {tagsRepository} from "@/lib/backend/persistance/tags.repository";
-import {ICategoryRepository} from "@/lib/backend/persistance/interfaces/category.repository.interface";
-import {categoryRepository} from "@/lib/backend/persistance/category.repository";
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
+import { categoryRepository } from "@/lib/backend/persistance/category.repository";
+import { ICategoryRepository } from "@/lib/backend/persistance/interfaces/category.repository.interface";
+import { IProductRepository } from "@/lib/backend/persistance/interfaces/products.repository.interface";
+import { IProductsTagsRepository } from "@/lib/backend/persistance/interfaces/productsTags.repository.interface";
+import { ITagRepository } from "@/lib/backend/persistance/interfaces/tags.repository.interface";
+import { productRepository } from "@/lib/backend/persistance/products.repository";
+import { productTagsRepository } from "@/lib/backend/persistance/productsTags.repository";
+import { tagsRepository } from "@/lib/backend/persistance/tags.repository";
+import { IAIService } from "@/lib/backend/services/interfaces/AI.service.interface";
+import { IProductsTagsService } from "@/lib/backend/services/interfaces/productsTags.service.interface";
+import { openAIService } from "@/lib/backend/services/openAI.service";
+import { TagNotFoundException } from "../exceptions/tagNotFound.exception";
 
 class ProductsTagsService implements IProductsTagsService {
     private repository: IProductsTagsRepository;
@@ -35,7 +36,7 @@ class ProductsTagsService implements IProductsTagsService {
             if(prod.description) {
                 // TODO Agregar nombre, marca etc al prompt
                 const aiResponse : IAITagsResponse = await this.aiService.runAssistant(prod.description);
-                console.log(`GPT respose ${aiResponse}`)
+                console.log(`GPT respose ${JSON.stringify(aiResponse)}`)
                 if (aiResponse) {
 
                     for (const [categoryName, tags] of Object.entries(aiResponse)) {
@@ -61,12 +62,21 @@ class ProductsTagsService implements IProductsTagsService {
 
         const tagObjects: ITag[] = await Promise.all(
             tags.map(async (tagName) => {
-                let tag = await this.tagsRepository.getTagByName(tagName);
-                if (!tag) {
-                    await this.tagsRepository.insertTagsByCategoryId([tagName], category.id);
-                    tag = await this.tagsRepository.getTagByName(tagName);
+                try {
+                    let tag = await this.tagsRepository.getTagByName(tagName);
+                    if (!tag) {
+                        await this.tagsRepository.insertTagsByCategoryId([tagName], category.id);
+                        tag = await this.tagsRepository.getTagByName(tagName);
+                    }
+                    return tag;
+                } catch (error) {
+                    if (error instanceof TagNotFoundException) {
+                        console.warn(`Tag "${tagName}" not found. Creating a new tag.`);
+                        await this.tagsRepository.insertTagsByCategoryId([tagName], category.id);
+                        return await this.tagsRepository.getTagByName(tagName);
+                    }
+                    throw error;
                 }
-                return tag;
             })
         );
 
