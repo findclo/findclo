@@ -1,6 +1,6 @@
-import '@/app/globals.css'; // Add this line
-import { Button } from "@/components/ui/button"
-import Link from 'next/link'
+import { Button } from "@/components/ui/button";
+import Link from 'next/link';
+import './globals.css'; // Add this line
 
 export default function NotFound() {
   return (
