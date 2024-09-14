@@ -1,5 +1,5 @@
 import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
-import { IListProductsParams } from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
+import { IListProductsParams } from "@/lib/backend/persistance/products.repository";
 import { productService } from "@/lib/backend/services/product.service";
 
 export async function GET(req: Request) {
