@@ -1,6 +1,5 @@
 import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
 import {brandService} from "@/lib/backend/services/brand.service";
-import {productTagsService} from "@/lib/backend/services/productsTags.service";
 
 export async function GET(req: Request) {
     try {

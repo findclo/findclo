@@ -17,8 +17,8 @@ export async function GET(req: Request) {
         const products : IListProductResponseDto = await productService.listProducts(listProductParams);
         return new Response(JSON.stringify(products), { status: 200 });
 
-    } catch (error) {
-        return new Response(null, { status: 500 });
+    } catch (error: any) {
+        return new Response(null, { status: error.statusCode? error.statusCode : 500 });
     }
 
 }
@@ -37,8 +37,8 @@ export async function POST(req: Request){
 
 
         return new Response(null, {status: 200});
-    } catch (error){
+    } catch (error: any){
         console.log(error)
-        return new Response(null, { status: 500 });
+        return new Response(null, { status: error.statusCode? error.statusCode : 500 });
     }
 }

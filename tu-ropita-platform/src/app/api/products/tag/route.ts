@@ -5,8 +5,8 @@ export async function POST(req: Request){
         await productTagsService.tagPendingProducts();
 
         return new Response(null, {status: 200});
-    } catch (error){
+    } catch (error: any){
         console.log(error)
-        return new Response(null, { status: 500 });
+        return new Response(null, { status: error.statusCode? error.statusCode : 500 });
     }
 }
