@@ -2,7 +2,6 @@
 
 import { productsApiWrapper } from "@/api-wrappers/products";
 import { Carousel } from "@/components/Carousel";
-import { FeaturedBrands } from "@/components/FeaturedBrands";
 import { SearchBar } from "@/components/SearchBar";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { Suspense, useEffect, useState } from "react";
@@ -49,16 +48,22 @@ export default function Home() {
   return (
     <>
       <SearchBar />
+
+      <div className="h-32 md:h-24 flex items-center justify-center mt-20">
+        <h2 className="text-2xl md:text-3xl text-center text-gray-800 px-4">
+          Encontrá el producto que buscas
+        </h2>
+      </div>
       
-      <div className="flex justify-center">
-        <Suspense fallback={<div>Loading...</div>}>
+      <div className="container mx-auto px-4">
+        <Suspense fallback={<div className="text-center">Cargando...</div>}>
           <CarouselWrapper items={carouselItems} />
         </Suspense>
       </div>
       
-      <div className="flex justify-center">
+      {/* <div className="flex justify-center">
         <FeaturedBrands />
-      </div>
+      </div> */}
     </>
   );
 }
