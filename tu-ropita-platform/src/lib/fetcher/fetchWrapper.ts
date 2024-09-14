@@ -2,7 +2,7 @@ import globalSettings from "../settings";
 
 const API_BASE_URL = `${globalSettings.BASE_URL}/api`;
 
-export const fetcher = async (path: string, options: RequestInit = {}): Promise<[Error | null, object | null]> => {
+export const fetcher = async (path: string, options: RequestInit = {}): Promise<[Error | null, any | null]> => {
     try {
         const res = await fetch(`${API_BASE_URL}${path}`, options);
         if (!res.ok) {

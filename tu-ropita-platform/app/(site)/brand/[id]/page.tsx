@@ -9,7 +9,11 @@ import { notFound } from 'next/navigation';
 async function BrandPage({ params }: { params: { id: string } }) {
   try {
     const brand = await brandsApiWrapper.getBrandById(params.id);
-    const products = (await productsApiWrapper.getProductsByBrandId(params.id)).products;
+    if (!brand) {
+      notFound();
+    }
+
+    let products = await productsApiWrapper.getProductsByBrandId(params.id);
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -41,9 +45,11 @@ async function BrandPage({ params }: { params: { id: string } }) {
 
         <h2 className="text-2xl font-semibold mb-4">Productos de la marca</h2>
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((product) => (
+          {products? products.products.map((product) => (
             <ProductCard key={product.id} product={product} />
-          ))}
+          )):
+          <div>Nada que ver por aquí...</div>
+          }
         </div>
       </div>
     );

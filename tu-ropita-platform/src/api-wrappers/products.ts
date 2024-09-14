@@ -8,12 +8,12 @@ class ProductsApiWrapper {
 
     async getProductById(productId: string) {
         const queryParams = new URLSearchParams({ productId });
-        const [error, product] = await fetcher(`${this.PRODUCTS_PATH}?${queryParams}`);
-        if (error) {
+        const [error, response_of_product] = await fetcher(`${this.PRODUCTS_PATH}?${queryParams}`);
+        if (error || !response_of_product.products || response_of_product.products.length === 0) {
             console.error(`Error fetching product by id ${productId}: ${error}`);
             return null;
         }
-        return product as IProduct;
+        return response_of_product.products[0] as IProduct;
     }
 
     async getProductsByBrandId(brandId: string): Promise<IListProductResponseDto | null> {

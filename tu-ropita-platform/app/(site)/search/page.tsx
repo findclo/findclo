@@ -1,68 +1,50 @@
-"use client";
-
 import { productsApiWrapper } from "@/api-wrappers/products";
 import ProductCard from "@/components/ProductCard";
 import { SearchBar } from "@/components/SearchBar";
-import SearchFilters from "@/components/SearchFilters";
 import SearchResults from "@/components/SearchResults";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from "react";
 
-export default function SearchPage() {
-    const [products, setProducts] = useState<IProduct[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [filters, setFilters] = useState({});
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const searchParams = useSearchParams();
-    const [noProductsFound, setNoProductsFound] = useState(false);
+interface SearchPageProps {
+    searchParams: {
+        q?: string;
+        minPrice?: string;
+        maxPrice?: string;
+        category?: string | string[];
+    };
+}
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-            setIsLoading(true);
-            setProducts([]);
-            setNoProductsFound(false);
-            const query = searchParams.get('q') || '';
-            try {
-                const result = await productsApiWrapper.getFilteredProducts(query, filters);
-                console.log(result);
-                if (result.products.length === 0) {
-                    setNoProductsFound(true);
-                } else {
-                    setProducts(result.products);
-                }
-            } catch (error) {
-                console.error('Error fetching products:', error);
-                setNoProductsFound(true);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+    const query = searchParams.q || '';
+    const filters = {
+        minPrice: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
+        maxPrice: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
+        categories: Array.isArray(searchParams.category) ? searchParams.category : searchParams.category ? [searchParams.category] : undefined,
+    };
 
-        fetchProducts();
-    }, [filters, searchParams]);
+    let products: IProduct[] = [];
+    let noProductsFound = false;
+
+    try {
+        const result = await productsApiWrapper.getFilteredProducts(query, filters);
+        if (!result || result.products.length === 0) {
+            noProductsFound = true;
+        } else {
+            products = result.products;
+        }
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        noProductsFound = true;
+    }
 
     return (
         <>
             <div className="mb-8">
-                <SearchBar />
+                <SearchBar initialQuery={query} initialFilters={filters} />
             </div>
 
             <div className="flex flex-col md:flex-row gap-8">
-                {isFilterOpen && (
-                    <div className="w-full md:w-1/4">
-                        <SearchFilters 
-                            filters={filters} 
-                            setFilters={setFilters}
-                        />
-                    </div>
-                )}
-                <div className={`w-full ${isFilterOpen ? 'md:w-3/4' : 'md:w-full'}`}>
-                    {isLoading ? (
-                        <div className="flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
-                        </div>
-                    ) : noProductsFound ? (
+                <div className="w-full">
+                    {noProductsFound ? (
                         <div className="text-center py-8">
                             <p className="text-xl text-gray-600">No se encontraron productos para la búsqueda especificada</p>
                         </div>

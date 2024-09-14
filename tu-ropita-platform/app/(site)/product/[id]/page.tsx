@@ -4,15 +4,28 @@ import BrandLink from '@/components/BrandLink';
 import ImageGallery from '@/components/ImageGallery';
 import RelatedProducts from '@/components/RelatedProducts';
 import ShareButtons from '@/components/ShareButtons';
+import { IProduct } from '@/lib/backend/models/interfaces/product.interface';
 import { ShoppingCart } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = (await productsApiWrapper.getProductById(params.id)).products[0];
-  const brand = await brandsApiWrapper.getBrandById(product.brand_id);
-  const relatedProducts = (await productsApiWrapper.getProductsByBrandId(brand.id.toString())).products;
-
+  const product = await productsApiWrapper.getProductById(params.id);
   if (!product) {
+    notFound();
+  }
+
+  const brand = await brandsApiWrapper.getBrandById((product as any).brand_id);
+  let relatedProducts: IProduct[] = [];
+  if (brand) {
+    const aux_relatedProducts = await productsApiWrapper.getProductsByBrandId(brand.id.toString());
+    if (aux_relatedProducts) {
+      relatedProducts = aux_relatedProducts.products;
+    }else{
+      relatedProducts = [];
+    }
+  }
+
+  if (!product || !brand) {
     notFound();
   }
 
