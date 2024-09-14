@@ -105,17 +105,18 @@ class ProductsRepository implements IProductRepository{
             values.push(...tagNames);
         }
 
-        if (params.search && params.search.trim().length > 1) {
-            console.log(params.search)
-            const sanitizedSearch = params.search
-                .trim()
-                .replace(/[^a-zA-Z0-9\s]/g, '')
-                .split(/\s+/)
-                .map(word => word + ':*')
-                .join(' & ');conditions.push(`tsv @@ to_tsquery('spanish', $${values.length + 1})`);
-
-            values.push(sanitizedSearch);
-        }
+        // if (params.search && params.search.trim().length > 1) {
+        //     console.log(params.search)
+        //     const sanitizedSearch = params.search
+        //         .trim()
+        //         .replace(/[^a-zA-Z0-9\s]/g, '')
+        //         .split(/\s+/)
+        //         .map(word => word + ':*')
+        //         .join(' & ');
+        //     conditions.push(`tsv @@ to_tsquery('spanish', $${values.length + 1})`);
+        //
+        //     values.push(sanitizedSearch);
+        // }
 
         if (params.brandId) {
             conditions.push(`p.brand_id = $${values.length + 1}`);

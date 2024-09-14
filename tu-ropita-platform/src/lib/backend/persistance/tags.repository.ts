@@ -109,9 +109,9 @@ class TagsRepository implements ITagRepository {
         try {
             const result = await this.db.query(query, values);
             return result.rows.map((row) => ({
-                id: row.id || row.tagId,
-                name: row.name || row.tagName,
-                category_id: row.category_id || row.categoryId
+                id: row.id,
+                name: row.name ,
+                category_id: row.category_id
             }));
         } catch (error) {
             console.error('Error executing query:', query);
