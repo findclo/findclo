@@ -33,12 +33,13 @@ export default function Home() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      try {
-        const featuredProducts = (await productsApiWrapper.getFeaturedProducts()).products;
-        const mappedItems = mapProductsToCarouselItems(featuredProducts);
+      const featuredProducts = await productsApiWrapper.getFeaturedProducts();
+      if (featuredProducts) { 
+        const mappedItems = mapProductsToCarouselItems(featuredProducts.products);
         setCarouselItems(mappedItems);
-      } catch (error) {
-        console.error('Error fetching featured products:', error);
+      }else{
+        console.error('Error fetching featured products...');
+        setCarouselItems([]);
       }
     };
 

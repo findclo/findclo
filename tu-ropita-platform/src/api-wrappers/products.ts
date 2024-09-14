@@ -1,42 +1,45 @@
 import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
-import globalSettings from "@/lib/settings";
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { fetcher } from "@/lib/fetcher/fetchWrapper";
 
 class ProductsApiWrapper {
 
-    private API_BASE_URL = `${globalSettings.BASE_URL}/api`;
     private PRODUCTS_PATH = `/products`;
 
     async getProductById(productId: string) {
-        const res = await fetch(`${this.API_BASE_URL}${this.PRODUCTS_PATH}?productId=${productId}`, { cache: 'no-store' });
-        if (!res.ok) {
-            throw new Error('Failed to fetch product');
+        const queryParams = new URLSearchParams({ productId });
+        const [error, product] = await fetcher(`${this.PRODUCTS_PATH}?${queryParams}`);
+        if (error) {
+            console.error(`Error fetching product by id ${productId}: ${error}`);
+            return null;
         }
-        return res.json();
+        return product as IProduct;
     }
 
-    async getProductsByBrandId(brandId: string): Promise<IListProductResponseDto> {
-        const queryParams = new URLSearchParams({ brandId: brandId });
-        const res = await fetch(`${this.API_BASE_URL}${this.PRODUCTS_PATH}?${queryParams}`, { cache: 'no-store' });
-        if (!res.ok) {
-            throw new Error('Failed to fetch products');
+    async getProductsByBrandId(brandId: string): Promise<IListProductResponseDto | null> {
+        const queryParams = new URLSearchParams({ brandId });
+        const [error, products] = await fetcher(`${this.PRODUCTS_PATH}?${queryParams}`);
+        if (error) {
+            console.error(`Error fetching products by brand id ${brandId}: ${error}`);
+            return null;
         }
-        return res.json();
+        return products as IListProductResponseDto;
     }
 
-    async getFilteredProducts(query: string, filters: any): Promise<IListProductResponseDto> {
+    async getFilteredProducts(query: string, filters: any): Promise<IListProductResponseDto | null> {
         const queryParams = new URLSearchParams({ search: query, ...filters });
-        const res = await fetch(`${this.API_BASE_URL}${this.PRODUCTS_PATH}?${queryParams}`, { cache: 'no-store' });
-        if (!res.ok) {
-            throw new Error('Failed to fetch products');
+        const [error, products] = await fetcher(`${this.PRODUCTS_PATH}?${queryParams}`);
+        if (error) {
+            console.error(`Error fetching filtered products: ${error}`);
+            return null;
         }
-        return res.json();
+        return products as IListProductResponseDto;
     }
 
-    async getFeaturedProducts(): Promise<IListProductResponseDto> {
-        const res = await this.getFilteredProducts("", { featured: true });
-        return res;
+    async getFeaturedProducts(): Promise<IListProductResponseDto | null> {
+        //TODO: 'featured' query param not implemented yet
+        return this.getFilteredProducts("", { featured: true });
     }
-
 }
 
 export const productsApiWrapper = new ProductsApiWrapper();

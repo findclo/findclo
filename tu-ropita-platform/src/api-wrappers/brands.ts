@@ -1,19 +1,18 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
-import globalSettings from "@/lib/settings";
+import { fetcher } from "@/lib/fetcher/fetchWrapper";
 
 class BrandsApiWrapper {
 
-    private API_BASE_URL = `${globalSettings.BASE_URL}/api`;
     private BRANDS_PATH = `/brands`;
 
-    async getBrandById(id: string): Promise<IBrand> {
-        const res = await fetch(`${this.API_BASE_URL}${this.BRANDS_PATH}/${id}`, { cache: 'no-store' });
-        if (!res.ok) {
-            throw new Error('Failed to fetch brand');
+    async getBrandById(id: string): Promise<IBrand | null> {
+        const [error, brand] = await fetcher(`${this.BRANDS_PATH}/${id}`);
+        if (error) {
+            console.error(`Error fetching brand by id ${id}: ${error}`);
+            return null;
         }
-        return res.json();
+        return brand as IBrand;
     }
-
 }
 
 export const brandsApiWrapper = new BrandsApiWrapper();
