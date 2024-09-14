@@ -1,5 +1,5 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
-import { brandRepository, IBrandRepository } from "@/lib/backend/persistance/brand.repository";
+import { brandRepository } from "@/lib/backend/persistance/brand.repository";
 
 export interface IBrandService {
     getBrandById(brandId:number): Promise<IBrand>;
@@ -9,20 +9,15 @@ export interface IBrandService {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class BrandService implements IBrandService {
-    private repository: IBrandRepository;
-
-    constructor(repository: IBrandRepository) {
-        this.repository = repository;
-    }
 
     getBrandById(brandId: number): Promise<IBrand> {
-        return this.repository.getBrandById(brandId);
+        return brandRepository.getBrandById(brandId);
     }
 
     listBrands(): Promise<IBrand[]> {
-        return this.repository.listBrands();
+        return brandRepository.listBrands();
     }
 
 }
 
-export const brandService : IBrandService = new BrandService(brandRepository);
+export const brandService : IBrandService = new BrandService();

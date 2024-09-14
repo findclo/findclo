@@ -1,5 +1,5 @@
 import { ICategory } from "@/lib/backend/models/interfaces/category.interface";
-import { categoryRepository, ICategoryRepository } from "@/lib/backend/persistance/category.repository";
+import { categoryRepository } from "@/lib/backend/persistance/category.repository";
 
 export interface ICategoryService {
     getCategoryByName(categoryName: string): Promise<ICategory>;
@@ -10,24 +10,19 @@ export interface ICategoryService {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export class CategoryService implements ICategoryService{
-    private categoryRepository: ICategoryRepository;
-
-    constructor(categoryRepository: ICategoryRepository) {
-        this.categoryRepository = categoryRepository;
-    }
 
     async getCategoryByName(categoryName: string): Promise<ICategory> {
-        return await this.categoryRepository.getCategoryByName(categoryName);
+        return await categoryRepository.getCategoryByName(categoryName);
     }
 
     async getCategoryById(categoryId: string): Promise<ICategory> {
-        return await this.categoryRepository.getCategoryById(categoryId);
+        return await categoryRepository.getCategoryById(categoryId);
     }
 
     async listAllCategories(): Promise<ICategory[]> {
-        return await this.categoryRepository.listCategories();
+        return await categoryRepository.listCategories();
     }
 
 }
 
-export const categoryService : ICategoryService = new CategoryService(categoryRepository);
+export const categoryService : ICategoryService = new CategoryService();

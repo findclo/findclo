@@ -8,7 +8,8 @@ export interface IAIService {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class OpenAIService implements IAIService {
-    openai = new OpenAI({
+
+    private openai = new OpenAI({
         apiKey: settings.OPEN_AI.API_KEY,
     });
 

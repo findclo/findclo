@@ -1,5 +1,5 @@
 import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { ITagRepository, tagsRepository } from "@/lib/backend/persistance/tags.repository";
+import { tagsRepository } from "@/lib/backend/persistance/tags.repository";
 
 export interface ITagsService {
     getTagsByName(names: string[]): Promise<ITag[]>;
@@ -10,28 +10,23 @@ export interface ITagsService {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class TagsService implements ITagsService {
-    private repository : ITagRepository;
-
-    constructor(repository: ITagRepository) {
-        this.repository = repository;
-    }
 
     getTagsByName(names: string[]): Promise<ITag[]> {
-        return this.repository.getTagsByName(names);
+        return tagsRepository.getTagsByName(names);
     }
 
     getTagsByIds(ids: string[]): Promise<ITag[]> {
-        return this.repository.getTagsByIds(ids);
+        return tagsRepository.getTagsByIds(ids);
     }
 
     async getAvailableTagsForProducts(productsId: string[], excludeTags: ITag[] | undefined): Promise<ITag[]>{
 
         if(productsId.length > 0) {
-            return this.repository.getAvailableTagsForProducts(productsId, excludeTags);
+            return tagsRepository.getAvailableTagsForProducts(productsId, excludeTags);
         }
         return [];
     }
 
 }
 
-export const tagsService : ITagsService = new TagsService(tagsRepository);
+export const tagsService : ITagsService = new TagsService();
