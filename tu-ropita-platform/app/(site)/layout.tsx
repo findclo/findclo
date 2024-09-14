@@ -25,7 +25,7 @@ export default function RootLayout({
         </main>
         
         {/* Spacer div to prevent content from being hidden under the mobile header */}
-      <div className="h-12 md:hidden"></div>
+      <div className="h-24 md:hidden"></div>
         
         <Footer />
       </body>

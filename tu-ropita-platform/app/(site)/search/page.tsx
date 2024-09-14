@@ -7,29 +7,31 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 interface SearchPageProps {
     searchParams: {
         q?: string;
-        minPrice?: string;
-        maxPrice?: string;
-        category?: string | string[];
+        tagsIds?: string | string[];
     };
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const query = searchParams.q || '';
-    const filters = {
-        minPrice: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
-        maxPrice: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
-        categories: Array.isArray(searchParams.category) ? searchParams.category : searchParams.category ? [searchParams.category] : undefined,
-    };
+    const tagsIds = Array.isArray(searchParams.tagsIds) 
+        ? searchParams.tagsIds 
+        : searchParams.tagsIds 
+            ? [searchParams.tagsIds] 
+            : undefined;
 
     let products: IProduct[] = [];
     let noProductsFound = false;
+    let tags_applied: any[] = [];
+    let tags_available: any[] = [];
 
     try {
-        const result = await productsApiWrapper.getFilteredProducts(query, filters);
+        const result = await productsApiWrapper.getFilteredProducts(query, { tagsIds });
         if (!result || result.products.length === 0) {
             noProductsFound = true;
         } else {
             products = result.products;
+            tags_applied = result.appliedTags || [];
+            tags_available = result.availableTags || [];
         }
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -39,7 +41,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     return (
         <>
             <div className="mb-8">
-                <SearchBar initialQuery={query} initialFilters={filters} />
+                <SearchBar 
+                    initialQuery={query} 
+                    appliedTags={tags_applied} 
+                    availableTags={tags_available}
+                />
             </div>
 
             <div className="flex flex-col md:flex-row gap-8">

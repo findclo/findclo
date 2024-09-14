@@ -1,28 +1,29 @@
 'use client'
 
+import { productsApiWrapper } from "@/api-wrappers/products";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 import { Filter, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-interface Filters {
-  minPrice?: number;
-  maxPrice?: number;
-  categories?: string[];
+interface Tag {
+  id: number;
+  name: string;
+  category_id: number;
 }
 
 export interface SearchBarProps {
   initialQuery: string;
-  initialFilters: Filters;
+  appliedTags: Tag[];
+  availableTags: Tag[];
 }
 
-export function SearchBar({ initialQuery, initialFilters }: SearchBarProps) {
+export function SearchBar({ initialQuery, appliedTags, availableTags }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [filters, setFilters] = useState<Filters>(initialFilters);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -32,37 +33,33 @@ export function SearchBar({ initialQuery, initialFilters }: SearchBarProps) {
     }
   }, []);
 
-  const handleSearch = useCallback((e: React.FormEvent) => {
+  const handleSearch = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      const queryParams = new URLSearchParams();
-      queryParams.append('q', searchQuery.trim());
-
-      if (filters.minPrice !== undefined) queryParams.append('minPrice', filters.minPrice.toString());
-      if (filters.maxPrice !== undefined) queryParams.append('maxPrice', filters.maxPrice.toString());
-      if (filters.categories && filters.categories.length > 0) {
-        filters.categories.forEach(category => queryParams.append('category', category));
-      }
-
-      router.push(`/search?${queryParams.toString()}`);
-      // Close the keyboard by blurring the active element
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
+      try {
+        setIsLoading(true);
+        const result = await productsApiWrapper.getFilteredProducts(searchQuery.trim(), {});
+        if (result && result.appliedTags) {
+          const newTagsIds = result.appliedTags.map(tag => tag.id);
+          const queryParams = new URLSearchParams();
+          newTagsIds.forEach(id => queryParams.append('tagsIds', id.toString()));
+          router.push(`/search?${queryParams.toString()}`);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching filtered products:', error);
       }
     }
-  }, [searchQuery, filters, router]);
+  }, [searchQuery, router]);
 
-  const handlePriceChange = (value: number[]) => {
-    setFilters(prev => ({ ...prev, minPrice: value[0], maxPrice: value[1] }));
-  };
-
-  const handleCategoryChange = (category: string, checked: boolean) => {
-    setFilters(prev => {
-      const updatedCategories = checked
-        ? [...(prev.categories || []), category]
-        : (prev.categories || []).filter((c: string) => c !== category);
-      return { ...prev, categories: updatedCategories };
-    });
+  const handleTagClick = (tag: Tag) => {
+    const queryParams = new URLSearchParams();
+    const newTags = appliedTags.some(t => t.id === tag.id)
+      ? appliedTags.filter(t => t.id !== tag.id)
+      : [...appliedTags, tag];
+    
+    newTags.forEach(t => queryParams.append('tagsIds', t.id.toString()));
+    router.push(`/search?${queryParams.toString()}`);
   };
 
   return (
@@ -74,7 +71,7 @@ export function SearchBar({ initialQuery, initialFilters }: SearchBarProps) {
         >
           <Input
             ref={inputRef}
-            type="search"
+            type="text"
             placeholder="¿Qué estás buscando hoy?"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -83,8 +80,12 @@ export function SearchBar({ initialQuery, initialFilters }: SearchBarProps) {
             enterKeyHint="search"
             autoFocus
           />
-          <Button type="submit" size="sm" className="h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90">
-            <Search className="h-4 w-4 text-white" />
+          <Button type="submit" size="sm" className="h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90" disabled={isLoading}>
+            {isLoading ? (
+              <div className="spinner h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Search className="h-4 w-4 text-white" />
+            )}
             <span className="sr-only">Buscar</span>
           </Button>
           <Button
@@ -102,32 +103,32 @@ export function SearchBar({ initialQuery, initialFilters }: SearchBarProps) {
       {isFilterOpen && (
         <div className="w-full mx-auto mt-4">
           <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Precio</h3>
-              <Slider
-                defaultValue={[0, 1000]}
-                max={1000}
-                step={10}
-                onValueChange={handlePriceChange}
-              />
-              <div className="flex justify-between mt-2">
-                <span>${filters.minPrice ?? 0}</span>
-                <span>${filters.maxPrice ?? 1000}</span>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Categorías</h3>
-              {['Camisetas', 'Pantalones', 'Vestidos', 'Accesorios'].map((category) => (
-                <div key={category} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={category}
-                    checked={(filters.categories || []).includes(category)}
-                    onCheckedChange={(checked) => handleCategoryChange(category, checked as boolean)}
-                  />
-                  <label htmlFor={category}>{category}</label>
+            {appliedTags.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Tags Aplicados</h3>
+                <div className="flex flex-wrap gap-2">
+                  {appliedTags.map((tag) => (
+                    <Badge key={tag.id} variant="secondary">
+                      {tag.name}
+                    </Badge>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+            
+            {availableTags.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Tags Disponibles</h3>
+                <div className="flex flex-wrap gap-2">
+                  {availableTags.map((tag) => (
+                    <Badge key={tag.id} variant="outline" className="cursor-pointer hover:bg-secondary"
+                           onClick={() => handleTagClick(tag)}>
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

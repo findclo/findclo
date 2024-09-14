@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Home, Menu, Search } from 'lucide-react';
+import { Home, Menu } from 'lucide-react';
 import Link from 'next/link';
 
 const Header = () => {
@@ -52,10 +52,10 @@ const Header = () => {
           <Home className="h-6 w-6" />
           <span className="text-xs mt-1">Inicio</span>
         </Link>
-        <Link href="/search" className="flex flex-col items-center">
+        {/* <Link href="/search?q=summer" className="flex flex-col items-center">
           <Search className="h-6 w-6" />
           <span className="text-xs mt-1">Buscar</span>
-        </Link>
+        </Link> */}
         {/* <Link href="/cart" className="flex flex-col items-center">
           <ShoppingBag className="h-6 w-6" />
           <span className="text-xs mt-1">Carrito</span>
