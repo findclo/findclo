@@ -1,13 +1,9 @@
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { categoryRepository } from "@/lib/backend/persistance/category.repository";
-import { ICategoryRepository } from "@/lib/backend/persistance/interfaces/category.repository.interface";
-import { IProductRepository } from "@/lib/backend/persistance/interfaces/products.repository.interface";
-import { IProductsTagsRepository } from "@/lib/backend/persistance/interfaces/productsTags.repository.interface";
-import { ITagRepository } from "@/lib/backend/persistance/interfaces/tags.repository.interface";
-import { productRepository } from "@/lib/backend/persistance/products.repository";
-import { productTagsRepository } from "@/lib/backend/persistance/productsTags.repository";
-import { tagsRepository } from "@/lib/backend/persistance/tags.repository";
+import { categoryRepository, ICategoryRepository } from "@/lib/backend/persistance/category.repository";
+import { IProductRepository, productRepository } from "@/lib/backend/persistance/products.repository";
+import { IProductsTagsRepository, productTagsRepository } from "@/lib/backend/persistance/productsTags.repository";
+import { ITagRepository, tagsRepository } from "@/lib/backend/persistance/tags.repository";
 import { IAIService, openAIService } from "@/lib/backend/services/openAI.service";
 import { TagNotFoundException } from "../exceptions/tagNotFound.exception";
 
@@ -19,6 +15,7 @@ export interface IProductsTagsService {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ProductsTagsService implements IProductsTagsService {
+    
     private repository: IProductsTagsRepository;
     private productsRepository: IProductRepository;
     private tagsRepository: ITagRepository;

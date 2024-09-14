@@ -1,8 +1,15 @@
-import { Pool } from "pg";
-import { ICategoryRepository } from "@/lib/backend/persistance/interfaces/category.repository.interface";
 import pool from "@/lib/backend/conf/db.connections";
+import { CategoryNotFoundException } from "@/lib/backend/exceptions/categoryNotFoundException";
 import { ICategory } from "@/lib/backend/models/interfaces/category.interface";
-import {CategoryNotFoundException} from "@/lib/backend/exceptions/categoryNotFoundException";
+import { Pool } from "pg";
+
+export interface ICategoryRepository {
+    getCategoryByName(categoryName: string): Promise<ICategory>;
+    getCategoryById(categoryId: string): Promise<ICategory>;
+    listCategories(): Promise<ICategory[]>;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class CategoryRepository implements ICategoryRepository {
     private db: Pool;

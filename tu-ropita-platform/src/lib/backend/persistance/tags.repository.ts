@@ -1,8 +1,18 @@
-import {ITagRepository} from "@/lib/backend/persistance/interfaces/tags.repository.interface";
-import {Pool} from "pg";
-import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
 import pool from "@/lib/backend/conf/db.connections";
-import {TagNotFoundException} from "@/lib/backend/exceptions/tagNotFound.exception";
+import { TagNotFoundException } from "@/lib/backend/exceptions/tagNotFound.exception";
+import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
+import { Pool } from "pg";
+
+export interface ITagRepository {
+    insertTagsByCategoryId(tags : string[], categoryId : number): Promise<void>;
+    getTagsByCategoryId(categoryId: number): Promise<ITag[]>;
+    getTagByName(tagName: string): Promise<ITag>;
+    getTagsByName(tagsName: string[]): Promise<ITag[]>;
+    getAvailableTagsForProducts(productsId: string[], excludeTags: ITag[] | undefined): Promise<ITag[]>;
+    getTagsByIds(tagIds: string[]): Promise<ITag[]>;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class TagsRepository implements ITagRepository {
     private db: Pool;

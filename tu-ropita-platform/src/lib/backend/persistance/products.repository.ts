@@ -2,9 +2,25 @@ import pool from "@/lib/backend/conf/db.connections";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { IListProductsParams } from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
-import { IProductRepository } from "@/lib/backend/persistance/interfaces/products.repository.interface";
 import { Pool } from "pg";
+
+export interface  IListProductsParams {
+    search?:string;
+    brandId?:number;
+    tagged?: boolean;
+    tagsIds?: string[];
+    productId?: number;
+}
+// TODO ADD (brand, tags, etc.)
+
+export interface IProductRepository {
+    getProductById(productId: number): Promise<IProduct | null>;
+    listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>;
+    bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>;
+    markProductAsTagged(productId: string): Promise<void>;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ProductsRepository implements IProductRepository{
     private db: Pool;
@@ -99,7 +115,7 @@ class ProductsRepository implements IProductRepository{
 
             console.log(`Product with ID ${productId} has been marked as tagged.`);
         } catch (error) {
-            console.error(`Error marking product as tagged: ${error.message}`);
+            console.error(`Error marking product as tagged: ${(error as any).message}`);
             throw error;
         }
     }

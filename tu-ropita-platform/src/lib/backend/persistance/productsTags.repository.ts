@@ -1,8 +1,14 @@
-import {IProductsTagsRepository} from "@/lib/backend/persistance/interfaces/productsTags.repository.interface";
-import {Pool} from "pg";
-import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
-import {undefined} from "zod";
 import pool from "@/lib/backend/conf/db.connections";
+import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
+import { Pool } from "pg";
+import { undefined } from "zod";
+
+export interface IProductsTagsRepository {
+    insertTagsToProduct(tags: ITag[], productId : string) : Promise<void>;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ProductsTagsRepository implements IProductsTagsRepository {
     private db: Pool;
