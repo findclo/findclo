@@ -1,7 +1,14 @@
-import { ICategoryRepository } from "@/lib/backend/persistance/interfaces/category.repository.interface";
 import { ICategory } from "@/lib/backend/models/interfaces/category.interface";
-import {categoryRepository} from "@/lib/backend/persistance/category.repository";
-import {ICategoryService} from "@/lib/backend/services/interfaces/category.service.interface";
+import { categoryRepository } from "@/lib/backend/persistance/category.repository";
+import { ICategoryRepository } from "@/lib/backend/persistance/interfaces/category.repository.interface";
+
+export interface ICategoryService {
+    getCategoryByName(categoryName: string): Promise<ICategory>;
+    getCategoryById(categoryId: string): Promise<ICategory>;
+    listAllCategories(): Promise<ICategory[]>;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export class CategoryService implements ICategoryService{
     private categoryRepository: ICategoryRepository;

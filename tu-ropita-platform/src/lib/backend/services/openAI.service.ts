@@ -1,8 +1,13 @@
-import { IAIService } from "@/lib/backend/services/interfaces/AI.service.interface";
 import settings from "@/lib/settings";
 import OpenAI from "openai";
 
-class OpenAIService implements IAIService{
+export interface IAIService {
+    runAssistant(prompt: string): Promise<IAITagsResponse>;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class OpenAIService implements IAIService {
     openai = new OpenAI({
         apiKey: settings.OPEN_AI.API_KEY,
     });

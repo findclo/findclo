@@ -9,11 +9,14 @@ import {
 } from "@/lib/backend/persistance/interfaces/listProductsParams.interface";
 import { IProductRepository } from "@/lib/backend/persistance/interfaces/products.repository.interface";
 import { productRepository } from "@/lib/backend/persistance/products.repository";
-import { IAIService } from "@/lib/backend/services/interfaces/AI.service.interface";
-import { IProductService } from "@/lib/backend/services/interfaces/product.service.interface";
-import { ITagsService } from "@/lib/backend/services/interfaces/tags.service.interface";
-import { openAIService } from "@/lib/backend/services/openAI.service";
-import { tagsService } from "@/lib/backend/services/tags.service";
+import { IAIService, openAIService } from "@/lib/backend/services/openAI.service";
+import { ITagsService, tagsService } from "@/lib/backend/services/tags.service";
+
+export interface IProductService {
+    listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ProductService implements IProductService{
     private repository: IProductRepository;

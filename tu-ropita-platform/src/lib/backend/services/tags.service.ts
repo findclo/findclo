@@ -1,7 +1,14 @@
-import {ITagsService} from "@/lib/backend/services/interfaces/tags.service.interface";
-import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
-import {ITagRepository} from "@/lib/backend/persistance/interfaces/tags.repository.interface";
-import {tagsRepository} from "@/lib/backend/persistance/tags.repository";
+import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
+import { ITagRepository } from "@/lib/backend/persistance/interfaces/tags.repository.interface";
+import { tagsRepository } from "@/lib/backend/persistance/tags.repository";
+
+export interface ITagsService {
+    getTagsByName(names: string[]): Promise<ITag[]>;
+    getAvailableTagsForProducts(productsId: string[], excludeTags: ITag[] | undefined): Promise<ITag[]>;
+    getTagsByIds(names: string[]): Promise<ITag[]>;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class TagsService implements ITagsService {
     private repository : ITagRepository;

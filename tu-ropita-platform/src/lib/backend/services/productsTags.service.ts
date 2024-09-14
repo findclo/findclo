@@ -8,10 +8,15 @@ import { ITagRepository } from "@/lib/backend/persistance/interfaces/tags.reposi
 import { productRepository } from "@/lib/backend/persistance/products.repository";
 import { productTagsRepository } from "@/lib/backend/persistance/productsTags.repository";
 import { tagsRepository } from "@/lib/backend/persistance/tags.repository";
-import { IAIService } from "@/lib/backend/services/interfaces/AI.service.interface";
-import { IProductsTagsService } from "@/lib/backend/services/interfaces/productsTags.service.interface";
-import { openAIService } from "@/lib/backend/services/openAI.service";
+import { IAIService, openAIService } from "@/lib/backend/services/openAI.service";
 import { TagNotFoundException } from "../exceptions/tagNotFound.exception";
+
+export interface IProductsTagsService {
+    tagPendingProducts(): Promise<void>;
+    tagProductByCategoryName(tags: string[], categoryName : string ,productId: string): Promise<void>;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ProductsTagsService implements IProductsTagsService {
     private repository: IProductsTagsRepository;
