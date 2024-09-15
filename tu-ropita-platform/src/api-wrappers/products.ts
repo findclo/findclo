@@ -2,7 +2,7 @@ import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
 
-class ProductsApiWrapper {
+class PublicProductsApiWrapper {
 
     private PRODUCTS_PATH = `/products`;
 
@@ -42,4 +42,11 @@ class ProductsApiWrapper {
     }
 }
 
-export const productsApiWrapper = new ProductsApiWrapper();
+class PrivateProductsApiWrapper {
+
+    //TODO: implement private (admin/brand) products api wrapper
+
+}
+
+export const publicProductsApiWrapper = new PublicProductsApiWrapper();
+export const privateProductsApiWrapper = new PrivateProductsApiWrapper();

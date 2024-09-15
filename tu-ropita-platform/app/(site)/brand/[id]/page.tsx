@@ -1,5 +1,5 @@
-import { brandsApiWrapper } from '@/api-wrappers/brands';
-import { productsApiWrapper } from '@/api-wrappers/products';
+import { publicBrandsApiWrapper } from '@/api-wrappers/brands';
+import { publicProductsApiWrapper } from '@/api-wrappers/products';
 import ProductCard from '@/components/ProductCard';
 import { Button } from "@/components/ui/button";
 import Image from 'next/image';
@@ -8,12 +8,12 @@ import { notFound } from 'next/navigation';
 
 async function BrandPage({ params }: { params: { id: string } }) {
   try {
-    const brand = await brandsApiWrapper.getBrandById(params.id);
+    const brand = await publicBrandsApiWrapper.getBrandById(params.id);
     if (!brand) {
       notFound();
     }
 
-    let products = await productsApiWrapper.getProductsByBrandId(params.id);
+    let products = await publicProductsApiWrapper.getProductsByBrandId(params.id);
 
     return (
       <div className="container mx-auto px-4 py-8">

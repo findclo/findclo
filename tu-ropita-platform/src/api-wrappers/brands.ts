@@ -1,7 +1,7 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
 
-class BrandsApiWrapper {
+class PublicBrandsApiWrapper {
 
     private BRANDS_PATH = `/brands`;
 
@@ -15,4 +15,11 @@ class BrandsApiWrapper {
     }
 }
 
-export const brandsApiWrapper = new BrandsApiWrapper();
+class PrivateBrandsApiWrapper {
+
+    //TODO: implement private (admin/brand) brands api wrapper
+
+}
+
+export const publicBrandsApiWrapper = new PublicBrandsApiWrapper();
+export const privateBrandsApiWrapper = new PrivateBrandsApiWrapper();

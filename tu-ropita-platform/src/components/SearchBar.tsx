@@ -1,6 +1,6 @@
 'use client'
 
-import { productsApiWrapper } from "@/api-wrappers/products";
+import { publicProductsApiWrapper } from "@/api-wrappers/products";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,7 @@ export function SearchBar({ initialQuery, appliedTags, availableTags }: SearchBa
     if (searchQuery.trim()) {
       try {
         setIsLoading(true);
-        const result = await productsApiWrapper.getFilteredProducts(searchQuery.trim(), {});
+        const result = await publicProductsApiWrapper.getFilteredProducts(searchQuery.trim(), {});
         if (result && result.appliedTags) {
           const newTagsIds = result.appliedTags.map(tag => tag.id);
           const queryParams = new URLSearchParams();

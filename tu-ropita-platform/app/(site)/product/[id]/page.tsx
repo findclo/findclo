@@ -1,5 +1,5 @@
-import { brandsApiWrapper } from '@/api-wrappers/brands';
-import { productsApiWrapper } from '@/api-wrappers/products';
+import { publicBrandsApiWrapper } from '@/api-wrappers/brands';
+import { publicProductsApiWrapper } from '@/api-wrappers/products';
 import BrandLink from '@/components/BrandLink';
 import ImageGallery from '@/components/ImageGallery';
 import RelatedProducts from '@/components/RelatedProducts';
@@ -9,15 +9,15 @@ import { ShoppingCart } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = await productsApiWrapper.getProductById(params.id);
+  const product = await publicProductsApiWrapper.getProductById(params.id);
   if (!product) {
     notFound();
   }
 
-  const brand = await brandsApiWrapper.getBrandById((product as any).brand_id);
+  const brand = await publicBrandsApiWrapper.getBrandById((product as any).brand_id);
   let relatedProducts: IProduct[] = [];
   if (brand) {
-    const aux_relatedProducts = await productsApiWrapper.getProductsByBrandId(brand.id.toString());
+    const aux_relatedProducts = await publicProductsApiWrapper.getProductsByBrandId(brand.id.toString());
     if (aux_relatedProducts) {
       relatedProducts = aux_relatedProducts.products;
     }else{

@@ -1,4 +1,4 @@
-import { productsApiWrapper } from "@/api-wrappers/products";
+import { publicProductsApiWrapper } from "@/api-wrappers/products";
 import ProductCard from "@/components/ProductCard";
 import { SearchBar } from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
@@ -25,7 +25,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     let tags_available: any[] = [];
 
     try {
-        const result = await productsApiWrapper.getFilteredProducts(query, { tagsIds });
+        const result = await publicProductsApiWrapper.getFilteredProducts(query, { tagsIds });
         if (!result || result.products.length === 0) {
             noProductsFound = true;
         } else {

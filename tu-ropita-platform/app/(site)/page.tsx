@@ -1,4 +1,4 @@
-import { productsApiWrapper } from "@/api-wrappers/products";
+import { publicProductsApiWrapper } from "@/api-wrappers/products";
 import { Carousel } from "@/components/Carousel";
 import { SearchBar } from "@/components/SearchBar";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
@@ -18,7 +18,7 @@ function mapProductsToCarouselItems(products: IProduct[]): CarouselItem[] {
 }
 
 export default async function Home() {
-  const featuredProducts = await productsApiWrapper.getFeaturedProducts();
+  const featuredProducts = await publicProductsApiWrapper.getFeaturedProducts();
   const carouselItems = featuredProducts ? mapProductsToCarouselItems(featuredProducts.products) : [];
 
   return (
