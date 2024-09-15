@@ -23,7 +23,7 @@ export default async function Home() {
 
   return (
     <>
-      <SearchBar initialQuery={""} appliedTags={[]} availableTags={[]} />
+      <SearchBar initialQuery={""} appliedTags={[]} availableTags={[]} isHomePage={true} />
 
       <div className="h-32 md:h-24 flex items-center justify-center mt-20">
         <h2 className="text-2xl md:text-3xl text-center text-gray-800 px-4">

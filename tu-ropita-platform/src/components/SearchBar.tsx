@@ -18,9 +18,10 @@ export interface SearchBarProps {
   initialQuery: string;
   appliedTags: Tag[];
   availableTags: Tag[];
+  isHomePage?: boolean;
 }
 
-export function SearchBar({ initialQuery, appliedTags, availableTags }: SearchBarProps) {
+export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage = false }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,19 +93,21 @@ export function SearchBar({ initialQuery, appliedTags, availableTags }: SearchBa
             type="button"
             variant="outline"
             size="sm"
-            className="h-10 w-10 p-0 rounded-full border-2 border-gray-300 hover:bg-gray-100"
+            className="h-10 w-10 p-0 rounded-full border-2 border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             aria-label={isFilterOpen ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+            disabled={isHomePage}  // Disable the button on the home page
           >
             <Filter className="h-4 w-4" />
           </Button>
         </form>
       </div>
+
       {isFilterOpen && (
         <div className="w-full mx-auto mt-4">
-          <div className="space-y-6">
+          <div className="flex space-x-6">
             {appliedTags.length > 0 && (
-              <div>
+              <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-2">Tags Aplicados</h3>
                 <div className="flex flex-wrap gap-2">
                   {appliedTags.map((tag) => (
@@ -117,7 +120,7 @@ export function SearchBar({ initialQuery, appliedTags, availableTags }: SearchBa
             )}
             
             {availableTags.length > 0 && (
-              <div>
+              <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-2">Tags Disponibles</h3>
                 <div className="flex flex-wrap gap-2">
                   {availableTags.map((tag) => (
@@ -132,6 +135,7 @@ export function SearchBar({ initialQuery, appliedTags, availableTags }: SearchBa
           </div>
         </div>
       )}
+      
     </div>
   );
 }

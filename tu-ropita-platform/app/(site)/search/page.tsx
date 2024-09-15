@@ -1,5 +1,5 @@
 import { publicProductsApiWrapper } from "@/api-wrappers/products";
-import ProductCard from "@/components/ProductCard";
+import RelatedProducts from "@/components/RelatedProducts";
 import { SearchBar } from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
@@ -38,6 +38,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         noProductsFound = true;
     }
 
+    let recommendedProducts: IProduct[] = [];
+    try {
+        const result = await publicProductsApiWrapper.getFeaturedProducts();
+        if (result && result.products.length > 0) {
+            recommendedProducts = result.products;
+        }
+    } catch (error) {
+        console.error('Error fetching featured products:', error);
+    }
+
     return (
         <>
             <div className="mb-8">
@@ -56,15 +66,25 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         </div>
                     ) : (
                         <>
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-0">
-                                <h2 className="text-2xl sm:text-3xl mt-4 sm:mt-0">Nosotros recomendamos</h2>
+                            {recommendedProducts.length > 0 && (
+                                <>
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-0">
+                                        <h2 className="text-2xl sm:text-3xl mt-4 sm:mt-0">Nosotros recomendamos</h2>
+                                    </div>
+                                    {recommendedProducts.length > 0 && (
+                                        <div className="mt-4">
+                                            <RelatedProducts 
+                                                brandName={""} 
+                                                products={recommendedProducts} 
+                                            />
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            <div className="mt-8">
+                                <SearchResults products={products} />
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                                {products.map((product) => (
-                                    <ProductCard key={product.id} product={product} />
-                                ))}
-                            </div>
-                            <SearchResults products={products} />
                         </>
                     )}
                 </div>

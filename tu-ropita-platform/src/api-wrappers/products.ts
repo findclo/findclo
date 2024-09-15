@@ -38,6 +38,7 @@ class PublicProductsApiWrapper {
 
     async getFeaturedProducts(): Promise<IListProductResponseDto | null> {
         //TODO: 'featured' query param not implemented yet
+        // return null;
         return this.getFilteredProducts("", { featured: true });
     }
 }

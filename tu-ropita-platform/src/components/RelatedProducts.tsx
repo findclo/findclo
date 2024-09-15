@@ -6,7 +6,7 @@ import ProductCard from './ProductCard'; // Add this import
 
 
 interface RelatedProductsProps {
-  brandName: string;
+  brandName?: string;
   products: IProduct[];
 }
 
@@ -26,7 +26,7 @@ export default function RelatedProducts({ brandName, products }: RelatedProducts
 
   return (
     <section className="relative px-4 md:px-0"> {/* Add relative positioning and mobile-friendly padding */}
-      <h2 className="text-2xl mb-6">Otros productos de <span className="font-bold">{brandName}</span></h2>
+      {brandName && <h2 className="text-2xl mb-6">Otros productos de <span className="font-bold">{brandName}</span></h2>}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {displayedProducts.map((product) => (
           <ProductCard key={product.id} product={product} />
