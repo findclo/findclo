@@ -46,6 +46,22 @@ class PrivateProductsApiWrapper {
 
     //TODO: implement private (admin/brand) products api wrapper
 
+    async deleteProduct(id: string): Promise<void> {
+        //TODO: implement
+    }
+
+    async updateProduct(id: string, updated_product: IProduct): Promise<IProduct | null> {
+        //TODO: implement
+        return null;
+    }
+
+    async changeProductStatus(id: string, status: string): Promise<IProduct | null> {
+        //TODO: implement
+        return null;
+    }
+    
+    
+
 }
 
 export const publicProductsApiWrapper = new PublicProductsApiWrapper();

@@ -19,6 +19,30 @@ class PrivateBrandsApiWrapper {
 
     //TODO: implement private (admin/brand) brands api wrapper
 
+    async createBrand(brand: IBrand): Promise<IBrand | null> {
+        //TODO: implement
+        return null;
+    }
+
+    async updateBrand(id: string, updated_brand: IBrand): Promise<IBrand | null> {
+        //TODO: implement
+        return null;
+    }
+
+    async deleteBrand(id: string): Promise<void> {
+        //TODO: implement
+    }
+
+    async listBrands(): Promise<IBrand[]> {
+        //TODO: implement
+        return [];
+    }
+
+    async changeBrandStatus(id: string, status: string): Promise<IBrand | null> {
+        //TODO: implement
+        return null;
+    }
+   
 }
 
 export const publicBrandsApiWrapper = new PublicBrandsApiWrapper();
