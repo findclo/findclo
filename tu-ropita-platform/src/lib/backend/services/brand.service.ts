@@ -6,6 +6,7 @@ export interface IBrandService {
     getBrandById(brandId:number): Promise<IBrand>;
     listBrands():Promise<IBrand[]>;
     createBrand(brand:IBrandDto): Promise<IBrand>;
+    updateBrand(id: number, brand:IBrandDto): Promise<IBrand>;
 }
 
 class BrandService implements IBrandService {
@@ -20,6 +21,10 @@ class BrandService implements IBrandService {
 
     createBrand(brand: IBrandDto): Promise<IBrand> {
         return brandRepository.createBrand(brand);
+    }
+
+    updateBrand(id: number,brand: IBrandDto): Promise<IBrand> {
+        return brandRepository.updateBrand(id,brand);
     }
 
 }

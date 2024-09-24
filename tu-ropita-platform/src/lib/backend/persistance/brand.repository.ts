@@ -9,6 +9,7 @@ export interface IBrandRepository {
     getBrandById(brandId:number): Promise<IBrand>;
     listBrands():Promise<IBrand[]>;
     createBrand(brand: IBrandDto): Promise<IBrand>;
+    updateBrand(id: number,brand: IBrandDto): Promise<IBrand>;
 }
 
 class BrandRepository implements IBrandRepository {
@@ -46,6 +47,21 @@ class BrandRepository implements IBrandRepository {
             RETURNING *`;
         const values = [brand.name, brand.image, brand.websiteUrl];
 
+        return this.upsertBrand(query,values,brand);
+    }
+
+    async updateBrand(id: number, brand: IBrandDto): Promise<IBrand> {
+        const query = `
+        UPDATE Brands
+        SET name = $1, image = $2, websiteUrl = $3
+        WHERE id = $4
+        RETURNING *`;
+        const values = [brand.name, brand.image, brand.websiteUrl, id];
+
+        return this.upsertBrand(query, values, brand);
+    }
+
+    private async upsertBrand(query: string, values: any[], brand: IBrandDto) {
         try {
             const res = await this.db.query(query, values);
             return res.rows[0];
@@ -54,6 +70,7 @@ class BrandRepository implements IBrandRepository {
             if (error.code === '23505') {
                 throw new BrandAlreadyExistsException(brand.name);
             }
+            console.log(error)
             throw error;
         }
     }

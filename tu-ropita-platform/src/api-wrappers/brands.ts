@@ -25,8 +25,8 @@ class PrivateBrandsApiWrapper {
         return null;
     }
 
-    async updateBrand(auth_token: string, id: string, updated_brand: IBrand): Promise<IBrand | null> {
-        //TODO: implement
+    async updateBrand(auth_token: string, id: string, updated_brand: IBrandDto): Promise<IBrand | null> {
+        //TODO: implement call
         return null;
     }
 
