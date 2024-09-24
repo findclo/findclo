@@ -2,13 +2,14 @@ import pool from "@/lib/backend/conf/db.connections";
 import { BrandNotFoundException } from "@/lib/backend/exceptions/brandNotFound.exception";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { Pool } from "pg";
+import {IBrandDto} from "@/lib/backend/dtos/brand.dto.interface";
+import {BrandAlreadyExistsException} from "@/lib/backend/exceptions/brandAlreadyExists.exception";
 
 export interface IBrandRepository {
     getBrandById(brandId:number): Promise<IBrand>;
     listBrands():Promise<IBrand[]>;
+    createBrand(brand: IBrandDto): Promise<IBrand>;
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class BrandRepository implements IBrandRepository {
     constructor(private readonly db: Pool) {}
@@ -36,6 +37,25 @@ class BrandRepository implements IBrandRepository {
         const query = `SELECT * FROM Brands;`;
         const res = await this.db.query(query);
         return res.rows.map(this.mapBrandRow);
+    }
+
+    async createBrand(brand: IBrandDto): Promise<IBrand> {
+        const query =
+            `INSERT INTO Brands (name, image, websiteUrl)
+            VALUES ($1, $2, $3)
+            RETURNING *`;
+        const values = [brand.name, brand.image, brand.websiteUrl];
+
+        try {
+            const res = await this.db.query(query, values);
+            return res.rows[0];
+        } catch (error: any) {
+
+            if (error.code === '23505') {
+                throw new BrandAlreadyExistsException(brand.name);
+            }
+            throw error;
+        }
     }
 }
 

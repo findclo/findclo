@@ -1,5 +1,6 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
+import {IBrandDto} from "@/lib/backend/dtos/brand.dto.interface";
 
 class PublicBrandsApiWrapper {
 
@@ -19,8 +20,8 @@ class PrivateBrandsApiWrapper {
 
     //TODO: implement private (admin/brand) brands api wrapper
 
-    async createBrand(auth_token: string, brand: IBrand): Promise<IBrand | null> {
-        //TODO: implement
+    async createBrand(auth_token: string, brand: IBrandDto): Promise<IBrand | null> {
+        //TODO: implement call
         return null;
     }
 
