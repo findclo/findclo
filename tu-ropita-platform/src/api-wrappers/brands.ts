@@ -35,12 +35,12 @@ class PrivateBrandsApiWrapper {
     }
 
     async listBrands(auth_token: string): Promise<IBrand[]> {
-        //TODO: implement
+        //TODO: implement call
         return [];
     }
 
     async changeBrandStatus(auth_token: string, id: string, status: string): Promise<IBrand | null> {
-        //TODO: implement
+        //TODO: implement call
         return null;
     }
    

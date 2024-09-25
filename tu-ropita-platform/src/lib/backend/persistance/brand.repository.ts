@@ -11,19 +11,23 @@ export interface IBrandRepository {
     createBrand(brand: IBrandDto): Promise<IBrand>;
     updateBrand(id: number,brand: IBrandDto): Promise<IBrand>;
     deleteBrand(id: number): Promise<boolean>;
+    changeBrandStatus(id: number, status: string): Promise<boolean>;
 }
 
 class BrandRepository implements IBrandRepository {
     constructor(private readonly db: Pool) {}
 
-    private mapBrandRow(b: any): IBrand {
+    private mapBrandRow(row: any): IBrand {
         return {
-            id: b.id,
-            name: b.name,
-            image: b.image,
-            websiteUrl: b.websiteurl,
+            id: row.id,
+            name: row.name,
+            image: row.image,
+            websiteUrl: row.websiteurl,
+            status: row.status,
         };
     }
+
+
 
     async getBrandById(brandId: number): Promise<IBrand> {
         const query = `SELECT * FROM Brands WHERE id = $1;`;
@@ -31,7 +35,6 @@ class BrandRepository implements IBrandRepository {
         if (res.rowCount == null || res.rowCount <= 0){
             throw new BrandNotFoundException(brandId);
         }
-        console.log(res)
         return this.mapBrandRow(res.rows[0]);
     }
 
@@ -48,7 +51,7 @@ class BrandRepository implements IBrandRepository {
             RETURNING *`;
         const values = [brand.name, brand.image, brand.websiteUrl];
 
-        return this.upsertBrand(query,values,brand);
+        return this.upsertBrand(query,values,brand, -1);
     }
 
     async updateBrand(id: number, brand: IBrandDto): Promise<IBrand> {
@@ -59,7 +62,7 @@ class BrandRepository implements IBrandRepository {
         RETURNING *`;
         const values = [brand.name, brand.image, brand.websiteUrl, id];
 
-        return this.upsertBrand(query, values, brand);
+        return this.upsertBrand(query, values, brand, id);
     }
 
     async deleteBrand(id: number): Promise<boolean> {
@@ -75,10 +78,28 @@ class BrandRepository implements IBrandRepository {
         }
     }
 
-    private async upsertBrand(query: string, values: any[], brand: IBrandDto) {
+    async changeBrandStatus(id: number, status: string): Promise<boolean>{
+        const query = `
+        UPDATE Brands
+        SET status = $1
+        WHERE id = $2
+        RETURNING *`;
+        const values = [status,id];
+        const result = await this.db.query(query, values);
+        if (result.rowCount == null || result.rowCount <= 0){
+            throw new BrandNotFoundException(id);
+        }
+        return  result.rowCount > 0;
+    }
+
+    private async upsertBrand(query: string, values: any[], brand: IBrandDto, brandId: number) {
         try {
+            console.log("llega")
             const res = await this.db.query(query, values);
-            return res.rows[0];
+            if (res.rowCount == null || res.rowCount <= 0){
+                throw new BrandNotFoundException(brandId);
+            }
+            return this.mapBrandRow(res.rows[0]);
         } catch (error: any) {
 
             if (error.code === '23505') {

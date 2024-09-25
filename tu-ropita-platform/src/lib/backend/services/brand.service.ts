@@ -8,6 +8,7 @@ export interface IBrandService {
     createBrand(brand:IBrandDto): Promise<IBrand>;
     updateBrand(id: number, brand:IBrandDto): Promise<IBrand>;
     deleteBrand(id: number): Promise<boolean>;
+    changeBrandStatus(id: number, status: string): Promise<IBrand>;
 }
 
 class BrandService implements IBrandService {
@@ -30,6 +31,14 @@ class BrandService implements IBrandService {
 
     deleteBrand(id: number): Promise<boolean> {
         return brandRepository.deleteBrand(id);
+    }
+
+    async changeBrandStatus(id: number, status: string): Promise<IBrand> {
+        const changed =  await brandRepository.changeBrandStatus(id,status);
+        if (changed){
+            return this.getBrandById(id);
+        }
+        throw new Error('Failed to change brand status');
     }
 
 }
