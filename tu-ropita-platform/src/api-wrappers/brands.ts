@@ -31,7 +31,7 @@ class PrivateBrandsApiWrapper {
     }
 
     async deleteBrand(auth_token: string, id: string): Promise<void> {
-        //TODO: implement
+        //TODO: implement call
     }
 
     async listBrands(auth_token: string): Promise<IBrand[]> {

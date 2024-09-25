@@ -10,6 +10,7 @@ export interface IBrandRepository {
     listBrands():Promise<IBrand[]>;
     createBrand(brand: IBrandDto): Promise<IBrand>;
     updateBrand(id: number,brand: IBrandDto): Promise<IBrand>;
+    deleteBrand(id: number): Promise<boolean>;
 }
 
 class BrandRepository implements IBrandRepository {
@@ -59,6 +60,19 @@ class BrandRepository implements IBrandRepository {
         const values = [brand.name, brand.image, brand.websiteUrl, id];
 
         return this.upsertBrand(query, values, brand);
+    }
+
+    async deleteBrand(id: number): Promise<boolean> {
+        const query = `DELETE FROM Brands WHERE id = $1`;
+        const values = [id];
+
+        try {
+            const res = await this.db.query(query, values);
+            return res.rowCount!= null? res.rowCount > 0: false;
+        } catch (error: any) {
+            console.log(error); // No need to raise error.
+            return false;
+        }
     }
 
     private async upsertBrand(query: string, values: any[], brand: IBrandDto) {

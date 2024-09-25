@@ -28,3 +28,16 @@ export async function PUT(req: Request, {params}: {params: {id:string}}) {
         return parseErrorResponse(error);
     }
 }
+
+export async function DELETE(req: Request, {params}: {params: {id:string}}) {
+    try {
+        if(isNaN(Number(params.id))){
+            return new Response('Invalid brand ID', { status: 400 });
+        }
+
+        await brandService.deleteBrand(Number(params.id));
+        return new Response(null, { status: 204 });
+    } catch (error:any) {
+        return parseErrorResponse(error);
+    }
+}
