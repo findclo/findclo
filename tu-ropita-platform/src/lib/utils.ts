@@ -31,10 +31,6 @@ export const validatePassword = async (randomSaltSaved: string, stringPlainPassw
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
 export async function getDtoFromBody<T>(req: Request, requiredFields: (keyof T)[]): Promise<T> {
   let body: any;
   try{
@@ -70,9 +66,6 @@ export async function getBrandDtoFromBody(req: Request): Promise<IBrandDto> {
 export async function getUserDtoFromBody(req: Request): Promise<CreateUserDto> {
   return getDtoFromBody<CreateUserDto>(req, ['email', 'password', 'full_name']);
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // TODO MOVE TO A MIDDLEWARE
 export function parseErrorResponse(error:any): Response {
   const statusCode = error.statusCode ? error.statusCode : 500;

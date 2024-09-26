@@ -4,7 +4,7 @@ import { Pool } from "pg";
 import { undefined } from "zod";
 
 export interface IProductsTagsRepository {
-    insertTagsToProduct(tags: ITag[], productId : string) : Promise<void>;
+    insertTagsToProduct(tags: ITag[], productId : number) : Promise<void>;
 
 }
 
@@ -17,7 +17,7 @@ class ProductsTagsRepository implements IProductsTagsRepository {
         this.db = db;
     }
 
-    async insertTagsToProduct(tags: ITag[], productId: string): Promise<void> {
+    async insertTagsToProduct(tags: ITag[], productId: number): Promise<void> {
         const values: any[] = [];
         const valuePlaceholders: string[] = [];
         tags.forEach((tag:ITag)=>{

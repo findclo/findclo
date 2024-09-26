@@ -9,7 +9,7 @@ import { TagNotFoundException } from "../exceptions/tagNotFound.exception";
 
 export interface IProductsTagsService {
     tagPendingProducts(): Promise<void>;
-    tagProductByCategoryName(tags: string[], categoryName : string ,productId: string): Promise<void>;
+    tagProductByCategoryName(tags: string[], categoryName : string ,productId: number): Promise<void>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -40,7 +40,7 @@ class ProductsTagsService implements IProductsTagsService {
 
     }
 
-    async tagProductByCategoryName(tags: string[], categoryName: string, productId: string): Promise<void> {
+    async tagProductByCategoryName(tags: string[], categoryName: string, productId: number): Promise<void> {
         const category = await categoryRepository.getCategoryByName(categoryName);
 
         if (!category) {

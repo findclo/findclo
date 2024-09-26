@@ -48,7 +48,7 @@ class PrivateProductsApiWrapper {
     //TODO: implement private (admin/brand) products api wrapper
 
     async deleteProduct(auth_token: string, id: string): Promise<void> {
-        //TODO: implement
+        //TODO: implement call
     }
 
     async updateProduct(auth_token: string, id: string, updated_product: IProduct): Promise<IProduct | null> {

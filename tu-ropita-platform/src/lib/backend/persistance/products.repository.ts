@@ -3,6 +3,7 @@ import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
 import { Pool } from "pg";
+import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
 
 export interface  IListProductsParams {
     search?:string;
@@ -17,8 +18,10 @@ export interface IProductRepository {
     getProductById(productId: number): Promise<IProduct | null>;
     listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>;
     bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>;
-    markProductAsTagged(productId: string): Promise<void>;
+    markProductAsTagged(productId: number): Promise<void>;
     deleteProduct(productId: number): Promise<boolean>;
+    updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
+    markProductAsUntagged(productId: number): Promise<void>
 };
 
 
@@ -100,17 +103,26 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
-    async markProductAsTagged(productId: string): Promise<void> {
+    async markProductAsTagged(productId: number): Promise<void> {
+        this.markProductIsTagged(productId,true);
+    }
+
+    async markProductAsUntagged(productId: number): Promise<void> {
+        this.markProductIsTagged(productId,false);
+    }
+
+
+    private async markProductIsTagged(productId: number, isTagged: boolean): Promise<void> {
         const query: string = `UPDATE Products
-            SET has_tags_generated = TRUE
-            WHERE id = $1;`;
+            SET has_tags_generated = $1
+            WHERE id = $2;`;
 
         try {
-            const result = await pool.query(query, [productId]);
+            const result = await pool.query(query, [isTagged,productId]);
 
             if (result.rowCount === 0) {
                 // TODO HANDLE THIS
-                throw new Error(`Product with ID ${productId} not found.`);
+                throw new ProductNotFoundException(productId);
             }
 
             console.log(`Product with ID ${productId} has been marked as tagged.`);
@@ -130,6 +142,33 @@ class ProductsRepository implements IProductRepository{
         } catch (error: any) {
             console.log(error); // No need to raise error.
             return false;
+        }
+    }
+
+    async updateProduct(id: number, product: IProductDTO): Promise<IProduct> {
+        const query = `
+        UPDATE Products
+        SET name = $1::TEXT, 
+            price = $2, 
+            description = $3, 
+            images = $4,
+            has_tags_generated = false,
+            tsv = to_tsvector('spanish', coalesce($1, '') || ' ' || coalesce($3, ''))
+        WHERE id = $5
+        RETURNING *
+    `;
+
+        const values = [product.name, product.price, product.description, product.images, id];
+
+        try {
+            const res = await pool.query(query, values);
+            if (res.rowCount === 0) {
+                throw new ProductNotFoundException(id);
+            }
+            return res.rows[0]
+        } catch (error) {
+            console.error('Error updating product:', error);
+            throw error;
         }
     }
 

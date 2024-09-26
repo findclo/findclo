@@ -6,11 +6,13 @@ import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/p
 import { IListProductsParams, productRepository } from "@/lib/backend/persistance/products.repository";
 import { openAIService } from "@/lib/backend/services/openAI.service";
 import { tagsService } from "@/lib/backend/services/tags.service";
+import {productTagsRepository} from "@/lib/backend/persistance/productsTags.repository";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
     deleteProduct(id: number): Promise<boolean>;
     uploadProductsFromCSV(file : File): Promise<boolean>;
+    updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
 }
 
 
@@ -72,6 +74,11 @@ class ProductService implements IProductService{
 
     public async deleteProduct(id: number): Promise<boolean> {
         return productRepository.deleteProduct(id);
+    }
+
+    public async updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>{
+        return productRepository.updateProduct(productId, updateProduct);
+
     }
 }
 
