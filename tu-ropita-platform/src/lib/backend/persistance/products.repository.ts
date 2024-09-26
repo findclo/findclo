@@ -18,9 +18,9 @@ export interface IProductRepository {
     listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>;
     bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>;
     markProductAsTagged(productId: string): Promise<void>;
+    deleteProduct(productId: number): Promise<boolean>;
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ProductsRepository implements IProductRepository{
     private db: Pool;
@@ -117,6 +117,19 @@ class ProductsRepository implements IProductRepository{
         } catch (error) {
             console.error(`Error marking product as tagged: ${(error as any).message}`);
             throw error;
+        }
+    }
+
+    async deleteProduct(id: number): Promise<boolean> {
+        const query = `DELETE FROM Products WHERE id = $1`;
+        const values = [id];
+
+        try {
+            const res = await this.db.query(query, values);
+            return res.rowCount!= null? res.rowCount > 0: false;
+        } catch (error: any) {
+            console.log(error); // No need to raise error.
+            return false;
         }
     }
 

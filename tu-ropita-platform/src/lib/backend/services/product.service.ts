@@ -9,9 +9,10 @@ import { tagsService } from "@/lib/backend/services/tags.service";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
+    deleteProduct(id: number): Promise<boolean>;
+    uploadProductsFromCSV(file : File): Promise<boolean>;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ProductService implements IProductService{
 
@@ -60,12 +61,17 @@ class ProductService implements IProductService{
 
     }
 
-    public async uploadProductsFromCSV(file : File){
+    public async uploadProductsFromCSV(file : File): Promise<boolean>{
         const products : IProductDTO[] = await this.parser.parse(file);
 
         const dbRes = await productRepository.bulkProductInsert(products,1);
 
         console.log(`db insert result ${dbRes}`);
+        return dbRes > 0;
+    }
+
+    public async deleteProduct(id: number): Promise<boolean> {
+        return productRepository.deleteProduct(id);
     }
 }
 
