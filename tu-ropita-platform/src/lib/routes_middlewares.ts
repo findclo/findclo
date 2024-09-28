@@ -28,7 +28,6 @@ async function handleBearerAuth(bearer_auth_header: string): Promise<{ user: IUs
 
 export function withJwtAuth(handler: RouteHandler): RouteHandler {
   return async (req: Request) => {
-
     const token: string = req.headers.get('Authorization') as string;
     if (!token) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,7 +49,11 @@ export function withJwtAuth(handler: RouteHandler): RouteHandler {
 
     const newReq = new Request(req);
     (newReq as any).user = auth_tokens.user;
+    const response = await handler(newReq);
+    
+    // Add the Authorization header to the response before returning it
+    response.headers.set('Authorization', `Bearer ${auth_tokens.token}`);
 
-    return handler(newReq);
+    return response;
   };
 }
