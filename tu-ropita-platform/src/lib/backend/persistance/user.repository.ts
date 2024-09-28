@@ -21,7 +21,7 @@ class UserPersistance {
             user.full_name,
             user.password_hash || null,
             user.password_salt || null,
-            user.user_type || UserTypeEnum.BRAND
+            user.user_type || UserTypeEnum.BRAND_OWNER
         ]);
         if (result.rows.length === 0) {
             throw new Error("Failed to create user: No rows returned");

@@ -1,4 +1,4 @@
-CREATE TYPE user_type_enum AS ENUM ('admin', 'brand');
+CREATE TYPE user_type_enum AS ENUM ('admin', 'brand_owner');
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,

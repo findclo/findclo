@@ -1,9 +1,9 @@
 import pool from "@/lib/backend/conf/db.connections";
+import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
+import { BrandAlreadyExistsException } from "@/lib/backend/exceptions/brandAlreadyExists.exception";
 import { BrandNotFoundException } from "@/lib/backend/exceptions/brandNotFound.exception";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { Pool } from "pg";
-import {IBrandDto} from "@/lib/backend/dtos/brand.dto.interface";
-import {BrandAlreadyExistsException} from "@/lib/backend/exceptions/brandAlreadyExists.exception";
 
 export interface IBrandRepository {
     getBrandById(brandId:number): Promise<IBrand>;
@@ -12,6 +12,7 @@ export interface IBrandRepository {
     updateBrand(id: number,brand: IBrandDto): Promise<IBrand>;
     deleteBrand(id: number): Promise<boolean>;
     changeBrandStatus(id: number, status: string): Promise<boolean>;
+    getBrandOwnersIds(brandId: number): Promise<number[]>;
 }
 
 class BrandRepository implements IBrandRepository {
@@ -108,6 +109,12 @@ class BrandRepository implements IBrandRepository {
             console.log(error)
             throw error;
         }
+    }
+
+    async getBrandOwnersIds(brandId: number): Promise<number[]> {
+        const query = `SELECT user_id FROM user_brands WHERE brand_id = $1;`;
+        const res = await this.db.query(query, [brandId]);
+        return res.rows.map((row: any) => row.user_id);
     }
 }
 

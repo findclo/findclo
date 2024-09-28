@@ -1,6 +1,6 @@
 export enum UserTypeEnum {
     ADMIN = 'admin',
-    BRAND = 'brand',
+    BRAND_OWNER = 'brand_owner',
     // USER = 'user'
 }
 

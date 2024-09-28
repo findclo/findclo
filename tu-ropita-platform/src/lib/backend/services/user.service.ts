@@ -3,6 +3,7 @@ import { CreateUserDto } from "../dtos/user.dto.interface";
 import { ConflictException } from "../exceptions/ConflictException";
 import { NotFoundException } from "../exceptions/NotFoundException";
 import { IUser } from "../models/interfaces/user.interface";
+import { brandRepository } from "../persistance/brand.repository";
 import { userPersistance } from "../persistance/user.repository";
 import { brandService } from "./brand.service";
 
@@ -55,9 +56,17 @@ class UserService {
         if(!brand) {
             throw NotFoundException.createFromMessage(`Brand not found. [id=${brand_id}]`);
         }
-        const user_brand = await userPersistance.addBrandToUser(user_id, brand_id);
-        if(!user_brand) {
-            throw new Error(`Failed to add brand to user. [user_id=${user_id}, brand_id=${brand_id}]`);
+
+        //TODO: revisar esta logica
+        const brand_owners = await brandRepository.getBrandOwnersIds(brand_id);
+        if(brand_owners.length > 0 && !brand_owners.includes(user_id)) {
+            throw ConflictException.createFromMessage(`Brand already has an owner. [id=${brand_id}]`);
+        }else if(brand_owners.length == 0){
+            const user_brand = await userPersistance.addBrandToUser(user_id, brand_id);
+            if(!user_brand) {
+                await brandService.deleteBrand(brand_id);
+                throw new Error(`Failed to add brand to user. [user_id=${user_id}, brand_id=${brand_id}]`);
+            }
         }
     }
 
