@@ -36,15 +36,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export async function getDtoFromBody<T>(req: Request, requiredFields: (keyof T)[]): Promise<T> {
-  const body = await req.json();
+  let body: any;
+  try{
+    body = await req.json();
+  }catch(error){
+    throw new BadRequestException('Invalid request body. JSON is expected.');
+  }
 
   if (!body || typeof body !== 'object') {
-    throw new BadRequestException('Invalid request body');
+    throw new BadRequestException('Invalid request body. JSON is expected.');
   }
 
   const bodyKeys = Object.keys(body);
   const extraFields = bodyKeys.filter(key => !requiredFields.includes(key as keyof T));
-
   if (extraFields.length > 0) {
     throw new BadRequestException(`Unexpected fields in request: ${extraFields.join(', ')}`);
   }

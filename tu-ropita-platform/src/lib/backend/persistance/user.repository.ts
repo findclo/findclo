@@ -55,7 +55,19 @@ class UserPersistance {
         await this.db.query(`UPDATE users SET last_login = $1 WHERE id = $2`, [new Date(), id]);
     }
 
-
+    async addBrandToUser(user_id: number, brand_id: number): Promise<boolean> {
+        try {
+            const result = await this.db.query(
+                `INSERT INTO user_brands (user_id, brand_id) VALUES ($1, $2)`,
+                [user_id, brand_id]
+            );
+            return result.rowCount === 1;
+        } catch (error) {
+            console.error('Error adding brand to user:', error);
+            return false;
+        }
+    }
 }
+
 
 export const userPersistance = new UserPersistance(pool);

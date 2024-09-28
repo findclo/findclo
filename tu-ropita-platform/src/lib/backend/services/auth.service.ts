@@ -46,6 +46,8 @@ class AuthService {
         const accessToken = this.signAccessToken(user.id.toString(), user.email);
         const refreshToken = this.signRefreshToken(user.id.toString(), user.email);
 
+        delete user.password_hash;
+        delete user.password_salt;
         return { user:user, token: accessToken, refreshToken: refreshToken };
     }
     

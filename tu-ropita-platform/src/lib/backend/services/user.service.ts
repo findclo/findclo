@@ -4,6 +4,7 @@ import { ConflictException } from "../exceptions/ConflictException";
 import { NotFoundException } from "../exceptions/NotFoundException";
 import { IUser } from "../models/interfaces/user.interface";
 import { userPersistance } from "../persistance/user.repository";
+import { brandService } from "./brand.service";
 
 class UserService {
 
@@ -43,6 +44,21 @@ class UserService {
             updated_at: new Date(),
         });
         return new_user;
+    }
+
+    async addBrandToUser(user_id: number, brand_id: number): Promise<void> {
+        const user = await this.getUserById(user_id);
+        if(!user) {
+            throw NotFoundException.createFromMessage(`User not found. [id=${user_id}]`);
+        }
+        const brand = await brandService.getBrandById(brand_id);
+        if(!brand) {
+            throw NotFoundException.createFromMessage(`Brand not found. [id=${brand_id}]`);
+        }
+        const user_brand = await userPersistance.addBrandToUser(user_id, brand_id);
+        if(!user_brand) {
+            throw new Error(`Failed to add brand to user. [user_id=${user_id}, brand_id=${brand_id}]`);
+        }
     }
 
     async updateLastLogin(id: number): Promise<void> {

@@ -1,12 +1,14 @@
-import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
-import {brandService} from "@/lib/backend/services/brand.service";
-import {getBrandDtoFromBody, parseErrorResponse} from "@/lib/utils";
+import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { brandService } from "@/lib/backend/services/brand.service";
+import { userService } from "@/lib/backend/services/user.service";
+import { withJwtAuth } from "@/lib/routes_middlewares";
+import { getBrandDtoFromBody, parseErrorResponse } from "@/lib/utils";
 
 export async function GET(req: Request) {
     try {
 
         const brands : IBrand[] = await brandService.listBrands();
-        return new Response(JSON.stringify(brands), { status: 200 });
+        return Response.json(brands, { status: 200 });
 
     } catch (error:any) {
         return parseErrorResponse(error);
@@ -14,13 +16,14 @@ export async function GET(req: Request) {
 
 }
 
-export async function POST(req: Request) {
+export const POST = withJwtAuth(async (req: Request) => {
     try {
-        const brandDto = await getBrandDtoFromBody(req)
-        const brand : IBrand = await brandService.createBrand(brandDto);
-        return new Response(JSON.stringify(brand), { status: 200 });
-
-    } catch (error:any) {
+        const user = (req as any).user;
+        const brandDto = await getBrandDtoFromBody(req);
+        const brand: IBrand = await brandService.createBrand(brandDto);
+        await userService.addBrandToUser(user.id, brand.id);
+        return Response.json(brand, { status: 201 });
+    } catch (error: any) {
         return parseErrorResponse(error);
     }
-}
+});
