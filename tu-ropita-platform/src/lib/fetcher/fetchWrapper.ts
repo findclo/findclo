@@ -1,3 +1,4 @@
+import Cookies from 'js-cookie';
 import globalSettings from "../settings";
 
 const API_BASE_URL = `${globalSettings.BASE_URL}/api`;
@@ -9,6 +10,18 @@ export const fetcher = async (path: string, options: RequestInit = {}): Promise<
             throw new Error(`HTTP error! status: ${res.status}`);
         }
         const data = await res.json();
+
+        // Extract tokens from headers
+        const token = res.headers.get('Authorization');
+        const refreshToken = res.headers.get('Refresh-Token');
+        // Store tokens if they exist
+        if (token) {
+            Cookies.set('Authorization', token, { secure: true, sameSite: 'strict' });
+        }
+        if (refreshToken) {
+            Cookies.set('Refresh-Token', refreshToken, { secure: true, sameSite: 'strict' });
+        }
+
         return [null, data];
     } catch (error) {
         return [error instanceof Error ? error : new Error('An unknown error occurred'), null];

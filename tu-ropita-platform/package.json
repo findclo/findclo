@@ -13,6 +13,7 @@
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.1",
+    "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-slider": "^1.2.0",
     "@radix-ui/react-slot": "^1.1.0",
@@ -21,6 +22,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "http-status-codes": "^2.3.0",
+    "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.437.0",
     "next": "^14.2.13",
@@ -36,6 +38,7 @@
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",
     "@types/bluebird": "^3.5.42",
+    "@types/js-cookie": "^3.0.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20",
     "@types/papaparse": "^5.3.14",

@@ -5,6 +5,7 @@ import { NotFoundException } from "../exceptions/NotFoundException";
 import { IUser } from "../models/interfaces/user.interface";
 import { brandRepository } from "../persistance/brand.repository";
 import { userPersistance } from "../persistance/user.repository";
+import { authService } from "./auth.service";
 import { brandService } from "./brand.service";
 
 class UserService {
@@ -25,7 +26,7 @@ class UserService {
         return user;
     }
 
-    async createUser(user: CreateUserDto): Promise<IUser> {
+    async createUser(user: CreateUserDto): Promise<{ user: IUser, token: string, refresh_token: string }> {
         const existing_user = await userPersistance.findByEmail(user.email);
         if(existing_user) {
             throw ConflictException.createFromMessage(`User with email already exists. [email=${user.email}]`);
@@ -44,7 +45,8 @@ class UserService {
             created_at: new Date(),
             updated_at: new Date(),
         });
-        return new_user;
+        const token = await authService.login(new_user.email, user.password!);
+        return { user: new_user, token: token.token, refresh_token: token.refreshToken };
     }
 
     async addBrandToUser(user_id: number, brand_id: number): Promise<void> {

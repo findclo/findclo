@@ -2,6 +2,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import "../globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -16,10 +17,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  const cookieStore = cookies();
+  const token = cookieStore.get('Authorization');
+  let user = undefined;
+  if(token){
+    user = { name: 'John Doe' };
+  }
+
+  
   return (
     <html lang="en">
       <body className={`${inter.className} flex flex-col min-h-screen`}>
-        <Header />
+        <Header user={user} />
         <main className="container mx-auto mt-4 flex-grow px-4">
           {children}
         </main>
