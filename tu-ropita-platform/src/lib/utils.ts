@@ -1,25 +1,73 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import {IBrandDto} from "@/lib/backend/dtos/brand.dto.interface";
-import {InvalidBrandException} from "@/lib/backend/exceptions/invalidBrand.exception";
+import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
+import Bluebird from "bluebird";
+import { type ClassValue, clsx } from "clsx";
+import Crypto from "crypto";
+import { twMerge } from "tailwind-merge";
+import { CreateUserDto } from "./backend/dtos/user.dto.interface";
+import { BadRequestException } from "./backend/exceptions/BadRequestException";
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const pbkdf2 = Bluebird.promisify(Crypto.pbkdf2);
+
+const ITERATIONS: number = 1000;
+const KEY_LENGTH: number = 32;
+const HASH_FUNCTION: string = 'sha512';
+
+export interface HashedPasswordData {
+    random_salt: string;
+    hashed_password: string;
+}
+
+export const hashPassword = async (password: string) => {
+    let salt = Crypto.randomBytes(128).toString('base64');
+    return { random_salt: salt, hashed_password: await (await pbkdf2(password, salt, ITERATIONS, KEY_LENGTH, HASH_FUNCTION)).toString('base64') } as HashedPasswordData;
+}
+
+export const validatePassword = async (randomSaltSaved: string, stringPlainPassword: string, hashedPassword: string) => {
+    const derKey: Buffer = await pbkdf2(stringPlainPassword, randomSaltSaved, ITERATIONS, KEY_LENGTH, HASH_FUNCTION);
+    return derKey.toString('base64') === hashedPassword;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export async function getBrandDtoFromBody(req: Request) : Promise<IBrandDto>{
+export async function getDtoFromBody<T>(req: Request, requiredFields: (keyof T)[]): Promise<T> {
   const body = await req.json();
 
-  if( body && body.name && body.image && body.websiteUrl && body.websiteUrl){
-    return {
-      name: body.name,
-      image: body.image,
-      websiteUrl: body.websiteUrl
-    } as IBrandDto;
+  if (!body || typeof body !== 'object') {
+    throw new BadRequestException('Invalid request body');
   }
-  throw new InvalidBrandException();
+
+  const bodyKeys = Object.keys(body);
+  const extraFields = bodyKeys.filter(key => !requiredFields.includes(key as keyof T));
+
+  if (extraFields.length > 0) {
+    throw new BadRequestException(`Unexpected fields in request: ${extraFields.join(', ')}`);
+  }
+
+  if (requiredFields.every(field => body[field])) {
+    return requiredFields.reduce((dto, field) => {
+      dto[field] = body[field];
+      return dto;
+    }, {} as T);
+  }
+
+  throw new BadRequestException(`The following fields are required: ${requiredFields.join(', ')}`);
 }
 
+export async function getBrandDtoFromBody(req: Request): Promise<IBrandDto> {
+  return getDtoFromBody<IBrandDto>(req, ['name', 'image', 'websiteUrl']);
+}
+
+export async function getUserDtoFromBody(req: Request): Promise<CreateUserDto> {
+  return getDtoFromBody<CreateUserDto>(req, ['email', 'password', 'full_name']);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // TODO MOVE TO A MIDDLEWARE
 export function parseErrorResponse(error:any): Response {
