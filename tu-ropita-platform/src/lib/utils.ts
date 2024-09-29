@@ -6,6 +6,10 @@ import { twMerge } from "tailwind-merge";
 import { CreateUserDto } from "./backend/dtos/user.dto.interface";
 import { BadRequestException } from "./backend/exceptions/BadRequestException";
 
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export const pbkdf2 = Bluebird.promisify(Crypto.pbkdf2);
