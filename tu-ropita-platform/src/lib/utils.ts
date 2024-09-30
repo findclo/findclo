@@ -5,6 +5,8 @@ import Crypto from "crypto";
 import { twMerge } from "tailwind-merge";
 import { CreateUserDto } from "./backend/dtos/user.dto.interface";
 import { BadRequestException } from "./backend/exceptions/BadRequestException";
+import {InvalidProductException} from "@/lib/backend/exceptions/invalidProduct.exception";
+import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -70,6 +72,12 @@ export async function getBrandDtoFromBody(req: Request): Promise<IBrandDto> {
 export async function getUserDtoFromBody(req: Request): Promise<CreateUserDto> {
   return getDtoFromBody<CreateUserDto>(req, ['email', 'password', 'full_name']);
 }
+
+
+export async function getProductDtoFromBody(req: Request) : Promise<IProductDTO>{
+  return getDtoFromBody<IProductDTO>(req, ['name', 'price', 'description','images']);
+}
+
 // TODO MOVE TO A MIDDLEWARE
 export function parseErrorResponse(error:any): Response {
   const statusCode = error.statusCode ? error.statusCode : 500;

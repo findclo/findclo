@@ -6,7 +6,7 @@ import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/p
 import { IListProductsParams, productRepository } from "@/lib/backend/persistance/products.repository";
 import { openAIService } from "@/lib/backend/services/openAI.service";
 import { tagsService } from "@/lib/backend/services/tags.service";
-import {productTagsRepository} from "@/lib/backend/persistance/productsTags.repository";
+import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
@@ -20,14 +20,19 @@ class ProductService implements IProductService{
 
     private parser: IProductCSVUploadParser = new ProductCSVUploadParser();
 
+    public async getProductById(productId: number): Promise<IProduct> {
+        const product = await productRepository.getProductById(productId);
+        if(!product){
+            throw new ProductNotFoundException(productId);
+        }
+        return product;
+    }
+
     public async listProducts(params: IListProductsParams): Promise<IListProductResponseDto>{
         let tags : ITag[] = [];
 
         if(params.productId){
-            const product = await productRepository.getProductById(params.productId);
-            if(!product){
-                throw new Error(`Product not found. [productId=${params.productId}]`);
-            }
+            const product = await this.getProductById(params.productId);
             return {
                 appliedTags: [],
                 availableTags: [],
