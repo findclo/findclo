@@ -78,6 +78,11 @@ export async function getProductDtoFromBody(req: Request) : Promise<IProductDTO>
   return getDtoFromBody<IProductDTO>(req, ['name', 'price', 'description','images']);
 }
 
+export async function getUpdateProductStatusFromBody(req: Request) : Promise<{ status: string }>{
+  return getDtoFromBody<{ status: string }>(req, ['status']);
+}
+
+
 // TODO MOVE TO A MIDDLEWARE
 export function parseErrorResponse(error:any): Response {
   const statusCode = error.statusCode ? error.statusCode : 500;

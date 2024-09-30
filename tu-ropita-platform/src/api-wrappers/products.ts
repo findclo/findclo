@@ -52,7 +52,7 @@ class PrivateProductsApiWrapper {
     }
 
     async updateProduct(auth_token: string, id: string, updated_product: IProduct): Promise<IProduct | null> {
-        //TODO: implement
+        //TODO: implement call
         return null;
     }
 

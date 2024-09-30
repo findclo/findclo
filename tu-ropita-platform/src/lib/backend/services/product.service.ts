@@ -13,6 +13,7 @@ export interface IProductService {
     deleteProduct(id: number): Promise<boolean>;
     uploadProductsFromCSV(file : File): Promise<boolean>;
     updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
+    updateProductStatus(id: number, status: string): Promise<IProduct>
 }
 
 
@@ -83,7 +84,10 @@ class ProductService implements IProductService{
 
     public async updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>{
         return productRepository.updateProduct(productId, updateProduct);
+    }
 
+    async updateProductStatus(id: number, status: string): Promise<IProduct> {
+        return productRepository.updateProductStatus(id,status);
     }
 }
 
