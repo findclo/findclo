@@ -1,7 +1,11 @@
 import { ITokenPayloadType } from './backend/models/interfaces/ITokenPayload';
-import { IUser } from './backend/models/interfaces/user.interface';
+import {IUser, UserTypeEnum} from './backend/models/interfaces/user.interface';
 import { authService } from './backend/services/auth.service';
 import { userService } from './backend/services/user.service';
+import {NextRequest, NextResponse} from "next/server";
+import {parseErrorResponse} from "@/lib/utils";
+import {UnauthorizedException} from "@/lib/backend/exceptions/unauthorized.exception";
+import {InvalidTokenException} from "@/lib/backend/exceptions/InvalidTokenException";
 
 type RouteHandler = (req: Request) => Promise<Response>;
 
@@ -26,11 +30,10 @@ async function handleBearerAuth(bearer_auth_header: string): Promise<{ user: IUs
     }
 }
 
-export function withJwtAuth(handler: RouteHandler): RouteHandler {
-  return async (req: Request) => {
-    const token: string = req.headers.get('Authorization') as string;
+async function authenticate(req: Request): Promise<{ user: any; token: string }> {
+    const token: string | null = req.headers.get('Authorization');
     if (!token) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 });
+        throw new UnauthorizedException();
     }
 
     let auth_tokens: any;
@@ -41,19 +44,48 @@ export function withJwtAuth(handler: RouteHandler): RouteHandler {
             // TODO: Implement refresh token handling
             auth_tokens = await handleBearerAuth(token);
         } else {
-            return Response.json({ error: "Unauthorized" }, { status: 401 });
+            throw new UnauthorizedException();
         }
     } catch (err) {
-        return Response.json({ error: "Invalid token" }, { status: 403 });
+        throw new InvalidTokenException();
     }
 
-    const newReq = new Request(req);
-    (newReq as any).user = auth_tokens.user;
-    const response = await handler(newReq);
-    
-    // Add the Authorization header to the response before returning it
-    response.headers.set('Authorization', `Bearer ${auth_tokens.token}`);
+    return auth_tokens;
+}
 
-    return response;
-  };
+export function withJwtAuth(handler: RouteHandler): RouteHandler {
+    return async (req: Request) => {
+        try {
+            const auth_tokens = await authenticate(req);
+
+            const newReq = new Request(req);
+            (newReq as any).user = auth_tokens.user;
+
+            const response = await handler(newReq);
+            response.headers.set('Authorization', `Bearer ${auth_tokens.token}`);
+
+            return response;
+        } catch (err) {
+            return parseErrorResponse(err);
+        }
+    };
+}
+
+export function withBrandPermission(handler: Function) {
+    return async (req: Request, { params }: { params: { id: number } }) => {
+        try {
+            const auth_tokens = await authenticate(req);
+            const brandId = params.id;
+            const userId = auth_tokens.user.id; // Use the user from auth tokens
+
+            const hasPermission = await userService.userBelongsToBrand(userId, brandId);
+            if (auth_tokens.user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
+                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+            }
+
+            return handler(req, { params });
+        } catch (err) {
+            return parseErrorResponse(err);
+        }
+    };
 }
