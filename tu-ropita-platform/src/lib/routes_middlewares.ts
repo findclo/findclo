@@ -7,8 +7,10 @@ import {parseErrorResponse} from "@/lib/utils";
 import {UnauthorizedException} from "@/lib/backend/exceptions/unauthorized.exception";
 import {InvalidTokenException} from "@/lib/backend/exceptions/InvalidTokenException";
 import {productService} from "@/lib/backend/services/product.service";
+import {BadRequestException} from "@/lib/backend/exceptions/BadRequestException";
+import {param} from "ts-interface-checker";
 
-type RouteHandler = (req: Request) => Promise<Response>;
+type RouteHandler = (req: Request, params? : any) => Promise<Response>;
 
 async function handleBasicAuth(basic_auth_header: string): Promise<{ user: IUser, token: string, refreshToken: string }> {
     const encodedCredentials = basic_auth_header.replace(/^Basic\s/, '');
@@ -55,14 +57,13 @@ async function authenticate(req: Request): Promise<{ user: any; token: string }>
 }
 
 export function withJwtAuth(handler: RouteHandler): RouteHandler {
-    return async (req: Request) => {
+    return async (req: Request,  params? :any) => {
         try {
             const auth_tokens = await authenticate(req);
 
             const newReq = new Request(req);
             (newReq as any).user = auth_tokens.user;
-
-            const response = await handler(newReq);
+            const response = await handler(newReq,params);
             response.headers.set('Authorization', `Bearer ${auth_tokens.token}`);
 
             return response;
@@ -72,52 +73,63 @@ export function withJwtAuth(handler: RouteHandler): RouteHandler {
     };
 }
 
-export function withBrandPermission(handler: Function) {
-    return async (req: Request, { params }: { params: { id: number } }) => {
+export function withBrandPermission(handler: RouteHandler) {
+    return withJwtAuth(async (req: Request, params:{params: {id:number}}) => {
         try {
-            const auth_tokens = await authenticate(req);
-            const brandId = params.id;
-            const userId = auth_tokens.user.id; // Use the user from auth tokens
+            if(!params){
+                throw new BadRequestException();
+            }
 
-            const hasPermission = await userService.userBelongsToBrand(userId, brandId);
-            if (auth_tokens.user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
+            const brandId = params.params.id;
+            const user = (req as any).user; // Use the user from auth tokens
+
+            const hasPermission = await userService.userBelongsToBrand(user.id, brandId);
+            if (user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
                 return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
             }
 
-            return handler(req, { params });
+            return handler(req, params);
         } catch (err) {
             return parseErrorResponse(err);
         }
-    };
+    });
 }
 
-export function withAdminPermission(handler: Function) {
-    return async (req: Request,  params :any ) => {
+
+export function withAdminPermission(handler: RouteHandler) {
+    return withJwtAuth(async (req: Request, params:{params: {id:number}}) => {
         try {
-            const auth_tokens = await authenticate(req);
-            console.log(auth_tokens)
-            if (auth_tokens.user.user_type !== UserTypeEnum.ADMIN) {
+            if(!params){
+                throw new BadRequestException();
+            }
+
+            const user = (req as any).user;
+            if (user.user_type !== UserTypeEnum.ADMIN) {
                 return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
             }
 
             return handler(req, { params });
+
         } catch (err) {
             return parseErrorResponse(err);
         }
-    };
+    });
 }
-
-export function withProductBrandPermission(handler: Function) {
-    return async (req: Request, { params }: { params: { id: number } }) => {
+export function withProductBrandPermission(handler: RouteHandler) {
+    return withJwtAuth(async (req: Request, params:{params: {id:number}}) => {
         try {
-            const auth_tokens = await authenticate(req);
-            const userId = auth_tokens.user.id;
+            if(!params){
+                throw new BadRequestException();
+            }
 
-            const productId = params.id;
-            const prod = await productService.getProductById(productId);
+            const user = (req as any).user.id;
 
-            const hasPermission = await userService.userBelongsToBrand(userId, prod.brand.id);
-            if (auth_tokens.user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
+            const productId = params.params.id;
+            const product = await productService.getProductById(productId);
+
+            const hasPermission = await userService.userBelongsToBrand(user.id, product.brand.id);
+
+            if (user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
                 return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
             }
 
@@ -125,5 +137,5 @@ export function withProductBrandPermission(handler: Function) {
         } catch (err) {
             return parseErrorResponse(err);
         }
-    };
+    });
 }
