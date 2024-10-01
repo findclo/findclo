@@ -89,3 +89,19 @@ export function withBrandPermission(handler: Function) {
         }
     };
 }
+
+export function withAdminPermission(handler: Function) {
+    return async (req: Request,  params :any ) => {
+        try {
+            const auth_tokens = await authenticate(req);
+            console.log(auth_tokens)
+            if (auth_tokens.user.user_type !== UserTypeEnum.ADMIN) {
+                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+            }
+
+            return handler(req, { params });
+        } catch (err) {
+            return parseErrorResponse(err);
+        }
+    };
+}

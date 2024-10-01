@@ -1,7 +1,7 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { brandService } from "@/lib/backend/services/brand.service";
 import {getBrandDtoFromBody, parseErrorResponse} from "@/lib/utils";
-import {withBrandPermission} from "@/lib/routes_middlewares";
+import {withAdminPermission, withBrandPermission} from "@/lib/routes_middlewares";
 
 export async function GET(req: Request, {params}: {params: {id:string}}) {
     try {
@@ -30,7 +30,7 @@ export const PUT = withBrandPermission(async(req: Request, {params}: {params: {i
     }
 });
 
-export async function DELETE(req: Request, {params}: {params: {id:string}}) {
+export const DELETE = withAdminPermission(async(req: Request, {params}: {params: {id:string}}) => {
     try {
         if(isNaN(Number(params.id))){
             return new Response('Invalid brand ID', { status: 400 });
@@ -41,4 +41,4 @@ export async function DELETE(req: Request, {params}: {params: {id:string}}) {
     } catch (error:any) {
         return parseErrorResponse(error);
     }
-}
+});

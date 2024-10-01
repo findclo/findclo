@@ -78,7 +78,7 @@ export async function getProductDtoFromBody(req: Request) : Promise<IProductDTO>
   return getDtoFromBody<IProductDTO>(req, ['name', 'price', 'description','images']);
 }
 
-export async function getUpdateProductStatusFromBody(req: Request) : Promise<{ status: string }>{
+export async function getUpdateStatusFromBody(req: Request) : Promise<{ status: string }>{
   return getDtoFromBody<{ status: string }>(req, ['status']);
 }
 

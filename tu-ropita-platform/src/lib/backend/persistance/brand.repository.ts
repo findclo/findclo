@@ -95,7 +95,6 @@ class BrandRepository implements IBrandRepository {
 
     private async upsertBrand(query: string, values: any[], brand: IBrandDto, brandId: number) {
         try {
-            console.log("llega")
             const res = await this.db.query(query, values);
             if (res.rowCount == null || res.rowCount <= 0){
                 throw new BrandNotFoundException(brandId);

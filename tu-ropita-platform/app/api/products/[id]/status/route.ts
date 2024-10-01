@@ -1,4 +1,4 @@
-import {getUpdateProductStatusFromBody, parseErrorResponse} from "@/lib/utils";
+import {getUpdateStatusFromBody, parseErrorResponse} from "@/lib/utils";
 import {productService} from "@/lib/backend/services/product.service";
 import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
 
@@ -8,7 +8,7 @@ export async function PUT(req: Request, {params}: {params: {id:string}}) {
             return new Response('Invalid product ID', { status: 400 });
         }
 
-        const body = await getUpdateProductStatusFromBody(req);
+        const body = await getUpdateStatusFromBody(req);
 
         const product: IProduct = await productService.updateProductStatus(Number(params.id), body.status);
         return new Response(JSON.stringify(product), { status: 200 });
