@@ -108,7 +108,7 @@ export function withAdminPermission(handler: RouteHandler) {
                 return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
             }
 
-            return handler(req, { params });
+            return handler(req, params);
 
         } catch (err) {
             return parseErrorResponse(err);
@@ -122,18 +122,16 @@ export function withProductBrandPermission(handler: RouteHandler) {
                 throw new BadRequestException();
             }
 
-            const user = (req as any).user.id;
-
+            const user = (req as any).user;
             const productId = params.params.id;
             const product = await productService.getProductById(productId);
 
             const hasPermission = await userService.userBelongsToBrand(user.id, product.brand.id);
-
             if (user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
                 return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
             }
 
-            return handler(req, { params });
+            return handler(req,  params );
         } catch (err) {
             return parseErrorResponse(err);
         }

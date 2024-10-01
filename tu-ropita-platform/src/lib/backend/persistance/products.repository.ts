@@ -18,7 +18,7 @@ export interface  IListProductsParams {
 export interface IProductRepository {
     getProductById(productId: number): Promise<IProduct | null>;
     listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>;
-    bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>;
+    bulkProductInsert(products : IProductDTO[], brandId: string): Promise<number>;
     markProductAsTagged(productId: number): Promise<void>;
     deleteProduct(productId: number): Promise<boolean>;
     updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
@@ -61,7 +61,7 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
-    public async bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>{
+    public async bulkProductInsert(products : IProductDTO[], brandId: string): Promise<number>{
 
         const valuePlaceholders = products.map((_, index) => {
             const offset = index * 7;
@@ -194,7 +194,7 @@ class ProductsRepository implements IProductRepository{
             images: row.images,
             status: row.status,
             brand: {
-                id: row.brandId,
+                id: row.brand_id,
                 name: '',
                 image: '',
                 websiteUrl: ''

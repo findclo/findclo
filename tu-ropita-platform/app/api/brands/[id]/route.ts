@@ -10,7 +10,12 @@ export async function GET(req: Request, {params}: {params: {id:string}}) {
         }
 
         const brand: IBrand = await brandService.getBrandById(Number(params.id));
-        return new Response(JSON.stringify(brand), { status: 200 });
+        return new Response(JSON.stringify(brand), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     } catch (error:any) {
         return parseErrorResponse(error);
     }
@@ -24,7 +29,12 @@ export const PUT = withBrandPermission(async(req: Request, {params}: {params: {i
 
         const brandDto = await getBrandDtoFromBody(req);
         const brand: IBrand = await brandService.updateBrand(Number(params.id), brandDto);
-        return new Response(JSON.stringify(brand), { status: 200 });
+        return new Response(JSON.stringify(brand), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     } catch (error:any) {
         return parseErrorResponse(error);
     }

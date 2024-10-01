@@ -12,7 +12,11 @@ export async function GET(req: Request, {params}: {params: {id:string}}) {
         }
 
         const product: IProduct = await productService.getProductById(parseInt(params.id));
-        return new Response(JSON.stringify(product), { status: 200 });
+        return new Response(JSON.stringify(product), { status: 200 ,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     } catch (error:any) {
         return parseErrorResponse(error);
     }
@@ -26,7 +30,11 @@ export const PUT = withProductBrandPermission(async(req: Request, {params}: {par
 
         const productDto : IProductDTO = await getProductDtoFromBody(req);
         const product: IProduct = await productService.updateProduct(Number(params.id), productDto);
-        return new Response(JSON.stringify(product), { status: 200 });
+        return new Response(JSON.stringify(product), { status: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     } catch (error:any) {
         return parseErrorResponse(error);
     }

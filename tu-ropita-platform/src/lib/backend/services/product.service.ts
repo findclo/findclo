@@ -13,7 +13,7 @@ import {brandService} from "@/lib/backend/services/brand.service";
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
     deleteProduct(id: number): Promise<boolean>;
-    uploadProductsFromCSV(file : File): Promise<boolean>;
+    uploadProductsFromCSV(file : File,brandId: string): Promise<boolean>;
     updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
     updateProductStatus(id: number, status: string): Promise<IProduct>
 }
@@ -73,10 +73,10 @@ class ProductService implements IProductService{
 
     }
 
-    public async uploadProductsFromCSV(file : File): Promise<boolean>{
+    public async uploadProductsFromCSV(file : File,brandId: string): Promise<boolean>{
         const products : IProductDTO[] = await this.parser.parse(file);
 
-        const dbRes = await productRepository.bulkProductInsert(products,1);
+        const dbRes = await productRepository.bulkProductInsert(products,brandId);
 
         console.log(`db insert result ${dbRes}`);
         return dbRes > 0;

@@ -16,30 +16,15 @@ export async function GET(req: Request) {
 
     try {
         const products : IListProductResponseDto = await productService.listProducts(listProductParams);
-        return new Response(JSON.stringify(products), { status: 200 });
+        return new Response(JSON.stringify(products), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
 
     } catch (error: any) {
         return new Response(null, { status: error.statusCode? error.statusCode : 500 });
     }
 
-}
-
-export async function POST(req: Request){
-    try{
-        const formData : FormData = await req.formData();
-
-        const file  = formData.get("file");
-
-        if(!(file && file instanceof File)){
-            return new Response('Missing file', { status: 400 });
-        }
-
-        await productService.uploadProductsFromCSV(file);
-
-
-        return new Response(null, {status: 200});
-    } catch (error: any){
-        console.log(error)
-        return new Response(null, { status: error.statusCode? error.statusCode : 500 });
-    }
 }
