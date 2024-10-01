@@ -6,7 +6,7 @@ import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { Pool } from "pg";
 
 export interface IBrandRepository {
-    getBrandById(brandId:number): Promise<IBrand>;
+    getBrandById(brandId:number): Promise<IBrand | null>;
     listBrands():Promise<IBrand[]>;
     createBrand(brand: IBrandDto): Promise<IBrand>;
     updateBrand(id: number,brand: IBrandDto): Promise<IBrand>;
@@ -30,11 +30,11 @@ class BrandRepository implements IBrandRepository {
 
 
 
-    async getBrandById(brandId: number): Promise<IBrand> {
+    async getBrandById(brandId: number): Promise<IBrand | null> {
         const query = `SELECT * FROM Brands WHERE id = $1;`;
         const res = await this.db.query(query, [brandId]);
         if (res.rowCount == null || res.rowCount <= 0){
-            throw new BrandNotFoundException(brandId);
+            return null;
         }
         return this.mapBrandRow(res.rows[0]);
     }

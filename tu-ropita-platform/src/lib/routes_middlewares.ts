@@ -6,6 +6,7 @@ import {NextRequest, NextResponse} from "next/server";
 import {parseErrorResponse} from "@/lib/utils";
 import {UnauthorizedException} from "@/lib/backend/exceptions/unauthorized.exception";
 import {InvalidTokenException} from "@/lib/backend/exceptions/InvalidTokenException";
+import {productService} from "@/lib/backend/services/product.service";
 
 type RouteHandler = (req: Request) => Promise<Response>;
 
@@ -96,6 +97,27 @@ export function withAdminPermission(handler: Function) {
             const auth_tokens = await authenticate(req);
             console.log(auth_tokens)
             if (auth_tokens.user.user_type !== UserTypeEnum.ADMIN) {
+                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+            }
+
+            return handler(req, { params });
+        } catch (err) {
+            return parseErrorResponse(err);
+        }
+    };
+}
+
+export function withProductBrandPermission(handler: Function) {
+    return async (req: Request, { params }: { params: { id: number } }) => {
+        try {
+            const auth_tokens = await authenticate(req);
+            const userId = auth_tokens.user.id;
+
+            const productId = params.id;
+            const prod = await productService.getProductById(productId);
+
+            const hasPermission = await userService.userBelongsToBrand(userId, prod.brand.id);
+            if (auth_tokens.user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
                 return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
             }
 

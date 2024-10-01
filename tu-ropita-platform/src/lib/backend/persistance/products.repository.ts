@@ -40,7 +40,10 @@ class ProductsRepository implements IProductRepository{
 
         try {
             const res = await this.db.query(query, values);
-            return res.rows[0] || null;
+            if(res.rowCount == null || res.rowCount <= 0){
+                return null;
+            }
+            return this.mapProductRows(res.rows)[0];
         } catch (error) {
             console.error('Error executing query:', error);
             throw error;

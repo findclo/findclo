@@ -1,12 +1,14 @@
-import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
-import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
-import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/parsers/productCSVUpload.parser";
-import { IListProductsParams, productRepository } from "@/lib/backend/persistance/products.repository";
-import { openAIService } from "@/lib/backend/services/openAI.service";
-import { tagsService } from "@/lib/backend/services/tags.service";
+import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
+import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
+import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
+import {IProductCSVUploadParser, ProductCSVUploadParser} from "@/lib/backend/parsers/productCSVUpload.parser";
+import {IListProductsParams, productRepository} from "@/lib/backend/persistance/products.repository";
+import {openAIService} from "@/lib/backend/services/openAI.service";
+import {tagsService} from "@/lib/backend/services/tags.service";
 import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
+import {brandRepository} from "@/lib/backend/persistance/brand.repository";
+import {brandService} from "@/lib/backend/services/brand.service";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
@@ -26,6 +28,8 @@ class ProductService implements IProductService{
         if(!product){
             throw new ProductNotFoundException(productId);
         }
+        product.brand = await brandService.getBrandById(product.brand.id);
+
         return product;
     }
 
