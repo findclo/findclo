@@ -14,7 +14,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
     notFound();
   }
 
-  const brand = await publicBrandsApiWrapper.getBrandById((product as any).brand_id);
+  const brand = await publicBrandsApiWrapper.getBrandById((product as any).brand.id);
   let relatedProducts: IProduct[] = [];
   if (brand) {
     const aux_relatedProducts = await publicProductsApiWrapper.getProductsByBrandId(brand.id.toString());
