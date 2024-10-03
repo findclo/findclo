@@ -1,10 +1,14 @@
+'use client'
+
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useUser } from '@/providers/ClientUserProvider';
 import { Home, Menu, User } from 'lucide-react';
 import Link from 'next/link';
 
-// Add user prop
-const Header = ({ user }: { user?: { name: string } }) => {
+const Header = () => {
+  const { user } = useUser();
+
   return (
     <>
       {/* Top header for mobile */}
@@ -15,7 +19,7 @@ const Header = ({ user }: { user?: { name: string } }) => {
           </Link>
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href="/signup">Soy una marca</Link>
+              <Link href={user ? "/profile" : "/signup"}>{user ? "Perfil" : "Soy una marca"}</Link>
             </Button>
             {user && (
               <Link href="/profile">
@@ -40,7 +44,7 @@ const Header = ({ user }: { user?: { name: string } }) => {
               <Link href="/">Inicio</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/signin">Soy una marca</Link>
+              <Link href={user ? "/profile" : "/signin"}>{user ? "Perfil" : "Soy una marca"}</Link>
             </Button>
             {user && (
               <Link href="/profile">
@@ -57,6 +61,7 @@ const Header = ({ user }: { user?: { name: string } }) => {
             <SheetContent side="right">
               <nav className="flex flex-col gap-4">
                 <Link href="/">Inicio</Link>
+                <Link href={user ? "/profile" : "/signin"}>{user ? "Perfil" : "Soy una marca"}</Link>
               </nav>
             </SheetContent>
           </Sheet>
@@ -65,31 +70,17 @@ const Header = ({ user }: { user?: { name: string } }) => {
 
       {/* Bottom navigation for mobile */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden shadow-2xl z-50">
-        
         <div className="flex justify-around items-center h-16">
           <Link href="/" className="flex flex-col items-center">
             <Home className="h-6 w-6" />
             <span className="text-xs mt-1">Inicio</span>
           </Link>
-          <Link href="/signup" className="flex flex-col items-center">
+          <Link href={user ? "/profile" : "/signup"} className="flex flex-col items-center">
             <User className="h-6 w-6" />
-            <span className="text-xs mt-1">Soy una marca</span>
+            <span className="text-xs mt-1">{user ? "Perfil" : "Soy una marca"}</span>
           </Link>
-          {/* <Link href="/search?q=summer" className="flex flex-col items-center">
-            <Search className="h-6 w-6" />
-            <span className="text-xs mt-1">Buscar</span>
-          </Link> */}
-          {/* <Link href="/cart" className="flex flex-col items-center">
-            <ShoppingBag className="h-6 w-6" />
-            <span className="text-xs mt-1">Carrito</span>
-          </Link>
-          <Link href="/profile" className="flex flex-col items-center">
-            <User className="h-6 w-6" />
-            <span className="text-xs mt-1">Perfil</span>
-          </Link> */}
         </div>
       </nav>
-
     </>
   );
 };

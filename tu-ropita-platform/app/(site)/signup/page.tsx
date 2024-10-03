@@ -40,8 +40,9 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <Card className="w-full max-w-md shadow-lg">
+    <>
+                                                                    {/* TODO: ver como centrarlo en la pagina sin un mt */}
+      <Card className="w-full max-w-md shadow-lg m-4 mx-auto justify-center items-center mt-28">
         <CardHeader>
           <CardTitle>Registro</CardTitle>
           <CardDescription>Crea tu cuenta para comenzar</CardDescription>
@@ -95,6 +96,6 @@ export default function SignupPage() {
           </p>
         </CardFooter>
       </Card>
-    </div>
+    </>
   )
 }

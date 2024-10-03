@@ -1,5 +1,6 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import ClientUserProvider from "@/providers/ClientUserProvider";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
@@ -17,27 +18,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   const cookieStore = cookies();
   const token = cookieStore.get('Authorization');
-  let user = undefined;
+  let initialUser = undefined;
   if(token){
-    user = { name: 'John Doe' };
+    initialUser = { name: 'John Doe' };
   }
 
-  
   return (
     <html lang="en">
       <body className={`${inter.className} flex flex-col min-h-screen`}>
-        <Header user={user} />
-        <main className="container mx-auto mt-4 flex-grow px-4">
-          {children}
-        </main>
-        
-        {/* Spacer div to prevent content from being hidden under the mobile header */}
-      <div className="h-24 md:hidden"></div>
-        
-        <Footer />
+        <ClientUserProvider initialUser={initialUser}>
+          <Header />
+          <main className="container mx-auto mt-4 flex-grow px-4">
+            {children}
+          </main>
+          
+          {/* Spacer div to prevent content from being hidden under the mobile header */}
+          <div className="h-24 md:hidden"></div>
+          
+          <Footer />
+        </ClientUserProvider>
       </body>
     </html>
   );

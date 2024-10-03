@@ -24,13 +24,14 @@ export default function SigninPage() {
     if (!result) {
       setError('Credenciales inválidas. Por favor, inténtalo de nuevo.')
     } else {
-      router.push('/')
+      window.location.href = '/'
     }
   }
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <Card className="w-full max-w-md shadow-lg">
+    <>
+                                                                    {/* TODO: ver como centrarlo en la pagina sin un mt */}
+      <Card className="w-full max-w-md shadow-lg m-4 mx-auto justify-center items-center mt-40">
         <CardHeader>
           <CardTitle>Iniciar Sesión</CardTitle>
           <CardDescription>Accede a tu cuenta</CardDescription>
@@ -67,6 +68,6 @@ export default function SigninPage() {
           </p>
         </CardFooter>
       </Card>
-    </div>
+    </>
   )
 }
