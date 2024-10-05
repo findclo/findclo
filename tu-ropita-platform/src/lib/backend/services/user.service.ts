@@ -77,6 +77,11 @@ class UserService {
         await userPersistance.updateLastLogin(user.id);
     }
 
+    async userBelongsToBrand(user_id: number, brand_id: number): Promise<boolean>{
+        const brand_owners = await brandRepository.getBrandOwnersIds(brand_id);
+        return brand_owners.length > 0 && brand_owners.includes(user_id);
+    }
+
 }
 
 export const userService = new UserService();

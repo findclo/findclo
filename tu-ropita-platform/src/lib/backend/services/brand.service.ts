@@ -1,6 +1,7 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { brandRepository } from "@/lib/backend/persistance/brand.repository";
 import {IBrandDto} from "@/lib/backend/dtos/brand.dto.interface";
+import {BrandNotFoundException} from "@/lib/backend/exceptions/brandNotFound.exception";
 
 export interface IBrandService {
     getBrandById(brandId:number): Promise<IBrand>;
@@ -13,8 +14,12 @@ export interface IBrandService {
 
 class BrandService implements IBrandService {
 
-    getBrandById(brandId: number): Promise<IBrand> {
-        return brandRepository.getBrandById(brandId);
+    async getBrandById(brandId: number): Promise<IBrand> {
+        const brand = await brandRepository.getBrandById(brandId);
+        if (brand == null){
+            throw new BrandNotFoundException(brandId);
+        }
+        return brand;
     }
 
     listBrands(): Promise<IBrand[]> {

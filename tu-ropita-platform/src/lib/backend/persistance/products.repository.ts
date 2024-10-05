@@ -2,8 +2,9 @@ import pool from "@/lib/backend/conf/db.connections";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { Pool } from "pg";
+import {Pool, QueryResult} from "pg";
 import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
+import {BrandNotFoundException} from "@/lib/backend/exceptions/brandNotFound.exception";
 
 export interface  IListProductsParams {
     search?:string;
@@ -17,11 +18,12 @@ export interface  IListProductsParams {
 export interface IProductRepository {
     getProductById(productId: number): Promise<IProduct | null>;
     listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>;
-    bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>;
+    bulkProductInsert(products : IProductDTO[], brandId: string): Promise<number>;
     markProductAsTagged(productId: number): Promise<void>;
     deleteProduct(productId: number): Promise<boolean>;
     updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
-    markProductAsUntagged(productId: number): Promise<void>
+    markProductAsUntagged(productId: number): Promise<void>;
+    updateProductStatus(id: number, status: string): Promise<IProduct>;
 };
 
 
@@ -38,7 +40,10 @@ class ProductsRepository implements IProductRepository{
 
         try {
             const res = await this.db.query(query, values);
-            return res.rows[0] || null;
+            if(res.rowCount == null || res.rowCount <= 0){
+                return null;
+            }
+            return this.mapProductRows(res.rows)[0];
         } catch (error) {
             console.error('Error executing query:', error);
             throw error;
@@ -49,26 +54,14 @@ class ProductsRepository implements IProductRepository{
         const {query, values} = this.constructListQuery(params,tags);
         try {
             const res = await this.db.query(query, values);
-            return res.rows.map(row => ({
-                id: row.id,
-                name: row.name,
-                price: parseFloat(row.price),
-                description: row.description,
-                images: row.images,
-                brand: {
-                    id: row.brandId,
-                    name: '',
-                    image: '',
-                    websiteUrl: ''
-                }
-            }));
+            return this.mapProductRows(res.rows);
         } catch (err) {
             console.error('Error executing query:', err);
             throw err;
         }
     }
 
-    public async bulkProductInsert(products : IProductDTO[], brandId: number): Promise<number>{
+    public async bulkProductInsert(products : IProductDTO[], brandId: string): Promise<number>{
 
         const valuePlaceholders = products.map((_, index) => {
             const offset = index * 7;
@@ -145,31 +138,68 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
+
     async updateProduct(id: number, product: IProductDTO): Promise<IProduct> {
         const query = `
-        UPDATE Products
-        SET name = $1::TEXT, 
-            price = $2, 
-            description = $3, 
-            images = $4,
-            has_tags_generated = false,
-            tsv = to_tsvector('spanish', coalesce($1, '') || ' ' || coalesce($3, ''))
-        WHERE id = $5
-        RETURNING *
-    `;
+            UPDATE Products
+            SET name = $1::TEXT, 
+                price = $2, 
+                description = $3, 
+                images = $4,
+                has_tags_generated = false,
+                tsv = to_tsvector('spanish', coalesce($1, '') || ' ' || coalesce($3, ''))
+            WHERE id = $5
+            RETURNING *
+        `;
 
         const values = [product.name, product.price, product.description, product.images, id];
+        return this.executeUpdate(query, values);
+    }
 
+    async updateProductStatus(id: number, status: string): Promise<IProduct> {
+        const query = `
+            UPDATE Products
+            SET status = $1
+            WHERE id = $2
+            RETURNING *
+        `;
+
+        const values = [status, id];
+        return this.executeUpdate(query, values);
+    }
+
+    private async executeUpdate(query: string, values: any[]): Promise<IProduct> {
         try {
-            const res = await pool.query(query, values);
+            const res: QueryResult = await this.db.query(query, values);
             if (res.rowCount === 0) {
-                throw new ProductNotFoundException(id);
+                throw new ProductNotFoundException(values[values.length - 1]);
             }
-            return res.rows[0]
+            return this.mapProductRows(res.rows)[0];
         } catch (error) {
             console.error('Error updating product:', error);
             throw error;
         }
+    }
+
+
+    private mapProductRows(rows: any[]): IProduct[] {
+        if(rows.length == 0){
+            return [];
+        }
+        return rows.map(row => ({
+            id: row.id,
+            name: row.name,
+            price: parseFloat(row.price),
+            description: row.description,
+            images: row.images,
+            status: row.status,
+            brand: {
+                id: row.brand_id,
+                name: '',
+                image: '',
+                websiteUrl: ''
+            }
+        }));
     }
 
     private constructListQuery(params: IListProductsParams, tags?: ITag[]): { query: string, values: any[] } {

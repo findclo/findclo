@@ -3,5 +3,5 @@ export interface IBrand {
     name: string;
     image: string;
     websiteUrl:string;
-    status: string;
+    status?: string;
 }
