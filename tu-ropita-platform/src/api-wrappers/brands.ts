@@ -1,6 +1,6 @@
+import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
-import {IBrandDto} from "@/lib/backend/dtos/brand.dto.interface";
 
 const BRANDS_PATH : string = `/brands`;
 
@@ -37,6 +37,21 @@ class PrivateBrandsApiWrapper {
         return createdBrand as IBrand;
     }
 
+    async getMyBrand(auth_token: string): Promise<IBrand | null> {
+        const [error, brand] = await fetcher(`${BRANDS_PATH}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+        });
+        if (error) {
+            console.error(`Error listing brands: ${error}`);
+            return null;
+        }
+        return brand as IBrand;
+    }
+
+
     async updateBrand(auth_token: string, id: string, updated_brand: IBrandDto): Promise<IBrand | null> {
         const [error, updatedBrand] = await fetcher(`${BRANDS_PATH}/${id}`, {
             method: 'PUT',
@@ -63,20 +78,6 @@ class PrivateBrandsApiWrapper {
         if (error) {
             console.error(`Error deleting brand ${id}: ${error}`);
         }
-    }
-
-    async listBrands(auth_token: string): Promise<IBrand[]> {
-        const [error, brands] = await fetcher(`${BRANDS_PATH}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${auth_token}`,
-            },
-        });
-        if (error) {
-            console.error(`Error listing brands: ${error}`);
-            return [];
-        }
-        return brands as IBrand[];
     }
 
     async changeBrandStatus(auth_token: string, id: string, status: string): Promise<IBrand | null> {

@@ -2,6 +2,7 @@ import { hashPassword } from "@/lib/utils";
 import { CreateUserDto } from "../dtos/user.dto.interface";
 import { ConflictException } from "../exceptions/ConflictException";
 import { NotFoundException } from "../exceptions/NotFoundException";
+import { IBrand } from "../models/interfaces/brand.interface";
 import { IUser } from "../models/interfaces/user.interface";
 import { brandRepository } from "../persistance/brand.repository";
 import { userPersistance } from "../persistance/user.repository";
@@ -80,6 +81,17 @@ class UserService {
     async userBelongsToBrand(user_id: number, brand_id: number): Promise<boolean>{
         const brand_owners = await brandRepository.getBrandOwnersIds(brand_id);
         return brand_owners.length > 0 && brand_owners.includes(user_id);
+    }
+
+    async getUserBrand(user_id: number): Promise<IBrand> {
+        const user = await this.getUserById(user_id);
+        if (!user) {
+            throw NotFoundException.createFromMessage(`User not found. [id=${user_id}]`);
+        }
+
+        const userBrands = await brandRepository.getBrandsOfUser(user_id);
+        // Assuming a user can only have one brand, return the first one
+        return userBrands[0] as IBrand;
     }
 
 }

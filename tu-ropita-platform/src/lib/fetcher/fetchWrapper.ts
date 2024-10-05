@@ -16,7 +16,7 @@ export const fetcher = async (path: string, options: RequestInit = {}): Promise<
         const refreshToken = res.headers.get('Refresh-Token');
         // Store tokens if they exist
         if (token) {
-            Cookies.set('Authorization', token, { secure: true, sameSite: 'strict' });
+            Cookies.set('Authorization', token.split(' ')[1], { secure: true, sameSite: 'strict' });
         }
         if (refreshToken) {
             Cookies.set('Refresh-Token', refreshToken, { secure: true, sameSite: 'strict' });

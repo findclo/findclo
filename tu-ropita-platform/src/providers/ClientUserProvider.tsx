@@ -1,14 +1,15 @@
 'use client'
 
+import { privateUsersApiWrapper } from '@/api-wrappers/users';
+import { IUser } from '@/lib/backend/models/interfaces/user.interface';
 import Cookies from 'js-cookie';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-type User = { name: string } | undefined;
-
 const UserContext = createContext<{
-  user: User;
-  setUser: React.Dispatch<React.SetStateAction<User>>;
+  user: IUser | null;
+  setUser: React.Dispatch<React.SetStateAction<IUser | null>>;
   signOut: () => void;
+  getUser: () => Promise<IUser | null>;
 } | undefined>(undefined);
 
 export function useUser() {
@@ -20,38 +21,44 @@ export function useUser() {
 }
 
 export default function ClientUserProvider({ 
-  children, 
-  initialUser 
+  children,
+  initialUser
 }: { 
   children: React.ReactNode;
-  initialUser: User;
+  initialUser: IUser | null;
 }) {
-  const [user, setUser] = useState<User>(initialUser);
+  const [user, setUser] = useState<IUser | null>(initialUser);
 
   const signOut = useCallback(() => {
     Cookies.remove('Authorization');
     Cookies.remove('Refresh-Token');
-    setUser(undefined);
+    setUser(null);
     window.location.href = '/';
   }, []);
 
-  useEffect(() => {
-    // This effect will run on the client side and update the user state if needed
-    const checkUser = async () => {
-      // Replace this with your actual user checking logic
-      const token = Cookies.get('Authorization');
-      if (token && !user) {
-        setUser({ name: 'John Doe' });
-      } else if (!token && user) {
-        setUser(undefined);
+  const getUser = useCallback(async () => {
+    const token = Cookies.get('Authorization');
+    if (token && !user) {
+      try {
+        const fetchedUser = await privateUsersApiWrapper.getMe(token);
+        setUser(fetchedUser || null);
+        return fetchedUser || null;
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        setUser(null);
       }
-    };
-
-    checkUser();
+    }
+    return user;
   }, [user]);
 
+  useEffect(() => {
+    if (!user) {
+      getUser();
+    }
+  }, [getUser, user]);
+
   return (
-    <UserContext.Provider value={{ user, setUser, signOut }}>
+    <UserContext.Provider value={{ user, setUser, signOut, getUser }}>
       {children}
     </UserContext.Provider>
   );

@@ -38,6 +38,23 @@ class PublicUsersApiWrapper {
 }
 
 class PrivateUsersApiWrapper {
+
+    private USERS_PATH = `/users`;
+
+    async getMe(bearer_token: string): Promise<IUser | null> {
+        const [error, user] = await fetcher(`${this.USERS_PATH}/me`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${bearer_token}`
+            }
+        });
+        if (error) {
+            console.error(`Error signing up user: ${error}`);
+            return null;
+        }
+        return user as IUser;
+    }
+
 }
 
 export const publicUsersApiWrapper = new PublicUsersApiWrapper();

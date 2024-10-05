@@ -3,7 +3,8 @@ import { parseErrorResponse } from "@/lib/utils";
 
 export const GET = withJwtAuth(async (req: Request) => {
     try {
-        return Response.json({ status: "ok" }, { status: 200 });
+        const user = (req as any).user;
+        return Response.json(user, { status: 200 });
     } catch (error: any) {
         console.log("error")
         return parseErrorResponse(error);

@@ -1,14 +1,13 @@
+import { BadRequestException } from "@/lib/backend/exceptions/BadRequestException";
+import { InvalidTokenException } from "@/lib/backend/exceptions/InvalidTokenException";
+import { UnauthorizedException } from "@/lib/backend/exceptions/unauthorized.exception";
+import { productService } from "@/lib/backend/services/product.service";
+import { parseErrorResponse } from "@/lib/utils";
+import { NextResponse } from "next/server";
 import { ITokenPayloadType } from './backend/models/interfaces/ITokenPayload';
-import {IUser, UserTypeEnum} from './backend/models/interfaces/user.interface';
+import { IUser, UserTypeEnum } from './backend/models/interfaces/user.interface';
 import { authService } from './backend/services/auth.service';
 import { userService } from './backend/services/user.service';
-import {NextRequest, NextResponse} from "next/server";
-import {parseErrorResponse} from "@/lib/utils";
-import {UnauthorizedException} from "@/lib/backend/exceptions/unauthorized.exception";
-import {InvalidTokenException} from "@/lib/backend/exceptions/InvalidTokenException";
-import {productService} from "@/lib/backend/services/product.service";
-import {BadRequestException} from "@/lib/backend/exceptions/BadRequestException";
-import {param} from "ts-interface-checker";
 
 type RouteHandler = (req: Request, params? : any) => Promise<Response>;
 
@@ -65,7 +64,7 @@ export function withJwtAuth(handler: RouteHandler): RouteHandler {
             (newReq as any).user = auth_tokens.user;
             const response = await handler(newReq,params);
             response.headers.set('Authorization', `Bearer ${auth_tokens.token}`);
-
+            
             return response;
         } catch (err) {
             return parseErrorResponse(err);

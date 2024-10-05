@@ -4,6 +4,7 @@ import { BrandAlreadyExistsException } from "@/lib/backend/exceptions/brandAlrea
 import { BrandNotFoundException } from "@/lib/backend/exceptions/brandNotFound.exception";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { Pool } from "pg";
+import { NotFoundException } from "../exceptions/NotFoundException";
 
 export interface IBrandRepository {
     getBrandById(brandId:number): Promise<IBrand | null>;
@@ -13,6 +14,7 @@ export interface IBrandRepository {
     deleteBrand(id: number): Promise<boolean>;
     changeBrandStatus(id: number, status: string): Promise<boolean>;
     getBrandOwnersIds(brandId: number): Promise<number[]>;
+    getBrandsOfUser(userId: number): Promise<IBrand[]>;
 }
 
 class BrandRepository implements IBrandRepository {
@@ -93,6 +95,33 @@ class BrandRepository implements IBrandRepository {
         return  result.rowCount > 0;
     }
 
+    async getBrandOwnersIds(brandId: number): Promise<number[]> {
+        const query = `SELECT user_id FROM user_brands WHERE brand_id = $1;`;
+        const res = await this.db.query(query, [brandId]);
+        return res.rows.map((row: any) => row.user_id);
+    }
+
+    async getBrandsOfUser(userId: number): Promise<IBrand[]> {
+        const query = `
+            SELECT b.* 
+            FROM Brands b
+            JOIN user_brands ub ON b.id = ub.brand_id
+            WHERE ub.user_id = $1;
+        `;
+        const values = [userId];
+        
+        try {
+            const res = await this.db.query(query, values);
+            if (res.rowCount === 0) {
+                throw NotFoundException.createFromMessage(`No brand found for user. [user_id:${userId}]`);
+            }
+            return res.rows.map(this.mapBrandRow);
+        } catch (error) {
+            console.error('Error fetching brands of user:', error);
+            throw error;
+        }
+    }
+
     private async upsertBrand(query: string, values: any[], brand: IBrandDto, brandId: number) {
         try {
             const res = await this.db.query(query, values);
@@ -108,12 +137,6 @@ class BrandRepository implements IBrandRepository {
             console.log(error)
             throw error;
         }
-    }
-
-    async getBrandOwnersIds(brandId: number): Promise<number[]> {
-        const query = `SELECT user_id FROM user_brands WHERE brand_id = $1;`;
-        const res = await this.db.query(query, [brandId]);
-        return res.rows.map((row: any) => row.user_id);
     }
 }
 
