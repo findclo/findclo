@@ -3,11 +3,24 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useUser } from '@/providers/ClientUserProvider';
-import { Home, Menu, User } from 'lucide-react';
+import { Home, LogOut, Menu, User } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const Header = () => {
-  const { user } = useUser();
+  const { user, signOut } = useUser();
+  const router = useRouter();
+
+  const handleSignOut = () => {
+    const confirmSignOut = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
+    if (confirmSignOut) {
+      signOut();
+    }
+  };
+
+  const handleProfileClick = () => {
+    router.push('/profile');
+  };
 
   return (
     <>
@@ -22,9 +35,14 @@ const Header = () => {
               <Link href={user ? "/profile" : "/signup"}>{user ? "Perfil" : "Soy una marca"}</Link>
             </Button>
             {user && (
-              <Link href="/profile">
-                <User className="h-5 w-5" />
-              </Link>
+              <>
+                <Button onClick={handleProfileClick} size="sm" variant="ghost">
+                  <User className="h-5 w-5" />
+                </Button>
+                <Button onClick={handleSignOut} size="sm" variant="ghost">
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -47,9 +65,14 @@ const Header = () => {
               <Link href={user ? "/profile" : "/signin"}>{user ? "Perfil" : "Soy una marca"}</Link>
             </Button>
             {user && (
-              <Link href="/profile">
-                <User className="h-5 w-5" />
-              </Link>
+              <>
+                <Button onClick={handleProfileClick} variant="ghost">
+                  <User className="h-5 w-5" />
+                </Button>
+                <Button onClick={handleSignOut} variant="ghost">
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </>
             )}
           </nav>
           <Sheet>
@@ -75,10 +98,16 @@ const Header = () => {
             <Home className="h-6 w-6" />
             <span className="text-xs mt-1">Inicio</span>
           </Link>
-          <Link href={user ? "/profile" : "/signup"} className="flex flex-col items-center">
+          <Button onClick={handleProfileClick} variant="ghost" className="flex flex-col items-center">
             <User className="h-6 w-6" />
             <span className="text-xs mt-1">{user ? "Perfil" : "Soy una marca"}</span>
-          </Link>
+          </Button>
+          {user && (
+            <Button onClick={handleSignOut} variant="ghost" className="flex flex-col items-center">
+              <LogOut className="h-6 w-6" />
+              <span className="text-xs mt-1">Salir</span>
+            </Button>
+          )}
         </div>
       </nav>
     </>

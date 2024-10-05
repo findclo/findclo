@@ -35,7 +35,7 @@ export default function SignupPage() {
     if (!result) {
       setError('Error al crear el usuario. Por favor, inténtalo de nuevo.')
     } else {
-      router.push('/')
+        window.location.href = '/';
     }
   }
 
