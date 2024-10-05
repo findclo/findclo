@@ -24,24 +24,45 @@ async function getUserBrand(accessToken: string): Promise<IBrand | null>{
 }
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname === '/') {
-    const authCookie = request.cookies.get('Authorization');
-    const refreshTokenCookie = request.cookies.get('Refresh-Token');
+  const authCookie = request.cookies.get('Authorization');
 
-    if (authCookie?.value) {
+  if (request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/admin-shop')) {
+    if (!authCookie?.value) {
+      // No auth cookie, only redirect if not already on the root path
+      if (request.nextUrl.pathname !== '/') {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+      return NextResponse.next();
+    }
 
-      const user = await getUser(authCookie.value);
-      if(user?.user_type === UserTypeEnum.BRAND_OWNER){
+    const user = await getUser(authCookie.value);
+      
+    if (!user) {
+      // Invalid user, only redirect if not already on the root path
+      if (request.nextUrl.pathname !== '/') {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+      return NextResponse.next();
+    }
+
+    // Allow ADMIN users to access any page
+    if (user.user_type === UserTypeEnum.ADMIN) {
+      return NextResponse.next();
+    }
+
+    if (request.nextUrl.pathname === '/') {
+      if (user.user_type === UserTypeEnum.BRAND_OWNER) {
         const current_user_brand = await getUserBrand(authCookie.value);
         if (!current_user_brand) {
           return NextResponse.redirect(new URL('/admin-shop/start', request.url));
-        }else{
+        } else {
           return NextResponse.redirect(new URL('/admin-shop', request.url));
         }
-      }else{
-        //TODO: this means it is type ADMIN, redirect to /admin
       }
-
+    } else if (request.nextUrl.pathname.startsWith('/admin-shop')) {
+      if (user.user_type !== UserTypeEnum.BRAND_OWNER) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
     }
   }
 
@@ -49,5 +70,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/'],
+  matcher: ['/', '/admin-shop', '/admin-shop/:path*'],
 };
