@@ -2,14 +2,17 @@
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { IUser, UserTypeEnum } from '@/lib/backend/models/interfaces/user.interface';
+import { cn } from "@/lib/utils"; // Make sure you have this utility function
 import { useUser } from '@/providers/ClientUserProvider';
-import { Home, LogOut, Menu, User } from 'lucide-react';
+import { BarChart, CreditCard, Home, LogOut, Menu, Package, ShoppingBag, Store, User } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 const Header = () => {
   const { user, signOut } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleSignOut = () => {
     const confirmSignOut = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
@@ -22,6 +25,36 @@ const Header = () => {
     router.push('/profile');
   };
 
+  console.log(user);
+  const getMenuItems = (user: IUser | null) => {
+    if (!user) return [
+      { label: 'Inicio', href: '/', icon: Home },
+      { label: 'Soy Comerciante', href: '/signin', icon: ShoppingBag }
+    ];
+    
+    if (user.user_type === UserTypeEnum.BRAND_OWNER) {
+      return [
+        { label: 'Productos', href: '/admin-shop/products', icon: Package },
+        { label: 'Perfil', href: '/profile', icon: User },
+        { label: 'Estadísticas', href: '/admin-shop/stats', icon: BarChart },
+        { label: 'Facturación', href: '/admin-shop/billing', icon: CreditCard },
+      ];
+    }
+    
+    if (user.user_type === UserTypeEnum.ADMIN) {
+      return [
+        { label: 'Comercios', href: '/admin/stores', icon: Store },
+        { label: 'Estadísticas', href: '/admin/stats', icon: BarChart },
+        { label: 'Facturación', href: '/admin/billing', icon: CreditCard },
+      ];
+    }
+    
+    return [{ label: 'Inicio', href: '/', icon: Home }];
+  };
+
+  const menuItems = getMenuItems(user);
+  console.log(menuItems);
+
   return (
     <>
       {/* Top header for mobile */}
@@ -30,21 +63,40 @@ const Header = () => {
           <Link href="/" className="text-xl font-bold">
             FindClo
           </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href={user ? "/profile" : "/signup"}>{user ? "Perfil" : "Soy una marca"}</Link>
-            </Button>
-            {user && (
-              <>
-                <Button onClick={handleProfileClick} size="sm" variant="ghost">
-                  <User className="h-5 w-5" />
-                </Button>
-                <Button onClick={handleSignOut} size="sm" variant="ghost">
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </>
-            )}
-          </div>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <nav className="flex flex-col gap-4">
+                {menuItems.map((item, index) => (
+                  <Link key={index} href={item.href} className="flex items-center gap-2 py-2">
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                  </Link>
+                ))}
+                {user && (
+                  <>
+                    <div className="border-t my-2"></div>
+                    <Button 
+                      onClick={handleSignOut} 
+                      variant="outline" 
+                      className={cn(
+                        "w-full justify-start",
+                        "border-red-500 text-red-500 hover:bg-red-50",
+                        "focus:ring-red-500"
+                      )}
+                    >
+                      <LogOut className="h-5 w-5 mr-2" />
+                      Salir
+                    </Button>
+                  </>
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 
@@ -57,59 +109,33 @@ const Header = () => {
           <Link href="/" className="text-xl font-bold">
             FindClo
           </Link>
-          <nav className="hidden md:flex items-center gap-4">
-            <Button asChild>
-              <Link href="/">Inicio</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href={user ? "/profile" : "/signin"}>{user ? "Perfil" : "Soy una marca"}</Link>
-            </Button>
+          <nav className="flex items-center gap-4">
+            {menuItems.map((item, index) => (
+              <Button key={index} asChild variant="ghost">
+                <Link href={item.href} className="flex items-center gap-2">
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </Link>
+              </Button>
+            ))}
             {user && (
-              <>
-                <Button onClick={handleProfileClick} variant="ghost">
-                  <User className="h-5 w-5" />
-                </Button>
-                <Button onClick={handleSignOut} variant="ghost">
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </>
+              <Button 
+                onClick={handleSignOut} 
+                variant="outline" 
+                className={cn(
+                  "border-red-500 text-red-500 hover:bg-red-50",
+                  "focus:ring-red-500"
+                )}
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                Salir
+              </Button>
             )}
           </nav>
-          <Sheet>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <nav className="flex flex-col gap-4">
-                <Link href="/">Inicio</Link>
-                <Link href={user ? "/profile" : "/signin"}>{user ? "Perfil" : "Soy una marca"}</Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
         </div>
       </header>
 
-      {/* Bottom navigation for mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden shadow-2xl z-50">
-        <div className="flex justify-around items-center h-16">
-          <Link href="/" className="flex flex-col items-center">
-            <Home className="h-6 w-6" />
-            <span className="text-xs mt-1">Inicio</span>
-          </Link>
-          <Button onClick={handleProfileClick} variant="ghost" className="flex flex-col items-center">
-            <User className="h-6 w-6" />
-            <span className="text-xs mt-1">{user ? "Perfil" : "Soy una marca"}</span>
-          </Button>
-          {user && (
-            <Button onClick={handleSignOut} variant="ghost" className="flex flex-col items-center">
-              <LogOut className="h-6 w-6" />
-              <span className="text-xs mt-1">Salir</span>
-            </Button>
-          )}
-        </div>
-      </nav>
+      {/* Remove bottom navigation for mobile */}
     </>
   );
 };
