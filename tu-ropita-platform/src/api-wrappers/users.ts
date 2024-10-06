@@ -18,9 +18,9 @@ class PublicUsersApiWrapper {
         return createdUser as IUser;
     }
 
-    async signIn(email: string, password: string): Promise<{ status: string } | null> {
+    async signIn(email: string, password: string): Promise<IUser | null> {
         const token = btoa(`${email}:${password}`);
-        const [error, status] = await fetcher(`${this.USERS_PATH}/me`, {
+        const [error, user] = await fetcher(`${this.USERS_PATH}/me`, {
             method: 'GET',
             headers: {
                 'Authorization': `Basic ${token}`
@@ -32,7 +32,7 @@ class PublicUsersApiWrapper {
             return null;
         }
 
-        return status;
+        return user;
     }
     
 }

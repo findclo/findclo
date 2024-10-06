@@ -53,7 +53,6 @@ const Header = () => {
   };
 
   const menuItems = getMenuItems(user);
-  console.log(menuItems);
 
   return (
     <>

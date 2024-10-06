@@ -19,12 +19,16 @@ export default function SigninPage() {
     const password = formData.get('password') as string
 
     setError(null)
-    const result = await publicUsersApiWrapper.signIn(email, password)
-    console.log(result)
-    if (!result) {
+    const user = await publicUsersApiWrapper.signIn(email, password)
+    if (!user) {
       setError('Credenciales inválidas. Por favor, inténtalo de nuevo.')
     } else {
-      window.location.href = '/'
+        window.location.href = '/'
+        // if (user.user_type === UserTypeEnum.BRAND_OWNER) {
+        //     window.location.href = '/admin-shop/start'
+        // } else {
+        //     window.location.href = '/admin'
+        // }
     }
   }
 

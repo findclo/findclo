@@ -5,70 +5,98 @@ import { IUser, UserTypeEnum } from '@/lib/backend/models/interfaces/user.interf
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-async function getUser(accessToken: string): Promise<IUser | null>{
-  try{
-    const user = await privateUsersApiWrapper.getMe(accessToken);
-    return user;
-  }catch(err){
+async function getUser(accessToken: string): Promise<IUser | null> {
+  try {
+    return await privateUsersApiWrapper.getMe(accessToken);
+  } catch (err) {
     return null;
   }
 }
 
-async function getUserBrand(accessToken: string): Promise<IBrand | null>{
-  try{
-    const brand = await privateBrandsApiWrapper.getMyBrand(accessToken);
-    return brand;
-  }catch(err){
+async function getUserBrand(accessToken: string): Promise<IBrand | null> {
+  try {
+    return await privateBrandsApiWrapper.getMyBrand(accessToken);
+  } catch (err) {
     return null;
   }
 }
+
+const publicRoutes = ['/', '/signin', '/signup', '/product', '/brand', '/search'];
+const adminRoutes = ['/admin', '/admin-shop'];
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
   const authCookie = request.cookies.get('Authorization');
 
-  if (request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/admin-shop')) {
-    if (!authCookie?.value) {
-      // No auth cookie, only redirect if not already on the root path
-      if (request.nextUrl.pathname !== '/') {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
+  // Handle public routes
+  // if (publicRoutes.some(route => pathname.startsWith(route))) {
+  //   return NextResponse.next();
+  // }
+
+  // Handle unauthenticated users
+  if (!authCookie?.value) {
+    if (adminRoutes.some(route => pathname.startsWith(route))) {
+      return NextResponse.redirect(new URL('/signin', request.url));
+    }
+    if (publicRoutes.some(route => pathname.startsWith(route))) {
       return NextResponse.next();
     }
-
-    const user = await getUser(authCookie.value);
-      
-    if (!user) {
-      // Invalid user, only redirect if not already on the root path
-      if (request.nextUrl.pathname !== '/') {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
-      return NextResponse.next();
-    }
-
-    // Allow ADMIN users to access any page
-    if (user.user_type === UserTypeEnum.ADMIN) {
-      return NextResponse.next();
-    }
-
-    if (request.nextUrl.pathname === '/') {
-      if (user.user_type === UserTypeEnum.BRAND_OWNER) {
-        const current_user_brand = await getUserBrand(authCookie.value);
-        if (!current_user_brand) {
-          return NextResponse.redirect(new URL('/admin-shop/start', request.url));
-        } else {
-          return NextResponse.redirect(new URL('/admin-shop', request.url));
-        }
-      }
-    } else if (request.nextUrl.pathname.startsWith('/admin-shop')) {
-      if (user.user_type !== UserTypeEnum.BRAND_OWNER) {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
-    }
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  return NextResponse.next();
+  const user = await getUser(authCookie.value);
+
+  // Handle invalid users
+  if (!user) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  switch (user.user_type) {
+    case UserTypeEnum.BRAND_OWNER:
+      return handleBrandOwner(authCookie.value, pathname, request);
+    case UserTypeEnum.ADMIN:
+      return handleAdmin(pathname, request);
+    default:
+      return NextResponse.redirect(new URL('/', request.url));
+  }
+}
+
+async function handleBrandOwner(accessToken: string, pathname: string, request: NextRequest) {
+  const brand = await getUserBrand(accessToken);
+  
+  if (brand) {
+    if (pathname.startsWith('/admin-shop')) {
+      return NextResponse.next();
+    } else {
+      return NextResponse.redirect(new URL('/admin-shop', request.url));
+    }
+  } else {
+    if (pathname === '/admin-shop/start') {
+      return NextResponse.next();
+    } else {
+      return NextResponse.redirect(new URL('/admin-shop/start', request.url));
+    }
+  }
+}
+
+function handleAdmin(pathname: string, request: NextRequest) {
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin-shop')) {
+    return NextResponse.next();
+  } else {
+    return NextResponse.redirect(new URL('/admin', request.url));
+  }
 }
 
 export const config = {
-  matcher: ['/', '/admin-shop', '/admin-shop/:path*'],
+  matcher: [
+    '/',
+    '/profile',
+    '/signin',
+    '/signup',
+    '/product/:path*',
+    '/brand/:path*',
+    '/search/:path*',
+    '/admin/:path*',
+    '/admin-shop/:path*'
+  ],
 };
