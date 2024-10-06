@@ -43,7 +43,7 @@ const Header = () => {
     
     if (user.user_type === UserTypeEnum.ADMIN) {
       return [
-        { label: 'Comercios', href: '/admin/stores', icon: Store },
+        { label: 'Comercios', href: '/admin', icon: Store },
         { label: 'Estadísticas', href: '/admin/stats', icon: BarChart },
         { label: 'Facturación', href: '/admin/billing', icon: CreditCard },
       ];
