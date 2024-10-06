@@ -114,6 +114,24 @@ export function withAdminPermission(handler: RouteHandler) {
         }
     });
 }
+
+export function withAdminPermissionNoParams(handler: RouteHandler) {
+    return withJwtAuth(async (req: Request) => {
+        try {
+
+            const user = (req as any).user;
+            if (user.user_type !== UserTypeEnum.ADMIN) {
+                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+            }
+
+            return handler(req);
+
+        } catch (err) {
+            return parseErrorResponse(err);
+        }
+    });
+}
+
 export function withProductBrandPermission(handler: RouteHandler) {
     return withJwtAuth(async (req: Request, params:{params: {id:number}}) => {
         try {

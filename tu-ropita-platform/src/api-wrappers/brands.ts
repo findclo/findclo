@@ -51,6 +51,20 @@ class PrivateBrandsApiWrapper {
         return brand as IBrand;
     }
 
+    async listAllBrands(auth_token: string): Promise<IBrand | null> {
+        const [error, brand] = await fetcher(`${BRANDS_PATH}/all`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+        });
+        if (error) {
+            console.error(`Error listing brands: ${error}`);
+            return null;
+        }
+        return brand as IBrand;
+    }
+
 
     async updateBrand(auth_token: string, id: string, updated_brand: IBrandDto): Promise<IBrand | null> {
         const [error, updatedBrand] = await fetcher(`${BRANDS_PATH}/${id}`, {

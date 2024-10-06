@@ -1,9 +1,16 @@
+import AdminBrandList from "@/components/AdminBrandList";
 
-export default function ShopAdminPage() {
+export default function Component() {
+
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Admin Page</h1>
-      </div>
-    );
-  }
-  
+        <div className="container mx-auto p-4">
+            <main>
+                <div className="mb-4 flex justify-between items-center">
+                    <h1 className="text-xl font-bold">Administrar comercios</h1>
+                </div>
+
+                <AdminBrandList/>
+            </main>
+        </div>
+    )
+}
