@@ -9,11 +9,13 @@ import { IBrand } from "@/lib/backend/models/interfaces/brand.interface"
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands"
 import Cookies from "js-cookie"
 import { Input } from "@/components/ui/input"
+import {useRouter} from "next/navigation";
 
 export default function AdminBrandList() {
     const [brands, setBrands] = useState<IBrand[]>([])
     const [loading, setLoading] = useState(false)
     const [search, setSearch] = useState('')
+    const router = useRouter()
 
     useEffect(() => {
         const fetchBrands = async () => {
@@ -85,7 +87,7 @@ export default function AdminBrandList() {
                                         {brand.status === 'ACTIVE' ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
                                         {brand.status === 'ACTIVE' ? 'Pausar' : 'Activar'}
                                     </Button>
-                                    <Button variant="secondary" size="sm">
+                                    <Button variant="secondary" size="sm" onClick={() => router.push(`/admin/brand/${brand.id}`)}>
                                         <Store className="mr-2 h-4 w-4" />
                                         Detalles
                                     </Button>
