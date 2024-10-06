@@ -10,7 +10,7 @@ export interface  IListProductsParams {
     search?:string;
     brandId?:number;
     tagged?: boolean;
-    tagsIds?: string[];
+    tags?: string[];
     productId?: number;
 }
 // TODO ADD (brand, tags, etc.)

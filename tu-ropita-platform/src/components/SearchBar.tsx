@@ -41,9 +41,9 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
         setIsLoading(true);
         const result = await publicProductsApiWrapper.getFilteredProducts(searchQuery.trim(), {});
         if (result && result.appliedTags) {
-          const newTagsIds = result.appliedTags.map(tag => tag.id);
+          const newTagsName = result.appliedTags.map(tag => tag.name);
           const queryParams = new URLSearchParams();
-          newTagsIds.forEach(id => queryParams.append('tagsIds', id.toString()));
+          newTagsName.forEach(name => queryParams.append('tags', name.toString()));
           router.push(`/search?${queryParams.toString()}`);
         }
         setIsLoading(false);
@@ -59,7 +59,7 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
       ? appliedTags.filter(t => t.id !== tag.id)
       : [...appliedTags, tag];
     
-    newTags.forEach(t => queryParams.append('tagsIds', t.id.toString()));
+    newTags.forEach(t => queryParams.append('tags', t.name.toString()));
     router.push(`/search?${queryParams.toString()}`);
   };
 

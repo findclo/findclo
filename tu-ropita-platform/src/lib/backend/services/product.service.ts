@@ -7,7 +7,6 @@ import {IListProductsParams, productRepository} from "@/lib/backend/persistance/
 import {openAIService} from "@/lib/backend/services/openAI.service";
 import {tagsService} from "@/lib/backend/services/tags.service";
 import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
-import {brandRepository} from "@/lib/backend/persistance/brand.repository";
 import {brandService} from "@/lib/backend/services/brand.service";
 
 export interface IProductService {
@@ -48,8 +47,8 @@ class ProductService implements IProductService{
             }
         }
 
-        if(params.tagsIds){
-            tags = await tagsService.getTagsByIds(params.tagsIds);
+        if(params.tags){
+            tags = await tagsService.getTagsByName(params.tags);
         }
 
         if (params.search) {

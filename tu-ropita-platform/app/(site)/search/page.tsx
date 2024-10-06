@@ -7,16 +7,16 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 interface SearchPageProps {
     searchParams: {
         q?: string;
-        tagsIds?: string | string[];
+        tags?: string | string[];
     };
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const query = searchParams.q || '';
-    const tagsIds = Array.isArray(searchParams.tagsIds) 
-        ? searchParams.tagsIds 
-        : searchParams.tagsIds 
-            ? [searchParams.tagsIds] 
+    const tags = Array.isArray(searchParams.tags)
+        ? searchParams.tags
+        : searchParams.tags
+            ? [searchParams.tags]
             : undefined;
 
     let products: IProduct[] = [];
@@ -25,7 +25,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     let tags_available: any[] = [];
 
     try {
-        const result = await publicProductsApiWrapper.getFilteredProducts(query, { tagsIds });
+        const result = await publicProductsApiWrapper.getFilteredProducts(query, { tags:tags });
         if (!result || result.products.length === 0) {
             noProductsFound = true;
         } else {
