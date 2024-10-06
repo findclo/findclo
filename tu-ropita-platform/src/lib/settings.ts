@@ -34,7 +34,7 @@ const globalSettings: GlobalSettings = {
     AUTH:{
         JWT_SECRET: process.env.JWT_SECRET ?? 'secret',
         REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET ?? 'refresh_secret',
-        TOKEN_EXPIRATION_TIME: process.env.TOKEN_EXPIRATION_TIME ?? '1h',
+        TOKEN_EXPIRATION_TIME: process.env.TOKEN_EXPIRATION_TIME ?? '24h',
         REFRESH_TOKEN_EXPIRATION_TIME: process.env.REFRESH_TOKEN_EXPIRATION_TIME ?? '7d',
     },
     BASE_URL: process.env.NODE_ENV === 'production'

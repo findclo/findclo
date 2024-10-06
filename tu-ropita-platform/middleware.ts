@@ -48,7 +48,10 @@ export async function middleware(request: NextRequest) {
 
   // Handle invalid users
   if (!user) {
-    return NextResponse.redirect(new URL('/', request.url));
+    const response = NextResponse.redirect(new URL('/signin', request.url));
+    response.cookies.delete('Authorization');
+    response.cookies.delete('Refresh-Token');
+    return response;
   }
 
   switch (user.user_type) {
