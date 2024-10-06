@@ -1,13 +1,11 @@
 import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
+import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
-import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
 
 const PRODUCTS_PATH : string = `/products`;
 
 class PublicProductsApiWrapper {
-
-
 
     async getProductById(productId: string) {
         const queryParams = new URLSearchParams({ productId });

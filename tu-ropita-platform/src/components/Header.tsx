@@ -71,7 +71,14 @@ const Header = () => {
             <SheetContent side="right">
               <nav className="flex flex-col gap-4">
                 {menuItems.map((item, index) => (
-                  <Link key={index} href={item.href} className="flex items-center gap-2 py-2">
+                  <Link 
+                    key={index} 
+                    href={item.href} 
+                    className={cn(
+                      "flex items-center gap-2 py-2",
+                      pathname === item.href && "font-bold border-b-2 border-primary"
+                    )}
+                  >
                     <item.icon className="h-5 w-5" />
                     {item.label}
                   </Link>
@@ -110,7 +117,14 @@ const Header = () => {
           </Link>
           <nav className="flex items-center gap-4">
             {menuItems.map((item, index) => (
-              <Button key={index} asChild variant="ghost">
+              <Button 
+                key={index} 
+                asChild 
+                variant="ghost"
+                className={cn(
+                  pathname === item.href && "font-bold border-b-2 border-primary"
+                )}
+              >
                 <Link href={item.href} className="flex items-center gap-2">
                   <item.icon className="h-5 w-5" />
                   {item.label}
