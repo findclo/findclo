@@ -7,7 +7,7 @@ export interface IProductCSVUploadParser {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const REQUIRED_HEADERS = ['name', 'price', 'description', 'images'];
+const REQUIRED_HEADERS = ['name', 'price', 'description', 'images','url'];
 const MANDATORY_FIELDS = ['id', 'name', 'price'];
 
 // TODO
@@ -33,6 +33,7 @@ export class ProductCSVUploadParser implements IProductCSVUploadParser {
                             price: parseFloat(row.price),
                             description: row.description as string,
                             images: (row.images ? row.images.split(';') : []) as string [],
+                            url: row.url,
                         }));
                         resolve(products);
                     } catch (error) {

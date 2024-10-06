@@ -8,4 +8,5 @@ export interface IProduct {
     images: string[];
     status?: string;
     brand: IBrand;
+    url: string;
 };

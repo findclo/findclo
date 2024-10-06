@@ -62,11 +62,11 @@ class ProductsRepository implements IProductRepository{
     }
 
     public async bulkProductInsert(products : IProductDTO[], brandId: string): Promise<number>{
-
+        console.log("INSERTING")
         const valuePlaceholders = products.map((_, index) => {
-            const offset = index * 7;
+            const offset = index * 8;
             return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, 
-            to_tsvector('spanish', coalesce($${offset + 6}, '') || ' ' || coalesce($${offset + 7}, ''))
+            to_tsvector('spanish', coalesce($${offset + 6}, '') || ' ' || coalesce($${offset + 7}, '')),$${offset+8}
         )`;
         });
 
@@ -77,11 +77,12 @@ class ProductsRepository implements IProductRepository{
             product.images,
             brandId,
             product.name,
-            product.description
+            product.description,
+            product.url
         ]);
 
         const query = `
-            INSERT INTO Products (name, price, description, images, brand_id, tsv)
+            INSERT INTO Products (name, price, description, images, brand_id, tsv,url)
             VALUES ${valuePlaceholders.join(', ')}
         `;
 
@@ -193,6 +194,7 @@ class ProductsRepository implements IProductRepository{
             description: row.description,
             images: row.images,
             status: row.status,
+            url: row.url,
             brand: {
                 id: row.brand_id,
                 name: '',

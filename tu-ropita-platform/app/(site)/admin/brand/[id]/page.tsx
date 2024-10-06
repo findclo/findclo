@@ -125,7 +125,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                             <TableCell>{product.description}</TableCell>
                                             <TableCell>
                                                 <a
-                                                    href='http://google.com'
+                                                    href={product.url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                 >

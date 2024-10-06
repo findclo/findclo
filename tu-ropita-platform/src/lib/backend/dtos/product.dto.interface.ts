@@ -3,4 +3,5 @@ export interface IProductDTO {
     price: number;
     description: string;
     images: string[];
+    url: string;
 }
