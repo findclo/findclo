@@ -22,19 +22,24 @@ class ProductsTagsService implements IProductsTagsService {
         for (const prod of pendingProductsToTag) {
             if(prod.description) {
                 // TODO Agregar nombre, marca etc al prompt
-                const aiResponse : IAITagsResponse = await openAIService.runAssistant(prod.description);
-                console.log(`GPT respose ${JSON.stringify(aiResponse)}`)
-                if (aiResponse) {
+                const toTag = `brand:{}`
+                openAIService.runAssistant(prod.description).then(
+                    aiResponse =>{
+                        if (aiResponse) {
+                            console.log(`GPT respose ${JSON.stringify(aiResponse)}`)
 
-                    for (const [categoryName, tags] of Object.entries(aiResponse)) {
-                        if (tags && tags.length > 0) {
-                            await this.tagProductByCategoryName(tags, categoryName, prod.id);
+                            for (const [categoryName, tags] of Object.entries(aiResponse)) {
+                                if (tags && tags.length > 0) {
+                                    this.tagProductByCategoryName(tags, categoryName, prod.id);
+                                }
+                            }
+
+                            productRepository.markProductAsTagged(prod.id);
+                            console.log(aiResponse)
                         }
                     }
+                );
 
-                    productRepository.markProductAsTagged(prod.id);
-                    console.log(aiResponse)
-                }
             }
         }
 
