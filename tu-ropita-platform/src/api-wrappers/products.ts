@@ -49,15 +49,14 @@ class PrivateProductsApiWrapper {
 // TODO IMPLEMENT AND TRY
 
     async deleteProduct(auth_token: string, id: string): Promise<void> {
-        const response = await fetch(`${PRODUCTS_PATH}/${id}`, {
+        const [error, _] = await fetcher(`${PRODUCTS_PATH}/${id}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${auth_token}`
             }
         });
 
-        if (!response.ok) {
-            const error = await response.json();
+        if (error) {
             console.error(`Error deleting product with id ${id}:`, error);
             // TODO how do we handle?
         }
@@ -103,6 +102,26 @@ class PrivateProductsApiWrapper {
 
         const updatedProduct = await response.json();
         return updatedProduct as IProduct;
+    }
+
+    async uploadProductsFromCSV(auth_token: string, brandId: string, file: File): Promise<boolean> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const [error, _] = await fetcher(`/brands/${brandId}/products`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+            body: formData
+        });
+
+        if (error) {
+            console.error(`Error uploading products CSV for brand ${brandId}:`, error);
+            return false;
+        }
+
+        return true;
     }
     
     

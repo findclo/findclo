@@ -1,7 +1,8 @@
 "use client"
 
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands"
-import { publicProductsApiWrapper } from "@/api-wrappers/products"
+import { privateProductsApiWrapper, publicProductsApiWrapper } from "@/api-wrappers/products"
+import toast from "@/components/toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -13,18 +14,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface"
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface"
 import Cookies from "js-cookie"
-import { Download, Edit, FileDown, Plus, Trash2, Upload } from "lucide-react"
+import { Download, Edit, FileDown, Loader2, Plus, Trash2, Upload } from "lucide-react"
 import Image from 'next/image'
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 export default function ShopAdminProductsPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
   const [products, setProducts] = useState<IProduct[]>([]);
   const [newProduct, setNewProduct] = useState<Partial<IProduct>>({ name: "", price: 0, images: [], description: "" });
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const authToken = Cookies.get('Authorization')!;
 
   const fetchBrandDetails = useCallback(async () => {
-    const brandData = await privateBrandsApiWrapper.getMyBrand(Cookies.get('Authorization')!);
+    const brandData = await privateBrandsApiWrapper.getMyBrand(authToken);
     setBrand(brandData);
     return brandData;
   }, []);
@@ -47,7 +50,11 @@ export default function ShopAdminProductsPage() {
   }, [fetchBrandDetails, fetchProducts]);
 
   if (!brand) {
-    return <div>Cargando productos...</div>
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    )
   }
 
   const handleAddProduct = () => {
@@ -56,17 +63,81 @@ export default function ShopAdminProductsPage() {
     setIsAddProductOpen(false)
   }
 
-  const handleDeleteProduct = (id: number) => {
-    setProducts(products.filter(product => product.id !== id))
+  const handleDeleteProduct = async (id: string) => {
+    const isConfirmed = window.confirm(`¿Estás seguro de que quieres eliminar el producto "${products.find(p => p.id.toString() === id)?.name}" de tu tienda?`);
+    
+    if (isConfirmed) {
+      try {
+        await privateProductsApiWrapper.deleteProduct(authToken, id);
+      toast({ type: 'success', message: "Producto eliminado correctamente." });
+      await fetchProducts(brand.id.toString());
+    } catch (error) {
+      toast({ type: 'error', message: "Error al eliminar el producto. Intente nuevamente." });
+      }
+    }
   }
 
   const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," + 
-      "ID,Name,Price,Stock,Image,Description\n" +
-      products.map(p => `${p.id},${p.name},${p.price},${p.images[0]},${p.description}`).join("\n")
-    const encodedUri = encodeURI(csvContent)
-    window.open(encodedUri)
+    const csvHeader = "name,price,description,images,url\n";
+    const csvRows = products.map(product => 
+      `"${product.name}",${product.price},"${product.description}","${product.images.join(';')}","${product.url || ''}"`
+    ).join("\n");
+    
+    const csvContent = csvHeader + csvRows;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `FINDCLO_${brand.name}_productos_exportados.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !brand) {
+        toast({ type: 'error', message: "No se seleccionó ningún archivo o no se encontró la marca." });
+      return
+    }
+
+    const authToken = Cookies.get('Authorization')
+    if (!authToken) {
+      toast({ type: 'error', message: "No se encontró el token de autorización." });
+      return
+    }
+
+    try {
+      const result = await privateProductsApiWrapper.uploadProductsFromCSV(authToken, brand.id.toString(), file)
+      if (result) {
+        toast({ type: 'success', message: "Los productos se importaron correctamente." });
+        await fetchProducts(brand.id.toString())
+      } else {
+        toast({ type: 'error', message: "Hubo un problema al importar los productos." });
+      }
+    } catch (error) {
+      toast({ type: 'error', message: "Ocurrió un error al importar los productos." });
+    }
+  }
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateContent = `data:text/csv;charset=utf-8,name,price,description,images,url
+Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de botones y múltiples bolsillos","https://images.unsplash.com/photo-1543076447-215ad9ba6923?w=800,https://images.unsplash.com/photo-1578681994506-b8f463449011?w=800",https://example.com/products/denim-jacket
+`
+    const encodedUri = encodeURI(templateContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", "FINDCLO_plantilla_importacion_productos.csv")
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link) 
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -100,10 +171,20 @@ export default function ShopAdminProductsPage() {
             <Button onClick={handleAddProduct}>Añadir Producto</Button>
           </DialogContent>
         </Dialog>
-        <div className="space-x-2">
-          <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Importar</Button>
-          <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Descargar Plantilla</Button>
-          <Button variant="outline" onClick={handleExport}><FileDown className="mr-2 h-4 w-4" /> Exportar</Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleDownloadTemplate}>
+            <Download className="mr-2 h-4 w-4" /> Descargar Plantilla
+          </Button>
+          <Button variant="outline" onClick={triggerFileInput}>
+            <Upload className="mr-2 h-4 w-4" /> Importar
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleImport}
+            style={{ display: 'none' }}
+          />
         </div>
       </div>
       <Card className="mt-6">
@@ -118,7 +199,7 @@ export default function ShopAdminProductsPage() {
                   <TableHead className="sticky top-0 bg-background">Imagen</TableHead>
                   <TableHead className="sticky top-0 bg-background">Nombre</TableHead>
                   <TableHead className="sticky top-0 bg-background">Precio</TableHead>
-                  <TableHead className="sticky top-0 bg-background">Stock</TableHead>
+                  <TableHead className="sticky top-0 bg-background">Descripción</TableHead>
                   <TableHead className="sticky top-0 bg-background">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -137,6 +218,7 @@ export default function ShopAdminProductsPage() {
                       </TableCell>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell className="max-w-xs truncate">{product.description}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Dialog>
@@ -167,21 +249,35 @@ export default function ShopAdminProductsPage() {
                               </div>
                             </DialogContent>
                           </Dialog>
-                          <Button variant="outline" size="sm" onClick={() => handleDeleteProduct(product.id)}><Trash2 className="h-4 w-4" /></Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteProduct(product.id.toString())}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
+                  <>
                   <TableRow>
-                    <TableCell colSpan={5}>No hay productos disponibles</TableCell>
+                    <TableCell colSpan={5} className="h-24">
+                      <div className="flex flex-col justify-center items-center h-full gap-4 mt-32">
+                        No hay productos disponibles.
+                        <Button onClick={() => setIsAddProductOpen(true)}>¡Añadir un producto!</Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
+                  </>
                 )}
               </TableBody>
             </Table>
           </ScrollArea>
         </CardContent>
       </Card>
+      <div className="flex justify-end mt-4 space-x-2">
+        <Button variant="outline" onClick={handleExport}>
+          <FileDown className="mr-2 h-4 w-4" /> Exportar
+        </Button>
+      </div>
     </div>
   )
 }

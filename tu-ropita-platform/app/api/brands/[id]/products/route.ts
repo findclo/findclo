@@ -1,5 +1,5 @@
-import {productService} from "@/lib/backend/services/product.service";
-import {withBrandPermission} from "@/lib/routes_middlewares";
+import { productService } from "@/lib/backend/services/product.service";
+import { withBrandPermission } from "@/lib/routes_middlewares";
 
 export const POST = withBrandPermission(async(req: Request, {params}: {params: {id:string}}) =>{
     try{
@@ -14,7 +14,7 @@ export const POST = withBrandPermission(async(req: Request, {params}: {params: {
         await productService.uploadProductsFromCSV(file,params.id);
 
 
-        return new Response(null, {status: 200});
+        return new Response(null, {status: 204});
     } catch (error: any){
         console.log(error)
         return new Response(null, { status: error.statusCode? error.statusCode : 500 });

@@ -9,7 +9,6 @@ export const fetcher = async (path: string, options: RequestInit = {}): Promise<
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
         }
-        const data = await res.json();
 
         // Extract tokens from headers
         const token = res.headers.get('Authorization');
@@ -22,6 +21,11 @@ export const fetcher = async (path: string, options: RequestInit = {}): Promise<
             Cookies.set('Refresh-Token', refreshToken, { secure: true, sameSite: 'strict' });
         }
 
+        if(res.status === 204){
+            return [null, { status: 204 }];
+        }
+
+        const data = await res.json();
         return [null, data];
     } catch (error) {
         return [error instanceof Error ? error : new Error('An unknown error occurred'), null];

@@ -1,8 +1,8 @@
-import {getProductDtoFromBody, parseErrorResponse} from "@/lib/utils";
-import {productService} from "@/lib/backend/services/product.service";
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
-import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
-import { withProductBrandPermission} from "@/lib/routes_middlewares";
+import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { productService } from "@/lib/backend/services/product.service";
+import { withProductBrandPermission } from "@/lib/routes_middlewares";
+import { getProductDtoFromBody, parseErrorResponse } from "@/lib/utils";
 
 
 export async function GET(req: Request, {params}: {params: {id:string}}) {
