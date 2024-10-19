@@ -8,6 +8,7 @@ import { IListProductsParams, productRepository } from "@/lib/backend/persistanc
 import { brandService } from "@/lib/backend/services/brand.service";
 import { openAIService } from "@/lib/backend/services/openAI.service";
 import { tagsService } from "@/lib/backend/services/tags.service";
+import { ConflictException } from "../exceptions/ConflictException";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
@@ -22,10 +23,12 @@ class ProductService implements IProductService{
 
     private parser: IProductCSVUploadParser = new ProductCSVUploadParser();
 
-    public async getProductById(productId: number): Promise<IProduct> {
+    public async getProductById(productId: number, userQuery?: boolean): Promise<IProduct> {
         const product = await productRepository.getProductById(productId);
         if(!product){
             throw new ProductNotFoundException(productId);
+        }else if(product.status === 'PAUSED' && userQuery){
+            throw ConflictException.createFromMessage(`Product ${productId} is paused. [productId=${productId}]`);
         }
         product.brand = await brandService.getBrandById(product.brand.id);
 

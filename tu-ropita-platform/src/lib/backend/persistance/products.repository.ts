@@ -1,10 +1,10 @@
 import pool from "@/lib/backend/conf/db.connections";
-import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
-import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
-import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
-import {Pool, QueryResult} from "pg";
-import {BrandStatus} from "@/lib/backend/models/interfaces/brand.interface";
+import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
+import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
+import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
+import { Pool, QueryResult } from "pg";
 
 export interface  IListProductsParams {
     search?:string;
@@ -12,6 +12,7 @@ export interface  IListProductsParams {
     tagged?: boolean;
     tags?: string[];
     productId?: number;
+    userQuery?: boolean;
 }
 // TODO ADD (brand, tags, etc.)
 
@@ -252,9 +253,14 @@ class ProductsRepository implements IProductRepository{
             values.push(params.brandId);
         }
 
-        if(params.tagged!= undefined && !params.tagged){
+        if (params.tagged != undefined && !params.tagged) {
             conditions.push(`p.has_tags_generated = $${values.length + 1}`);
             values.push(params.tagged);
+        }
+
+        // Add condition to exclude PAUSED products when userQuery is true
+        if (params.userQuery) {
+            conditions.push(`p.status != 'PAUSED'`);
         }
 
         if (conditions.length > 0) {

@@ -141,7 +141,7 @@ export function withProductBrandPermission(handler: RouteHandler) {
 
             const user = (req as any).user;
             const productId = params.params.id;
-            const product = await productService.getProductById(productId);
+            const product = await productService.getProductById(productId, false);
 
             const hasPermission = await userService.userBelongsToBrand(user.id, product.brand.id);
             if (user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {

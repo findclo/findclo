@@ -140,7 +140,21 @@ class PrivateProductsApiWrapper {
         return created_product as IProduct;
     }
     
-    
+    async getProductsOfBrand(auth_token: string, brandId: string): Promise<IListProductResponseDto | null> {
+        const [error, products] = await fetcher(`/brands/${brandId}/products`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`
+            }
+        });
+
+        if (error) {
+            console.error(`Error fetching products of brand:`, error);
+            return null;
+        }
+
+        return products as IListProductResponseDto;
+    }
 
 }
 

@@ -14,6 +14,7 @@ export async function GET(req: Request) {
     };
 
     try {
+        listProductParams.userQuery = true;
         const products : IListProductResponseDto = await productService.listProducts(listProductParams);
         return new Response(JSON.stringify(products), {
             status: 200,

@@ -31,10 +31,9 @@ export const POST = withBrandPermission(async(req: Request, {params}: {params: {
     }
 });
 
-export async function GET(req: Request, {params}: {params: {id:string}}) {
+export const GET = withBrandPermission(async(req: Request, {params}: {params: {id:string}}) => {
     try{
         const products = await productService.listProducts({brandId: parseInt(params.id)});
-
 
         return new Response(JSON.stringify(products), {
             status: 200,
@@ -51,4 +50,4 @@ export async function GET(req: Request, {params}: {params: {id:string}}) {
             }
         });
     }
-}
+});

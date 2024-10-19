@@ -1,7 +1,7 @@
 "use client"
 
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands"
-import { privateProductsApiWrapper, publicProductsApiWrapper } from "@/api-wrappers/products"
+import { privateProductsApiWrapper } from "@/api-wrappers/products"
 import toast from "@/components/toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -36,7 +36,7 @@ export default function ShopAdminProductsPage() {
   }, []);
 
   const fetchProducts = useCallback(async (brandId: string) => {
-    const productsData = await publicProductsApiWrapper.getProductsByBrandId(brandId);
+    const productsData = await privateProductsApiWrapper.getProductsOfBrand(authToken, brandId);
     if (productsData) {
       setProducts(productsData.products);
     }
