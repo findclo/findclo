@@ -2,7 +2,7 @@ import pool from "@/lib/backend/conf/db.connections";
 import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
 import { BrandAlreadyExistsException } from "@/lib/backend/exceptions/brandAlreadyExists.exception";
 import { BrandNotFoundException } from "@/lib/backend/exceptions/brandNotFound.exception";
-import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import {BrandStatus, IBrand} from "@/lib/backend/models/interfaces/brand.interface";
 import { Pool } from "pg";
 import { NotFoundException } from "../exceptions/NotFoundException";
 
@@ -12,7 +12,7 @@ export interface IBrandRepository {
     createBrand(brand: IBrandDto): Promise<IBrand>;
     updateBrand(id: number,brand: IBrandDto): Promise<IBrand>;
     deleteBrand(id: number): Promise<boolean>;
-    changeBrandStatus(id: number, status: string): Promise<boolean>;
+    changeBrandStatus(id: number, status: BrandStatus): Promise<boolean>;
     getBrandOwnersIds(brandId: number): Promise<number[]>;
     getBrandsOfUser(userId: number): Promise<IBrand[]>;
 }
@@ -81,7 +81,7 @@ class BrandRepository implements IBrandRepository {
         }
     }
 
-    async changeBrandStatus(id: number, status: string): Promise<boolean>{
+    async changeBrandStatus(id: number, status: BrandStatus): Promise<boolean>{
         const query = `
         UPDATE Brands
         SET status = $1

@@ -1,9 +1,10 @@
 import pool from "@/lib/backend/conf/db.connections";
-import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
-import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
-import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { Pool, QueryResult } from "pg";
+import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
+import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
+import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
+import {Pool, QueryResult} from "pg";
+import {BrandStatus} from "@/lib/backend/models/interfaces/brand.interface";
 
 export interface  IListProductsParams {
     search?:string;
@@ -206,14 +207,15 @@ class ProductsRepository implements IProductRepository{
             name: row.name,
             price: parseFloat(row.price),
             description: row.description,
-            images: row.images,
+            images: row.images[0].split(';'),
             status: row.status,
             url: row.url,
             brand: {
                 id: row.brand_id,
                 name: '',
                 image: '',
-                websiteUrl: ''
+                websiteUrl: '',
+                status: BrandStatus.ACTIVE // this is to avoid tslint checks
             }
         }));
     }

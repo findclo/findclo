@@ -1,7 +1,8 @@
-import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import {BrandStatus, IBrand} from "@/lib/backend/models/interfaces/brand.interface";
 import { brandRepository } from "@/lib/backend/persistance/brand.repository";
 import {IBrandDto} from "@/lib/backend/dtos/brand.dto.interface";
 import {BrandNotFoundException} from "@/lib/backend/exceptions/brandNotFound.exception";
+import {BadRequestException} from "@/lib/backend/exceptions/BadRequestException";
 
 export interface IBrandService {
     getBrandById(brandId:number): Promise<IBrand>;
@@ -39,7 +40,11 @@ class BrandService implements IBrandService {
     }
 
     async changeBrandStatus(id: number, status: string): Promise<IBrand> {
-        const changed =  await brandRepository.changeBrandStatus(id,status);
+        const statusEnum = BrandStatus[status as keyof typeof BrandStatus];
+        if (!statusEnum) {
+            throw new BadRequestException(`Invalid status: ${status} please use one of ${Object.keys(BrandStatus).join(', ')}`);
+        }
+        const changed =  await brandRepository.changeBrandStatus(id,statusEnum);
         if (changed){
             return this.getBrandById(id);
         }

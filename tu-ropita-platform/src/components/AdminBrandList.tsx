@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Pause, Play, Store } from "lucide-react"
 import Image from "next/image"
-import { IBrand } from "@/lib/backend/models/interfaces/brand.interface"
+import {BrandStatus, IBrand} from "@/lib/backend/models/interfaces/brand.interface"
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands"
 import Cookies from "js-cookie"
 import { Input } from "@/components/ui/input"
@@ -37,10 +37,17 @@ export default function AdminBrandList() {
         fetchBrands()
     }, [])
 
-    const toggleShopStatus = (id: number) => {
-        setBrands(brands.map(brand =>
-            brand.id === id ? { ...brand, status: brand.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE' } : brand
-        ))
+    const toggleShopStatus = async (id: number) => {
+        const token = Cookies.get('Authorization')!;
+        const brand = brands.find(brand => brand.id === id);
+        if (!brand) return;
+
+        const newStatus = brand.status === BrandStatus.ACTIVE ? BrandStatus.PAUSED : BrandStatus.ACTIVE;
+        const updatedBrand = await privateBrandsApiWrapper.changeBrandStatus(token, id.toString(), newStatus);
+
+        if (updatedBrand) {
+            setBrands(brands.map(b => b.id === id ? { ...b, status: newStatus } : b));
+        }
     }
 
     const filteredBrands = brands.filter((brand) =>
