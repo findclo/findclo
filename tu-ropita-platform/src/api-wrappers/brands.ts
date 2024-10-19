@@ -1,7 +1,7 @@
 import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
+import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
-import {IListProductResponseDto} from "@/lib/backend/dtos/listProductResponse.dto.interface";
 
 const BRANDS_PATH : string = `/brands`;
 const ADMIN_BRANDS_PATH : string = `/admin/brands`;
@@ -69,6 +69,8 @@ class PrivateBrandsApiWrapper {
 
 
     async updateBrand(auth_token: string, id: string, updated_brand: IBrandDto): Promise<IBrand | null> {
+        delete (updated_brand as any).status;
+        delete (updated_brand as any).id;
         const [error, updatedBrand] = await fetcher(`${BRANDS_PATH}/${id}`, {
             method: 'PUT',
             headers: {

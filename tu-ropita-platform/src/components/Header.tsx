@@ -35,7 +35,7 @@ const Header = () => {
     if (user.user_type === UserTypeEnum.BRAND_OWNER) {
       return [
         { label: 'Productos', href: '/admin-shop/products', icon: Package },
-        { label: 'Perfil', href: '/profile', icon: User },
+        { label: 'Perfil', href: '/admin-shop/profile', icon: User },
         { label: 'Estadísticas', href: '/admin-shop/stats', icon: BarChart },
         { label: 'Facturación', href: '/admin-shop/billing', icon: CreditCard },
       ];
