@@ -1,0 +1,10 @@
+ALTER TABLE Brands
+    ALTER COLUMN status DROP DEFAULT;
+
+ALTER TABLE Brands
+    ALTER COLUMN status SET DATA TYPE VARCHAR(128) USING status::text;
+
+DROP TYPE IF EXISTS brand_status_enum;
+
+ALTER TABLE Brands
+    ALTER COLUMN status SET DEFAULT 'ACTIVE';
