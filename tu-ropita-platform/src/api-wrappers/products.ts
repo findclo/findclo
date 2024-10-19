@@ -63,7 +63,7 @@ class PrivateProductsApiWrapper {
     }
 
     async updateProduct(auth_token: string, id: string, updated_product: IProductDTO): Promise<IProduct | null> {
-        const [error,response] = await fetcher(`${PRODUCTS_PATH}/${id}`, {
+        const [error, updated_product_response] = await fetcher(`${PRODUCTS_PATH}/${id}`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -72,14 +72,13 @@ class PrivateProductsApiWrapper {
             body: JSON.stringify(updated_product)
         });
 
-        if (!response.ok) {
-            const error = await response.json();
+        if (error) {
             console.error(`Error updating product with id ${id}:`, error);
             // TODO how do we handle?
             return null;
         }
 
-        const updatedProduct = await response.json();
+        const updatedProduct = await updated_product_response;
         return updatedProduct as IProduct;
     }
 

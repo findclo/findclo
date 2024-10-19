@@ -42,10 +42,12 @@ export default async function ProductPage({ params }: { params: { id: string } }
           <p className="text-2xl font-bold mb-4">${product.price}</p>
           <p className="mb-6">{product.description}</p>
           <div className="group">
-            <button className="w-full bg-black text-white py-3 px-4 rounded mb-4 flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-green-600 hover:scale-105 hover:shadow-lg">
-              <ShoppingCart className="mr-2 transition-transform duration-300 ease-in-out group-hover:rotate-12" size={20} />
-              Comprar
-            </button>
+            <a href={product.url} target="_blank" rel="noopener noreferrer">
+              <button className="w-full bg-black text-white py-3 px-4 rounded mb-4 flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-green-600 hover:scale-105 hover:shadow-lg">
+                <ShoppingCart className="mr-2 transition-transform duration-300 ease-in-out group-hover:rotate-12" size={20} />
+                Comprar
+              </button>
+            </a>
           </div>
 
           <BrandLink
@@ -55,7 +57,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
           />
 
           <div className="flex justify-left mt-4">
-            <ShareButtons productId={product.id} productName={product.name} />
+            <ShareButtons productId={product.id.toString()} productName={product.name} />
           </div>
         </div>
       </div>

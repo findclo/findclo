@@ -1,10 +1,9 @@
 import pool from "@/lib/backend/conf/db.connections";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
+import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import {Pool, QueryResult} from "pg";
-import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
-import {BrandNotFoundException} from "@/lib/backend/exceptions/brandNotFound.exception";
+import { Pool, QueryResult } from "pg";
 
 export interface  IListProductsParams {
     search?:string;
@@ -147,13 +146,14 @@ class ProductsRepository implements IProductRepository{
                 price = $2, 
                 description = $3, 
                 images = $4,
+                url = $5,
                 has_tags_generated = false,
                 tsv = to_tsvector('spanish', coalesce($1, '') || ' ' || coalesce($3, ''))
-            WHERE id = $5
+            WHERE id = $6
             RETURNING *
         `;
 
-        const values = [product.name, product.price, product.description, product.images, id];
+        const values = [product.name, product.price, product.description, product.images, product.url, id];
         return this.executeUpdate(query, values);
     }
 

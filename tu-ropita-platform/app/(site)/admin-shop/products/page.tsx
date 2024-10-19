@@ -25,6 +25,8 @@ export default function ShopAdminProductsPage() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const authToken = Cookies.get('Authorization')!;
+  const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const fetchBrandDetails = useCallback(async () => {
     const brandData = await privateBrandsApiWrapper.getMyBrand(authToken);
@@ -128,7 +130,7 @@ export default function ShopAdminProductsPage() {
 
   const handleDownloadTemplate = () => {
     const templateContent = `data:text/csv;charset=utf-8,name,price,description,images,url
-Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de botones y múltiples bolsillos","https://images.unsplash.com/photo-1543076447-215ad9ba6923?w=800,https://images.unsplash.com/photo-1578681994506-b8f463449011?w=800",https://example.com/products/denim-jacket
+Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de botones y múltiples bolsillos","https://images.unsplash.com/photo-1543076447-215ad9ba6923?w=800; https://images.unsplash.com/photo-1578681994506-b8f463449011?w=800",https://example.com/products/denim-jacket
 `
     const encodedUri = encodeURI(templateContent)
     const link = document.createElement("a")
@@ -137,6 +139,35 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link) 
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!editingProduct) return;
+
+    try {
+      const updatedProduct = await privateProductsApiWrapper.updateProduct(
+        authToken,
+        editingProduct.id.toString(),
+        {
+          name: editingProduct.name,
+          price: editingProduct.price,
+          description: editingProduct.description,
+          images: editingProduct.images,
+          url: editingProduct.url,
+        }
+      );
+
+      if (updatedProduct) {
+        toast({ type: 'success', message: "Producto actualizado correctamente." });
+        setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+        setEditingProduct(null);
+        setIsEditDialogOpen(false);
+      } else {
+        toast({ type: 'error', message: "Error al actualizar el producto. Intente nuevamente." });
+      }
+    } catch (error) {
+      toast({ type: 'error', message: "Ocurrió un error al actualizar el producto." });
+    }
   };
 
   return (
@@ -221,32 +252,73 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
                       <TableCell className="max-w-xs truncate">{product.description}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Dialog>
+                          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="sm"><Edit className="h-4 w-4" /></Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  setEditingProduct(product);
+                                  setIsEditDialogOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
-                                <DialogTitle>Detalles del Producto</DialogTitle>
+                                <DialogTitle>Editar Producto</DialogTitle>
                               </DialogHeader>
                               <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label className="text-right">Nombre</Label>
-                                  <div className="col-span-3">{product.name}</div>
+                                  <Label htmlFor="edit-name" className="text-right">Nombre</Label>
+                                  <Input
+                                    id="edit-name"
+                                    value={editingProduct?.name || ''}
+                                    onChange={(e) => setEditingProduct(prev => ({ ...prev!, name: e.target.value }))}
+                                    className="col-span-3"
+                                  />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label className="text-right">Precio</Label>
-                                  <div className="col-span-3">${product.price.toFixed(2)}</div>
+                                  <Label htmlFor="edit-price" className="text-right">Precio</Label>
+                                  <Input
+                                    id="edit-price"
+                                    type="number"
+                                    value={editingProduct?.price || 0}
+                                    onChange={(e) => setEditingProduct(prev => ({ ...prev!, price: parseFloat(e.target.value) }))}
+                                    className="col-span-3"
+                                  />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label className="text-right">Imagen</Label>
-                                  <Image src={product.images[0]} alt={product.name} className="col-span-3 w-full h-40 object-cover" />
+                                  <Label htmlFor="edit-images" className="text-right">URLs de Imágenes</Label>
+                                  <Input
+                                    id="edit-images"
+                                    value={editingProduct?.images.join('; ') || ''}
+                                    onChange={(e) => setEditingProduct(prev => ({ ...prev!, images: e.target.value.split(';').map(url => url.trim()) }))}
+                                    className="col-span-3"
+                                    placeholder="URL1; URL2; URL3"
+                                  />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label className="text-right">Descripción</Label>
-                                  <div className="col-span-3">{product.description}</div>
+                                  <Label htmlFor="edit-url" className="text-right">URL del Producto</Label>
+                                  <Input
+                                    id="edit-url"
+                                    value={editingProduct?.url || ''}
+                                    onChange={(e) => setEditingProduct(prev => ({ ...prev!, url: e.target.value }))}
+                                    className="col-span-3"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="edit-description" className="text-right">Descripción</Label>
+                                  <Textarea
+                                    id="edit-description"
+                                    value={editingProduct?.description || ''}
+                                    onChange={(e) => setEditingProduct(prev => ({ ...prev!, description: e.target.value }))}
+                                    className="col-span-3"
+                                  />
                                 </div>
                               </div>
+                              <Button onClick={handleUpdateProduct}>Actualizar Producto</Button>
                             </DialogContent>
                           </Dialog>
                           <Button variant="destructive" size="sm" onClick={() => handleDeleteProduct(product.id.toString())}>

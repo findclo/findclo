@@ -1,12 +1,11 @@
 import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
+import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import Bluebird from "bluebird";
 import { type ClassValue, clsx } from "clsx";
 import Crypto from "crypto";
 import { twMerge } from "tailwind-merge";
 import { CreateUserDto } from "./backend/dtos/user.dto.interface";
 import { BadRequestException } from "./backend/exceptions/BadRequestException";
-import {InvalidProductException} from "@/lib/backend/exceptions/invalidProduct.exception";
-import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -75,7 +74,7 @@ export async function getUserDtoFromBody(req: Request): Promise<CreateUserDto> {
 
 
 export async function getProductDtoFromBody(req: Request) : Promise<IProductDTO>{
-  return getDtoFromBody<IProductDTO>(req, ['name', 'price', 'description','images']);
+  return getDtoFromBody<IProductDTO>(req, ['name', 'price', 'description','images', 'url']);
 }
 
 export async function getUpdateStatusFromBody(req: Request) : Promise<{ status: string }>{
