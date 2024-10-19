@@ -252,7 +252,7 @@ class ProductsRepository implements IProductRepository{
             values.push(params.brandId);
         }
 
-        if(params.tagged){
+        if(params.tagged!= undefined && !params.tagged){
             conditions.push(`p.has_tags_generated = $${values.length + 1}`);
             values.push(params.tagged);
         }
