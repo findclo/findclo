@@ -10,6 +10,7 @@ import { privateBrandsApiWrapper } from "@/api-wrappers/brands"
 import Cookies from "js-cookie"
 import { Input } from "@/components/ui/input"
 import {useRouter} from "next/navigation";
+import toast from "@/components/toast";
 
 export default function AdminBrandList() {
     const [brands, setBrands] = useState<IBrand[]>([])
@@ -47,6 +48,15 @@ export default function AdminBrandList() {
 
         if (updatedBrand) {
             setBrands(brands.map(b => b.id === id ? { ...b, status: newStatus } : b));
+            toast({
+                type: 'success',
+                message: `Comercio ${newStatus === BrandStatus.ACTIVE ? 'activado' : 'pausado'} correctamente`
+            });
+        }else{
+            toast({
+                type: 'error',
+                message: `Hubo un error al ${newStatus === BrandStatus.ACTIVE ? 'actir' : 'pausar'} el comercio. Intente nuevamente`
+            });
         }
     }
 
