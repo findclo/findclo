@@ -36,7 +36,7 @@ export default function ShopAdminProductsPage() {
   }, []);
 
   const fetchProducts = useCallback(async (brandId: string) => {
-    const productsData = await privateProductsApiWrapper.getProductsOfBrand(authToken, brandId);
+    const productsData = await privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(authToken, brandId);
     if (productsData) {
       setProducts(productsData.products);
     }

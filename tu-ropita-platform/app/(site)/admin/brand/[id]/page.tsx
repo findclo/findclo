@@ -27,7 +27,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
         }
 
         async function fetchProducts() {
-            const productsData = await privateBrandsApiWrapper.getBrandProductsAsAdmin(token,id);
+            const productsData = await privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(token,id);
             if (productsData) {
                 setProducts(productsData.products);
             }

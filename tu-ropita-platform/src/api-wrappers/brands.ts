@@ -112,7 +112,7 @@ class PrivateBrandsApiWrapper {
         return updatedBrand as IBrand;
     }
 
-    async getBrandProductsAsAdmin(auth_token: string,brandId: string): Promise<IListProductResponseDto | null> {
+    async getBrandProductsAsPrivilegedUser(auth_token: string, brandId: string): Promise<IListProductResponseDto | null> {
         const [error, products] = await fetcher(`${ADMIN_BRANDS_PATH}/${brandId}/products`,{
             method: 'GET',
             headers: {

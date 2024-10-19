@@ -1,9 +1,9 @@
 import { productService } from "@/lib/backend/services/product.service";
-import {withAdminPermission} from "@/lib/routes_middlewares";
+import {withBrandPermission} from "@/lib/routes_middlewares";
 
 
 
-export const GET = withAdminPermission(async(req: Request, {params}: {params: {id:string}}) => {
+export const GET = withBrandPermission(async(req: Request, {params}: {params: {id:string}}) => {
     try{
         const products = await productService.listProducts({brandId: parseInt(params.id),excludeBrandPaused: false});
 
