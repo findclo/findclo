@@ -10,15 +10,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { publicBrandsApiWrapper } from "@/api-wrappers/brands";
-import { publicProductsApiWrapper } from "@/api-wrappers/products";
+import {privateBrandsApiWrapper, publicBrandsApiWrapper} from "@/api-wrappers/brands";
+import {privateProductsApiWrapper, publicProductsApiWrapper} from "@/api-wrappers/products";
+import Cookies from "js-cookie";
 
 export default function BrandDetails({ params }: { params: { id: string } }) {
     const id = params.id;
     const router = useRouter();
     const [brand, setBrand] = useState<IBrand | null>(null);
     const [products, setProducts] = useState<IProduct[]>([]);
-
+    const token = Cookies.get('Authorization')!;
     useEffect(() => {
         async function fetchBrandDetails() {
             const brandData = await publicBrandsApiWrapper.getBrandById(id);
@@ -26,7 +27,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
         }
 
         async function fetchProducts() {
-            const productsData = await publicProductsApiWrapper.getProductsByBrandId(id);
+            const productsData = await privateBrandsApiWrapper.getBrandProductsAsAdmin(token,id);
             if (productsData) {
                 setProducts(productsData.products);
             }

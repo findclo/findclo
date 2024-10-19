@@ -13,11 +13,12 @@ export interface  IListProductsParams {
     tags?: string[];
     productId?: number;
     userQuery?: boolean;
+    excludeBrandPaused?: boolean;
 }
 // TODO ADD (brand, tags, etc.)
 
 export interface IProductRepository {
-    getProductById(productId: number): Promise<IProduct | null>;
+    getProductById(productId: number,excludeBrandPaused:boolean): Promise<IProduct | null>;
     listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>;
     bulkProductInsert(products : IProductDTO[], brandId: string): Promise<number>;
     markProductAsTagged(productId: number): Promise<void>;
@@ -35,9 +36,14 @@ class ProductsRepository implements IProductRepository{
         this.db = db;
     }
 
-    public async getProductById(productId: number): Promise<IProduct | null> {
-        const query = `SELECT * FROM Products WHERE id = $1`;
-        const values = [productId];
+    public async getProductById(productId: number,excludeBrandPaused:boolean): Promise<IProduct | null> {
+        let query = `SELECT p.*, b.status as brand_status FROM Products p JOIN Brands b ON p.brand_id = b.id WHERE p.id = $1`;
+        const values: any[] = [productId];
+
+        if (excludeBrandPaused) {
+            query += ` AND b.status != $2`;
+            values.push(BrandStatus.PAUSED);
+        }
 
         try {
             const res = await this.db.query(query, values);
@@ -232,7 +238,15 @@ class ProductsRepository implements IProductRepository{
             const tagNames = tags.map(tag => tag.name);
             const tagPlaceholders = tagNames.map((_, idx) => `$${values.length + idx + 1}`);
             conditions.push(`t.name IN (${tagPlaceholders.join(', ')})`);
+            // TODO FIX: make it to be exclusive. Example: If we have pants and we add color red, no to add every red cloth
             values.push(...tagNames);
+        }
+
+
+        if(params.excludeBrandPaused){
+            query += ' JOIN Brands b ON p.brand_id = b.id ';
+            conditions.push(`b.status != $${values.length + 1}`);
+            values.push(BrandStatus.PAUSED);
         }
 
         // if (params.search && params.search.trim().length > 1) {

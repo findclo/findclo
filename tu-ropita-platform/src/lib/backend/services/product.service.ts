@@ -23,8 +23,8 @@ class ProductService implements IProductService{
 
     private parser: IProductCSVUploadParser = new ProductCSVUploadParser();
 
-    public async getProductById(productId: number, userQuery?: boolean): Promise<IProduct> {
-        const product = await productRepository.getProductById(productId);
+    public async getProductById(productId: number,excludeBrandPaused:boolean, userQuery?: boolean): Promise<IProduct> {
+        const product = await productRepository.getProductById(productId,excludeBrandPaused);
         if(!product){
             throw new ProductNotFoundException(productId);
         }else if(product.status === 'PAUSED' && userQuery){
@@ -39,7 +39,7 @@ class ProductService implements IProductService{
         let tags : ITag[] = [];
 
         if(params.productId){
-            const product = await this.getProductById(params.productId);
+            const product = await this.getProductById(params.productId,params.excludeBrandPaused? params.excludeBrandPaused : true);
             return {
                 appliedTags: [],
                 availableTags: [],
@@ -62,6 +62,10 @@ class ProductService implements IProductService{
             }
         }
 
+        if(params.excludeBrandPaused == undefined){
+            params.excludeBrandPaused = true;
+        }
+
         const products : IProduct[] = await productRepository.listProducts(params,tags);
 
         return {
@@ -69,7 +73,7 @@ class ProductService implements IProductService{
             availableTags: await tagsService.getAvailableTagsForProducts(products.map(p=>p.id.toString()),tags),
             pageNum: 1,
             pageSize: products.length,
-            products: await productRepository.listProducts(params,tags),
+            products: products,
             totalPages: 1
         };
 
