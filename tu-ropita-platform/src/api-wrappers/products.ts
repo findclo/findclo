@@ -122,6 +122,24 @@ class PrivateProductsApiWrapper {
 
         return true;
     }
+
+    async createProduct(auth_token: string, brandId: string, product: IProductDTO): Promise<IProduct | null> {
+        const [error, created_product] = await fetcher(`/brands/${brandId}/products`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(product)
+        });
+
+        if (error) {
+            console.error(`Error creating product for brand ${brandId}:`, error);
+            return null;
+        }
+
+        return created_product as IProduct;
+    }
     
     
 

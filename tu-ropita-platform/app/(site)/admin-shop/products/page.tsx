@@ -59,10 +59,36 @@ export default function ShopAdminProductsPage() {
     )
   }
 
-  const handleAddProduct = () => {
-    setProducts([...products, { ...newProduct, id: products.length + 1 } as IProduct])
-    setNewProduct({ name: "", price: 0, images: [], description: "" })
-    setIsAddProductOpen(false)
+  const handleAddProduct = async () => {
+    if (!brand) {
+      toast({ type: 'error', message: "No se encontró la información de la marca." });
+      return;
+    }
+
+    try {
+      const createdProduct = await privateProductsApiWrapper.createProduct(
+        authToken,
+        brand.id.toString(),
+        {
+          name: newProduct.name || '',
+          price: newProduct.price || 0,
+          description: newProduct.description || '',
+          images: newProduct.images || [],
+          url: newProduct.url || '',
+        }
+      );
+
+      if (createdProduct) {
+        toast({ type: 'success', message: "Producto añadido correctamente." });
+        setProducts([...products, createdProduct]);
+        setNewProduct({ name: "", price: 0, images: [], description: "" });
+        setIsAddProductOpen(false);
+      } else {
+        toast({ type: 'error', message: "Error al añadir el producto. Intente nuevamente." });
+      }
+    } catch (error) {
+      toast({ type: 'error', message: "Ocurrió un error al añadir el producto." });
+    }
   }
 
   const handleDeleteProduct = async (id: string) => {
@@ -191,8 +217,17 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
                 <Input id="price" type="number" value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value)})} className="col-span-3" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="image" className="text-right">URL de Imagen</Label>
+                <Label htmlFor="image" className="text-right">URLs de Imagens</Label>
                 <Input id="image" value={newProduct.images?.[0]} onChange={(e) => setNewProduct({...newProduct, images: [e.target.value]})} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="url" className="text-right">URL del Producto</Label>
+                <Input 
+                  id="url" 
+                  value={newProduct.url || ''} 
+                  onChange={(e) => setNewProduct({...newProduct, url: e.target.value})} 
+                  className="col-span-3" 
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">Descripción</Label>

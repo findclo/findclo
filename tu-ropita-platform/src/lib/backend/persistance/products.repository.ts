@@ -96,6 +96,20 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
+    public async createProduct(product: IProductDTO, brandId: string): Promise<IProduct> {
+        const query = `INSERT INTO Products (name, price, description, images, brand_id, tsv, url)
+            VALUES ($1, $2, $3, $4, $5, to_tsvector('spanish', coalesce($6, '') || ' ' || coalesce($7, '')), $8)
+            RETURNING *`;
+        const values = [product.name, product.price, product.description, product.images, brandId, product.name, product.description, product.url];
+        try {
+            const res = await pool.query(query, values);
+            return this.mapProductRows(res.rows)[0];
+        } catch (error) {
+            console.error('Error inserting product:', error);
+            throw error;
+        }
+    }
+
     async markProductAsTagged(productId: number): Promise<void> {
         this.markProductIsTagged(productId,true);
     }

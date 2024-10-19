@@ -81,6 +81,10 @@ class ProductService implements IProductService{
         return dbRes > 0;
     }
 
+    public async createProduct(product: IProductDTO, brandId: string): Promise<IProduct> {
+        return productRepository.createProduct(product, brandId);
+    }
+
     public async deleteProduct(id: number): Promise<boolean> {
         return productRepository.deleteProduct(id);
     }
