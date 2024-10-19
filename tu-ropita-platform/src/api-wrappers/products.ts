@@ -63,7 +63,7 @@ class PrivateProductsApiWrapper {
     }
 
     async updateProduct(auth_token: string, id: string, updated_product: IProductDTO): Promise<IProduct | null> {
-        const response = await fetch(`${PRODUCTS_PATH}/${id}`, {
+        const [error,response] = await fetcher(`${PRODUCTS_PATH}/${id}`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -84,7 +84,7 @@ class PrivateProductsApiWrapper {
     }
 
     async changeProductStatus(auth_token: string, id: string, status: string): Promise<IProduct | null> {
-        const response = await fetch(`${PRODUCTS_PATH}/${id}/status`, {
+        const [error,response] = await fetcher(`${PRODUCTS_PATH}/${id}/status`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
