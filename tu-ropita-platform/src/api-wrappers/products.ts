@@ -83,7 +83,7 @@ class PrivateProductsApiWrapper {
     }
 
     async changeProductStatus(auth_token: string, id: string, status: string): Promise<IProduct | null> {
-        const [error,response] = await fetcher(`${PRODUCTS_PATH}/${id}/status`, {
+        const [error, response] = await fetcher(`${PRODUCTS_PATH}/${id}/status`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -92,14 +92,13 @@ class PrivateProductsApiWrapper {
             body: JSON.stringify({ status })
         });
 
-        if (!response.ok) {
-            const error = await response.json();
+        if (error) {
             console.error(`Error changing status for product with id ${id}:`, error);
             // TODO how do we handle?
             return null;
         }
 
-        const updatedProduct = await response.json();
+        const updatedProduct = response;
         return updatedProduct as IProduct;
     }
 

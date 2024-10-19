@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface"
@@ -196,6 +197,27 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
     }
   };
 
+  const handleStatusChange = async (productId: string, newStatus: 'ACTIVE' | 'PAUSED') => {
+    try {
+      const updatedProduct = await privateProductsApiWrapper.changeProductStatus(authToken, productId, newStatus)
+      if (updatedProduct) {
+        setProducts(products.map(p => p.id.toString() === productId ? updatedProduct : p))
+        toast({
+          type: 'success',
+          message: `Estado del producto actualizado correctamente.`,
+        })
+      } else {
+        throw new Error("Failed to update product status")
+      }
+    } catch (error) {
+      console.error("Error updating product status:", error)
+      toast({
+        type: 'error',
+        message: "Ocurrió un error al actualizar el estado del producto. Intente nuevamente.",
+      })
+    }
+  }
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between mb-4">
@@ -266,6 +288,8 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
                   <TableHead className="sticky top-0 bg-background">Nombre</TableHead>
                   <TableHead className="sticky top-0 bg-background">Precio</TableHead>
                   <TableHead className="sticky top-0 bg-background">Descripción</TableHead>
+                  <TableHead className="sticky top-0 bg-background">URL</TableHead>
+                  <TableHead className="sticky top-0 bg-background">Status</TableHead>
                   <TableHead className="sticky top-0 bg-background">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -285,6 +309,22 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>${product.price.toFixed(2)}</TableCell>
                       <TableCell className="max-w-xs truncate">{product.description}</TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        <a href={product.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                          {product.url}
+                        </a>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={product.status === 'ACTIVE'}
+                            onCheckedChange={(checked) => 
+                              handleStatusChange(product.id.toString(), checked ? 'ACTIVE' : 'PAUSED')
+                            }
+                          />
+                          <span>{product.status === 'ACTIVE' ? 'Activo' : 'Pausado'}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
