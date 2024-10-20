@@ -1,4 +1,6 @@
+import globalSettings from "@/lib/settings";
 import { hashPassword } from "@/lib/utils";
+import jwt from 'jsonwebtoken';
 import { CreateUserDto } from "../dtos/user.dto.interface";
 import { ConflictException } from "../exceptions/ConflictException";
 import { NotFoundException } from "../exceptions/NotFoundException";
@@ -94,6 +96,38 @@ class UserService {
         return userBrands[0] as IBrand;
     }
 
+    async requestPasswordReset(email: string): Promise<string> {
+        const user = await this.getUserByEmail(email);
+        
+        const resetToken = jwt.sign(
+            { userId: user.id, email: user.email },
+            globalSettings.AUTH.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        // TODO: Implement email sending logic
+        // For now, we'll just log the reset link
+        console.log(`Password reset link: http://localhost:4000/signin/reset-password?token=${resetToken}`);
+
+        return resetToken;
+    }
+
+    async resetPassword(resetToken: string, newPassword: string): Promise<void> {
+        try {
+            const decoded = jwt.verify(resetToken, globalSettings.AUTH.JWT_SECRET) as { userId: number, email: string };
+            console.log(`Decoded token: ${JSON.stringify(decoded)}`);
+            const user = await this.getUserById(decoded.userId);
+
+            if (user.email !== decoded.email) {
+                throw new Error('Invalid token');
+            }
+
+            const { hashed_password, random_salt } = await hashPassword(newPassword);
+            await userPersistance.updatePassword(user.id, hashed_password, random_salt);
+        } catch (error) {
+            throw new NotFoundException('Invalid or expired reset token');
+        }
+    }
 }
 
 export const userService = new UserService();

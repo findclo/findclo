@@ -34,6 +34,34 @@ class PublicUsersApiWrapper {
 
         return user;
     }
+
+    async requestPasswordReset(email: string): Promise<{ message: string, resetToken: string }> {
+        const [error, response] = await fetcher(`${this.USERS_PATH}/reset-password`, {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        });
+
+        if (error) {
+            console.error(`Error requesting password reset: ${error}`);
+            throw error;
+        }
+
+        return response as { message: string, resetToken: string };
+    }
+
+    async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+        const [error, response] = await fetcher(`${this.USERS_PATH}/reset-password`, {
+            method: 'PATCH',
+            body: JSON.stringify({ token, newPassword }),
+        });
+
+        if (error) {
+            console.error(`Error resetting password: ${error}`);
+            throw error;
+        }
+
+        return response as { message: string };
+    }
     
 }
 

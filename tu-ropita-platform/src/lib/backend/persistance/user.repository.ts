@@ -67,6 +67,14 @@ class UserPersistance {
             return false;
         }
     }
+
+    async updatePassword(userId: number, newPasswordHash: string, newPasswordSalt: string): Promise<void> {
+        await this.db.query(`
+            UPDATE users 
+            SET password_hash = $1, password_salt = $2
+            WHERE id = $3
+        `, [newPasswordHash, newPasswordSalt, userId]);
+    }
 }
 
 

@@ -66,9 +66,12 @@ export default function SigninPage() {
             <Button type="submit" className="w-full">Iniciar Sesión</Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col gap-2 justify-center">
           <p className="text-sm text-gray-600">
             ¿No tienes una cuenta? <a href="/signup" className="text-primary hover:underline">Regístrate</a>
+          </p>
+          <p className="text-sm text-gray-600">
+            ¿Olvidaste tu contraseña? <a href="/signin/reset-password" className="text-primary hover:underline">Recupérala</a>
           </p>
         </CardFooter>
       </Card>
