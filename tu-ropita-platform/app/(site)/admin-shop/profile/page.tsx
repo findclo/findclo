@@ -142,8 +142,8 @@ export default function AdminShopProfile() {
             ) : (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">{brand.name}</h2>
-                <p className={`text-gray-600 ${!brand.description && 'italic'}`}>
-                  {brand.description || 'No existe descripción para esta tienda.'}
+                <p className={`${!brand.description && 'italic'} ${!brand.description && 'text-gray-600'}`}>
+                  <span className="font-bold">Descripción:</span> {brand.description || 'No existe descripción para esta tienda.'}
                 </p>
                 <p><strong>Página web:</strong> <a href={brand.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{brand.websiteUrl}</a></p>
                 {/* Display other brand properties */}
