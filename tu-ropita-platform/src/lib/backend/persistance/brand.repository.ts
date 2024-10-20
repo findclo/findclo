@@ -2,7 +2,7 @@ import pool from "@/lib/backend/conf/db.connections";
 import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
 import { BrandAlreadyExistsException } from "@/lib/backend/exceptions/brandAlreadyExists.exception";
 import { BrandNotFoundException } from "@/lib/backend/exceptions/brandNotFound.exception";
-import {BrandStatus, IBrand} from "@/lib/backend/models/interfaces/brand.interface";
+import { BrandStatus, IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { Pool } from "pg";
 import { NotFoundException } from "../exceptions/NotFoundException";
 
@@ -26,6 +26,7 @@ class BrandRepository implements IBrandRepository {
             name: row.name,
             image: row.image,
             websiteUrl: row.websiteurl,
+            description: row.description,
             status: row.status,
         };
     }
@@ -49,10 +50,10 @@ class BrandRepository implements IBrandRepository {
 
     async createBrand(brand: IBrandDto): Promise<IBrand> {
         const query =
-            `INSERT INTO Brands (name, image, websiteUrl)
-            VALUES ($1, $2, $3)
+            `INSERT INTO Brands (name, image, websiteUrl, description)
+            VALUES ($1, $2, $3, $4)
             RETURNING *`;
-        const values = [brand.name, brand.image, brand.websiteUrl];
+        const values = [brand.name, brand.image, brand.websiteUrl, brand.description];
 
         return this.upsertBrand(query,values,brand, -1);
     }
@@ -60,10 +61,10 @@ class BrandRepository implements IBrandRepository {
     async updateBrand(id: number, brand: IBrandDto): Promise<IBrand> {
         const query = `
         UPDATE Brands
-        SET name = $1, image = $2, websiteUrl = $3
-        WHERE id = $4
+        SET name = $1, image = $2, websiteUrl = $3, description = $4
+        WHERE id = $5
         RETURNING *`;
-        const values = [brand.name, brand.image, brand.websiteUrl, id];
+        const values = [brand.name, brand.image, brand.websiteUrl, brand.description, id];
 
         return this.upsertBrand(query, values, brand, id);
     }

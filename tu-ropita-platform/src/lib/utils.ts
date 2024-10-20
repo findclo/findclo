@@ -36,11 +36,11 @@ export const validatePassword = async (randomSaltSaved: string, stringPlainPassw
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export async function getDtoFromBody<T>(req: Request, requiredFields: (keyof T)[]): Promise<T> {
+export async function getDtoFromBody<T>(req: Request, requiredFields: (keyof T)[], optionalFields: (keyof T)[] = []): Promise<T> {
   let body: any;
-  try{
+  try {
     body = await req.json();
-  }catch(error){
+  } catch (error) {
     throw new BadRequestException('Invalid request body. JSON is expected.');
   }
 
@@ -49,23 +49,31 @@ export async function getDtoFromBody<T>(req: Request, requiredFields: (keyof T)[
   }
 
   const bodyKeys = Object.keys(body);
-  const extraFields = bodyKeys.filter(key => !requiredFields.includes(key as keyof T));
+  const allowedFields = [...requiredFields, ...optionalFields];
+  const extraFields = bodyKeys.filter(key => !allowedFields.includes(key as keyof T));
   if (extraFields.length > 0) {
     throw new BadRequestException(`Unexpected fields in request: ${extraFields.join(', ')}`);
   }
 
-  if (requiredFields.every(field => body[field])) {
-    return requiredFields.reduce((dto, field) => {
-      dto[field] = body[field];
+  if (requiredFields.every(field => body[field] !== undefined)) {
+    return allowedFields.reduce((dto, field) => {
+      if (body[field] !== undefined) {
+        dto[field] = body[field];
+      }
       return dto;
     }, {} as T);
   }
 
-  throw new BadRequestException(`The following fields are required: ${requiredFields.join(', ')}`);
+  const missingFields = requiredFields.filter(field => body[field] === undefined);
+  throw new BadRequestException(`The following fields are required: ${missingFields.join(', ')}`);
 }
 
 export async function getBrandDtoFromBody(req: Request): Promise<IBrandDto> {
-  return getDtoFromBody<IBrandDto>(req, ['name', 'image', 'websiteUrl']);
+  return getDtoFromBody<IBrandDto>(
+    req,
+    ['name', 'image', 'websiteUrl'],
+    ['description']
+  );
 }
 
 export async function getUserDtoFromBody(req: Request): Promise<CreateUserDto> {

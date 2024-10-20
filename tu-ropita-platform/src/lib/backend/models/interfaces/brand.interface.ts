@@ -9,5 +9,6 @@ export interface IBrand {
     name: string;
     image: string;
     websiteUrl:string;
+    description: string;
     status: BrandStatus;
 }

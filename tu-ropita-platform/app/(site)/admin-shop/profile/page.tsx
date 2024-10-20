@@ -75,14 +75,37 @@ export default function AdminShopProfile() {
 
   return (
     <div className="container mx-auto p-4 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6">Shop Profile</h1>
-      <div className="flex justify-center items-center">
-        <Card className="w-full max-w-2xl">
-          <CardContent>
+      <h1 className="text-2xl font-bold mb-6">Perfil de la tienda</h1>
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="flex flex-col md:flex-row gap-8 p-6">
+          <div className="w-full md:w-1/3 flex flex-col items-center">
+            <Image
+              src={isEditing ? editedBrand?.image || '/placeholder-image.jpg' : brand.image || '/placeholder-image.jpg'}
+              alt={brand.name}
+              width={200}
+              height={200}
+              className="rounded-lg mb-4"
+            />
+            {isEditing ? (
+              <div className="w-full space-y-2">
+                <Label htmlFor="image">URL de la imagen</Label>
+                <Input
+                  id="image"
+                  name="image"
+                  value={editedBrand?.image || ''}
+                  onChange={handleChange}
+                  placeholder="URL de la imagen"
+                />
+              </div>
+            ) : (
+              <Button onClick={handleEdit} className="w-full">Editar perfil</Button>
+            )}
+          </div>
+          <div className="w-full md:w-2/3">
             {isEditing ? (
               <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Nombre</Label>
                   <Input
                     id="name"
                     name="name"
@@ -91,16 +114,18 @@ export default function AdminShopProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="image">Image URL</Label>
-                  <Input
-                    id="image"
-                    name="image"
-                    value={editedBrand?.image || ''}
+                  <Label htmlFor="description">Descripción</Label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={editedBrand?.description || ''}
                     onChange={handleChange}
+                    className="w-full p-2 border rounded-md"
+                    rows={4}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="websiteUrl">Website URL</Label>
+                  <Label htmlFor="websiteUrl">URL de la página web</Label>
                   <Input
                     id="websiteUrl"
                     name="websiteUrl"
@@ -109,31 +134,24 @@ export default function AdminShopProfile() {
                   />
                 </div>
                 {/* Add more form fields for other brand properties */}
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-                  <Button type="submit">Save</Button>
+                <div className="flex justify-end space-x-2 mt-4">
+                  <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
+                  <Button type="submit">Guardar</Button>
                 </div>
               </form>
             ) : (
-              <div className="space-y-4 text-center">
-                <div className="flex justify-center">
-                  <Image
-                    src={brand.image || '/placeholder-image.jpg'}
-                    alt={brand.name}
-                    width={200}
-                    height={200}
-                    className="rounded-full mt-4"
-                  />
-                </div>
-                <p><strong>Name:</strong> {brand.name}</p>
-                <p><strong>Website:</strong> <a href={brand.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{brand.websiteUrl}</a></p>
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">{brand.name}</h2>
+                <p className={`text-gray-600 ${!brand.description && 'italic'}`}>
+                  {brand.description || 'No existe descripción para esta tienda.'}
+                </p>
+                <p><strong>Página web:</strong> <a href={brand.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{brand.websiteUrl}</a></p>
                 {/* Display other brand properties */}
-                <Button onClick={handleEdit}>Edit Profile</Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

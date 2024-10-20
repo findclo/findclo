@@ -1,0 +1,1 @@
+ALTER TABLE brands DROP COLUMN description;

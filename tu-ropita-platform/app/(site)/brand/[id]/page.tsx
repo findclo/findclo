@@ -43,6 +43,13 @@ async function BrandPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
+        {brand.description && (
+          <>
+            <h2 className="text-2xl font-semibold mb-4">Descripción de la marca</h2>
+            <p className="text-gray-600 mb-8">{brand.description}</p>
+          </>
+        )}
+
         <h2 className="text-2xl font-semibold mb-4">Productos de la marca</h2>
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products? products.products.map((product) => (
