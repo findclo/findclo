@@ -1,18 +1,17 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, ShoppingBag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
-import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, FileDown, ShoppingBag } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {privateBrandsApiWrapper, publicBrandsApiWrapper} from "@/api-wrappers/brands";
-import {privateProductsApiWrapper, publicProductsApiWrapper} from "@/api-wrappers/products";
 import Cookies from "js-cookie";
+import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
+import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
 
 export default function BrandDetails({ params }: { params: { id: string } }) {
     const id = params.id;
@@ -38,73 +37,91 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     }, [id]);
 
     if (!brand) {
-        return <div>Loading...</div>;
+        return <div className="flex items-center justify-center h-screen">Loading...</div>
+    }
+
+    const handleExport = () => {
+        const csvHeader = "name,price,description,images,url\n"
+        const csvRows = products.map(product =>
+            `"${product.name}",${product.price},"${product.description}","${product.images.join(';')}","${product.url || ''}"`
+        ).join("\n")
+
+        const csvContent = csvHeader + csvRows
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+
+        const link = document.createElement('a')
+        link.setAttribute('href', url)
+        link.setAttribute('download', `FINDCLO_${brand.name}_productos_exportados.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
     }
 
     return (
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-4 sm:p-6">
             <div className="flex items-center justify-between mb-6">
                 <Button
                     variant="ghost"
                     className="flex items-center"
                     onClick={() => router.push('/admin')}
                 >
-                    <ArrowLeft className="mr-2 h-4 w-4"/>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Volver
                 </Button>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-1">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-2xl font-bold">Detalles</CardTitle>
-                    </CardHeader>
-                    <CardContent
-                        className="relative flex flex-col md:flex-row items-start"> {/* Cambiado para soporte de posicionamiento absoluto */}
-                        <div
-                            className="flex items-center space-x-4 mb-2 md:mb-0"> {/* Añadido margen inferior para dispositivos móviles */}
-                            <Image
-                                src={brand.image || '/placeholder.svg'}
-                                alt="Brand Logo"
-                                width={64}
-                                height={64}
-                                className="rounded-full"
-                            />
-                            <div>
-                                <h2 className="text-2xl font-bold">{brand.name}</h2>
-                                <p className="text-sm text-muted-foreground">{brand.websiteUrl}</p>
-                            </div>
-                        </div>
-                        <a
-                            href={brand.websiteUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="absolute right-4 top-2"
-                        >
-                            <Button>
-                                <span className="hidden md:inline">Ir a la pagina del comercio</span>
-                                <span className="md:hidden">🔗</span>
-                            </Button>
-                        </a>
-                    </CardContent>
-                </Card>
-            </div>
-
-
-            <Card className="mt-6">
+            <Card className="mb-6">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xl font-bold">Productos</CardTitle>
-                    <ShoppingBag className="h-4 w-4 text-muted-foreground"/>
+                    <CardTitle className="text-2xl font-bold">Detalles</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col sm:flex-row items-start justify-between">
+                    <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                        <Image
+                            src={brand.image || '/placeholder.svg'}
+                            alt="Brand Logo"
+                            width={64}
+                            height={64}
+                            className="rounded-full"
+                        />
+                        <div>
+                            <h2 className="text-2xl font-bold">{brand.name}</h2>
+                            <p className="text-sm text-muted-foreground">{brand.websiteUrl}</p>
+                        </div>
+                    </div>
+                    <a
+                        href={brand.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto"
+                    >
+                        <Button className="w-full sm:w-auto">
+                            <span className="hidden sm:inline">Ir a la pagina del comercio</span>
+                            <span className="sm:hidden">🔗</span>
+                        </Button>
+                    </a>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-col pb-2 space-y-0">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                        <CardTitle className="text-xl font-bold mb-2 sm:mb-0">Productos</CardTitle>
+                        <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
+                            <FileDown className="mr-2 h-4 w-4" /> Exportar
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <ScrollArea className="h-[400px] overflow-auto">
+                    <ScrollArea className="h-[400px] w-full overflow-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="sticky top-0 bg-background">Imagen</TableHead>
                                     <TableHead className="sticky top-0 bg-background">Nombre</TableHead>
                                     <TableHead className="sticky top-0 bg-background">Precio</TableHead>
-                                    <TableHead className="sticky top-0 bg-background">Descripción</TableHead>
+                                    <TableHead className="sticky top-0 bg-background hidden md:table-cell">Descripción</TableHead>
                                     <TableHead className="sticky top-0 bg-background">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -123,14 +140,18 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                             </TableCell>
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell>${product.price.toFixed(2)}</TableCell>
-                                            <TableCell>{product.description}</TableCell>
+                                            <TableCell className="hidden md:table-cell">{product.description}</TableCell>
                                             <TableCell>
                                                 <a
                                                     href={product.url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
+                                                    className="w-full sm:w-auto"
                                                 >
-                                                    <Button>Ver en página del comercio</Button>
+                                                    <Button className="w-full sm:w-auto">
+                                                        <span className="hidden sm:inline">Ver en página del comercio</span>
+                                                        <span className="sm:hidden">Ver</span>
+                                                    </Button>
                                                 </a>
                                             </TableCell>
                                         </TableRow>
@@ -146,5 +167,5 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                 </CardContent>
             </Card>
         </div>
-    );
+    )
 }
