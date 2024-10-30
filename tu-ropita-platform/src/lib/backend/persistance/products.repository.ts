@@ -222,7 +222,8 @@ class ProductsRepository implements IProductRepository{
                 name: '',
                 image: '',
                 websiteUrl: '',
-                status: BrandStatus.ACTIVE // this is to avoid tslint checks
+                status: BrandStatus.ACTIVE, // this is to avoid tslint checks
+                description: ''
             }
         }));
     }

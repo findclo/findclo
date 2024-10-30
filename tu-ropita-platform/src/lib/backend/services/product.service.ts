@@ -9,6 +9,7 @@ import { brandService } from "@/lib/backend/services/brand.service";
 import { openAIService } from "@/lib/backend/services/openAI.service";
 import { tagsService } from "@/lib/backend/services/tags.service";
 import { ConflictException } from "../exceptions/ConflictException";
+import {productsInteractionsService} from "@/lib/backend/services/productsInteractions.service";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
@@ -25,11 +26,13 @@ class ProductService implements IProductService{
 
     public async getProductById(productId: number,excludeBrandPaused:boolean, userQuery?: boolean): Promise<IProduct> {
         const product = await productRepository.getProductById(productId,excludeBrandPaused);
+        // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
         if(!product){
             throw new ProductNotFoundException(productId);
         }else if(product.status === 'PAUSED' && userQuery){
             throw ConflictException.createFromMessage(`Product ${productId} is paused. [productId=${productId}]`);
         }
+        productsInteractionsService.addProductClickInteraction(product.id.toString()).then(r  =>{});
         product.brand = await brandService.getBrandById(product.brand.id);
 
         return product;
@@ -40,6 +43,9 @@ class ProductService implements IProductService{
 
         if(params.productId){
             const product = await this.getProductById(params.productId,params.excludeBrandPaused? params.excludeBrandPaused : true);
+            // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
+            productsInteractionsService.addProductClickInteraction(product.id.toString()).then(r  =>{});
+
             return {
                 appliedTags: [],
                 availableTags: [],
@@ -67,6 +73,8 @@ class ProductService implements IProductService{
         }
 
         const products : IProduct[] = await productRepository.listProducts(params,tags);
+        // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
+        productsInteractionsService.addListOfProductViewInListingRelatedInteraction(products.map(p => p.id.toString())).then(r  =>{});
 
         return {
             appliedTags: tags,
