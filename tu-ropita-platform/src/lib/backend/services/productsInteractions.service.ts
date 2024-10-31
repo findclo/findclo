@@ -1,5 +1,6 @@
 import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/productInteraction.interface";
 import {productsInteractionsRepository} from "@/lib/backend/persistance/productsInteractions.repository";
+import {IProductMetricAggDaily} from "@/lib/backend/models/interfaces/productMetricAggDaily.interface";
 
 export interface IProductsInteractionsService {
     // Single product interactions
@@ -10,6 +11,10 @@ export interface IProductsInteractionsService {
 
     // Many products interactions
     addListOfProductViewInListingRelatedInteraction(productIds: string[]): Promise<void>;
+
+    // AggDaily metrics
+    syncProductMetricsAggDaily(): Promise<void>;
+    getProductMetricsBetweenDates(startDate: Date, endDate: Date): Promise<IProductMetricAggDaily[]>
 
 
 }
@@ -38,6 +43,14 @@ class ProductsInteractionsService implements IProductsInteractionsService {
 
     public async addListOfProductViewInListingRelatedInteraction(productIds: string[]): Promise<void> {
         return productsInteractionsRepository.addListOfProductInteractions(productIds, ProductInteractionEnum.VIEW_IN_LISTING_RELATED);
+    }
+
+    public async syncProductMetricsAggDaily(): Promise<void> {
+        return productsInteractionsRepository.syncProductMetricsAggDaily();
+    }
+
+    public async getProductMetricsBetweenDates(startDate: Date, endDate: Date): Promise<IProductMetricAggDaily[]> {
+        return productsInteractionsRepository.getProductMetricsBetweenDates(startDate, endDate);
     }
 }
 
