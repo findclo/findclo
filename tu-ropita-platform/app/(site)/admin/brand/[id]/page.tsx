@@ -162,6 +162,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                                     <Switch
                                                         checked={product.status === 'ACTIVE'}
                                                         onCheckedChange={(checked) => handleStatusChange(product.id.toString(), checked)}
+                                                        disabled={product.status === 'PAUSED'}
                                                     />
                                                     <span>{product.status === 'ACTIVE' ? 'Activo' : (product.status === 'PAUSED_BY_ADMIN' ? 'Pausado' : 'Pausado por el comercio')}</span>
                                                 </div>
