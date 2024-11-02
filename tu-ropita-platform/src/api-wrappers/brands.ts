@@ -53,8 +53,8 @@ class PrivateBrandsApiWrapper {
         return brand as IBrand;
     }
 
-    async listAllBrands(auth_token: string): Promise<IBrand | null> {
-        const [error, brand] = await fetcher(`${BRANDS_PATH}/all`, {
+    async listAllBrands(auth_token: string): Promise<IBrand[]> {
+        const [error, brands] = await fetcher(`${BRANDS_PATH}/all`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -62,9 +62,9 @@ class PrivateBrandsApiWrapper {
         });
         if (error) {
             console.error(`Error listing brands: ${error}`);
-            return null;
+            return [];
         }
-        return brand as IBrand;
+        return brands as IBrand[];
     }
 
 
