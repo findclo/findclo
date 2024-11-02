@@ -28,6 +28,7 @@ export default function ShopAdminProductsPage() {
   const authToken = Cookies.get('Authorization')!;
   const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   const fetchBrandDetails = useCallback(async () => {
     const brandData = await privateBrandsApiWrapper.getMyBrand(authToken);
@@ -227,6 +228,11 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
     }
   };
 
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(search.toLowerCase()) ||
+    product.description.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between mb-4">
@@ -287,6 +293,12 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
       <Card className="mt-6">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-xl font-bold">Productos</CardTitle>
+          <Input
+            placeholder="Buscar productos por nombre o descripción"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[400px] overflow-auto">
@@ -303,8 +315,8 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.length > 0 ? (
-                  products.map((product) => (
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell>
                         <Image
@@ -417,16 +429,11 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
                     </TableRow>
                   ))
                 ) : (
-                  <>
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24">
-                      <div className="flex flex-col justify-center items-center h-full gap-4 mt-32">
-                        No hay productos disponibles.
-                        <Button onClick={() => setIsAddProductOpen(true)}>¡Añadir un producto!</Button>
-                      </div>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      {search ? "No se encontraron productos" : "No hay productos disponibles."}
                     </TableCell>
                   </TableRow>
-                  </>
                 )}
               </TableBody>
             </Table>
