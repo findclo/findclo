@@ -39,8 +39,10 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     }, [id]);
 
     const handleStatusChange = async (productId: string, currentStatus: boolean) => {
-        console.log(currentStatus);
         const newStatus = !currentStatus? 'PAUSED_BY_ADMIN' : 'ACTIVE';
+        if(!confirm(`¿Estás seguro de querer cambiar el estado del producto?`)){
+            return;
+        }
         const updatedProduct = await privateProductsApiWrapper.changeProductStatus(token, productId, newStatus);
         if (updatedProduct) {
             setProducts(products.map(product => 
