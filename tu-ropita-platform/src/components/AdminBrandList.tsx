@@ -1,16 +1,16 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { privateBrandsApiWrapper } from "@/api-wrappers/brands"
+import toast from "@/components/toast"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { BrandStatus, IBrand } from "@/lib/backend/models/interfaces/brand.interface"
+import Cookies from "js-cookie"
 import { Pause, Play, Store } from "lucide-react"
 import Image from "next/image"
-import {BrandStatus, IBrand} from "@/lib/backend/models/interfaces/brand.interface"
-import { privateBrandsApiWrapper } from "@/api-wrappers/brands"
-import Cookies from "js-cookie"
-import { Input } from "@/components/ui/input"
-import {useRouter} from "next/navigation";
-import toast from "@/components/toast";
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from 'react'
 
 export default function AdminBrandList() {
     const [brands, setBrands] = useState<IBrand[]>([])
@@ -43,6 +43,10 @@ export default function AdminBrandList() {
         const brand = brands.find(brand => brand.id === id);
         if (!brand) return;
 
+        if(!confirm(`¿Estás seguro de ${brand.status === BrandStatus.ACTIVE ? 'PAUSAR' : 'ACTIVAR'} el comercio '${brand.name}'?`)){
+            return;
+        }
+
         const newStatus = brand.status === BrandStatus.ACTIVE ? BrandStatus.PAUSED : BrandStatus.ACTIVE;
         const updatedBrand = await privateBrandsApiWrapper.changeBrandStatus(token, id.toString(), newStatus);
 
@@ -74,7 +78,7 @@ export default function AdminBrandList() {
                 placeholder="Buscar comercios"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="max-w-sm"/>
+                className="max-w-sm mb-2"/>
         <div className="overflow-x-auto max-h-[500px]">
             <Table>
                 <TableHeader>
@@ -88,7 +92,15 @@ export default function AdminBrandList() {
                     </TableHeader>
                     <TableBody>
                         {filteredBrands.map((brand) => (
-                            <TableRow key={brand.id}>
+                            <TableRow 
+                                key={brand.id} 
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={(e) => {
+                                    if (!(e.target as HTMLElement).closest('button')) {
+                                        router.push(`/admin/brand/${brand.id}`)
+                                    }
+                                }}
+                            >
                                 <TableCell>
                                     <Image src={brand.image} alt={`${brand.name} logo`} width={40} height={40} className="rounded-full" />
                                 </TableCell>
