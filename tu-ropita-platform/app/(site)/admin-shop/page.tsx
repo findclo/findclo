@@ -4,7 +4,7 @@ import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import Cookies from "js-cookie";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 export default function ShopAdminPage() {
@@ -45,7 +45,26 @@ export default function ShopAdminPage() {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Dashboard de <span className="italic font-semibold">{brand?.name}</span></h1>
+      <div className="flex flex-row justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Dashboard de <span className="italic font-semibold">{brand?.name}</span></h1>
+        <div className="flex items-center gap-2 text-gray-600">
+          <p>Última actualización: {new Date().toLocaleString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          })}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+            title="Recargar página"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className={`p-6 rounded-lg shadow-md ${
