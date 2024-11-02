@@ -1,17 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, FileDown, ShoppingBag } from 'lucide-react'
+import { privateBrandsApiWrapper, publicBrandsApiWrapper } from "@/api-wrappers/brands"
+import { privateProductsApiWrapper } from "@/api-wrappers/products"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {privateBrandsApiWrapper, publicBrandsApiWrapper} from "@/api-wrappers/brands";
-import Cookies from "js-cookie";
-import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import { Switch } from "@/components/ui/switch"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { IBrand } from "@/lib/backend/models/interfaces/brand.interface"
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface"
+import Cookies from "js-cookie"
+import { ArrowLeft, FileDown } from 'lucide-react'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function BrandDetails({ params }: { params: { id: string } }) {
     const id = params.id;
@@ -35,6 +37,17 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
         fetchBrandDetails();
         fetchProducts();
     }, [id]);
+
+    const handleStatusChange = async (productId: string, currentStatus: boolean) => {
+        console.log(currentStatus);
+        const newStatus = !currentStatus? 'PAUSED_BY_ADMIN' : 'ACTIVE';
+        const updatedProduct = await privateProductsApiWrapper.changeProductStatus(token, productId, newStatus);
+        if (updatedProduct) {
+            setProducts(products.map(product => 
+                product.id.toString() === productId ? updatedProduct : product
+            ));
+        }
+    };
 
     if (!brand) {
         return <div className="flex items-center justify-center h-screen">Loading...</div>
@@ -122,6 +135,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                     <TableHead className="sticky top-0 bg-background">Nombre</TableHead>
                                     <TableHead className="sticky top-0 bg-background">Precio</TableHead>
                                     <TableHead className="sticky top-0 bg-background hidden md:table-cell">Descripción</TableHead>
+                                    <TableHead className="sticky top-0 bg-background">Estado</TableHead>
                                     <TableHead className="sticky top-0 bg-background">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -141,6 +155,15 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell>${product.price.toFixed(2)}</TableCell>
                                             <TableCell className="hidden md:table-cell">{product.description}</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center space-x-2">
+                                                    <Switch
+                                                        checked={product.status === 'ACTIVE'}
+                                                        onCheckedChange={(checked) => handleStatusChange(product.id.toString(), checked)}
+                                                    />
+                                                    <span>{product.status === 'ACTIVE' ? 'Activo' : (product.status === 'PAUSED_BY_ADMIN' ? 'Pausado' : 'Pausado por el comercio')}</span>
+                                                </div>
+                                            </TableCell>
                                             <TableCell>
                                                 <a
                                                     href={product.url}

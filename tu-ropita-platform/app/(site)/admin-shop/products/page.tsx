@@ -199,24 +199,33 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
 
   const handleStatusChange = async (productId: string, newStatus: 'ACTIVE' | 'PAUSED') => {
     try {
-      const updatedProduct = await privateProductsApiWrapper.changeProductStatus(authToken, productId, newStatus)
+      const product = products.find(p => p.id.toString() === productId);
+      if (product?.status === 'PAUSED_BY_ADMIN') {
+        toast({
+          type: 'error',
+          message: 'Este producto ha sido pausado por un administrador y no puede ser modificado.',
+        });
+        return;
+      }
+
+      const updatedProduct = await privateProductsApiWrapper.changeProductStatus(authToken, productId, newStatus);
       if (updatedProduct) {
-        setProducts(products.map(p => p.id.toString() === productId ? updatedProduct : p))
+        setProducts(products.map(p => p.id.toString() === productId ? updatedProduct : p));
         toast({
           type: 'success',
           message: `Estado del producto actualizado correctamente.`,
-        })
+        });
       } else {
-        throw new Error("Failed to update product status")
+        throw new Error("Failed to update product status");
       }
     } catch (error) {
-      console.error("Error updating product status:", error)
+      console.error("Error updating product status:", error);
       toast({
         type: 'error',
         message: "Ocurrió un error al actualizar el estado del producto. Intente nuevamente.",
-      })
+      });
     }
-  }
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -289,7 +298,7 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
                   <TableHead className="sticky top-0 bg-background">Precio</TableHead>
                   <TableHead className="sticky top-0 bg-background">Descripción</TableHead>
                   <TableHead className="sticky top-0 bg-background">URL</TableHead>
-                  <TableHead className="sticky top-0 bg-background">Status</TableHead>
+                  <TableHead className="sticky top-0 bg-background">Estado</TableHead>
                   <TableHead className="sticky top-0 bg-background">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -321,8 +330,12 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
                             onCheckedChange={(checked) => 
                               handleStatusChange(product.id.toString(), checked ? 'ACTIVE' : 'PAUSED')
                             }
+                            disabled={product.status === 'PAUSED_BY_ADMIN'}
                           />
-                          <span>{product.status === 'ACTIVE' ? 'Activo' : 'Pausado'}</span>
+                          <span>
+                            {product.status === 'ACTIVE' ? 'Activo' : 
+                             product.status === 'PAUSED_BY_ADMIN' ? 'Pausado por administrador' : 'Pausado'}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
