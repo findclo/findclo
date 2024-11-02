@@ -67,8 +67,8 @@ export default function ShopAdminPage() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className={brand?.status === 'ACTIVE' ? 'bg-green-50' : 'bg-red-50'}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-auto">
+        <Card className={brand?.status === 'ACTIVE' ? 'bg-green-50 h-fit' : 'bg-red-50 h-fit'}>
           <CardHeader>
             <CardTitle>Estado de la tienda</CardTitle>
           </CardHeader>
@@ -82,15 +82,15 @@ export default function ShopAdminPage() {
             {brand?.status !== 'ACTIVE' && (
               <div className="mt-4 p-4 bg-white rounded-md text-red-600 text-sm">
                 <p className="flex items-center">
-                  <AlertTriangle className="w-5 h-5 mr-2" />
-                  Tu tienda fue pausada por un administrador, ponete en contacto con nosotros para saber la razón y reactivarla.
+                  <AlertTriangle className="mr-2" />
+                  Tu tienda fue pausada por un administrador, ponte en contacto con nosotros para saber la razón y reactivarla.
                 </p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="h-fit">
           <CardHeader>
             <CardTitle>Clicks totales</CardTitle>
           </CardHeader>
@@ -100,7 +100,7 @@ export default function ShopAdminPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="h-fit">
           <CardHeader>
             <CardTitle>Productos activos</CardTitle>
           </CardHeader>
@@ -110,7 +110,7 @@ export default function ShopAdminPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-amber-50 border-amber-200">
+        <Card className="bg-amber-50 border-amber-200 h-fit">
           <CardHeader>
             <CardTitle className="text-amber-800">Productos pausados</CardTitle>
           </CardHeader>
