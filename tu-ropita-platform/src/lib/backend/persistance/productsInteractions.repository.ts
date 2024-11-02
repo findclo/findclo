@@ -2,6 +2,7 @@ import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/productInt
 import {Pool} from "pg";
 import pool from "@/lib/backend/conf/db.connections";
 import {IProductMetricAggDaily} from "@/lib/backend/models/interfaces/productMetricAggDaily.interface";
+import {IMetrics} from "@/lib/backend/models/metric.interface";
 
 export interface IProductsInteractionsRepository {
     addProductInteraction(productId: string, interaction: ProductInteractionEnum): Promise<void>;
@@ -78,19 +79,43 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
         }
     }
 
-    async getProductMetricsBetweenDates(startDate: Date, endDate: Date): Promise<IProductMetricAggDaily[]> {
+    async getProductMetricsBetweenDates(startDate: string, endDate: string, productId:string): Promise<IProductMetricAggDaily[]> {
         const query = `
-            SELECT product_id, interaction, date, count
+            SELECT product_id, interaction, date, SUM(count) as count
+            FROM ProductMetricsAggDaily
+            WHERE product_id = $1 AND date BETWEEN $2 AND $3
+            GROUP BY date, product_id, interaction;
+        `;
+
+        try {
+            const result = await this.db.query(query, [productId,startDate, endDate]);
+            return result.rows.map((row: any) => {
+                return {
+                    productId: row.product_id,
+                    interaction: row.interaction,
+                    date: row.date,
+                    count: row.count
+                }
+            });
+
+        } catch (error) {
+            console.error('Error fetching product metrics between dates:', error);
+            throw error;
+        }
+    }
+
+    async getMetricsBetweenDates(startDate: string, endDate: string): Promise<IMetrics[]> {
+        const query = `
+            SELECT interaction, date, SUM(count) as count
             FROM ProductMetricsAggDaily
             WHERE date BETWEEN $1 AND $2
-            ORDER BY date, product_id, interaction;
+            GROUP BY date, interaction;
         `;
 
         try {
             const result = await this.db.query(query, [startDate, endDate]);
             return result.rows.map((row: any) => {
                 return {
-                    productId: row.product_id,
                     interaction: row.interaction,
                     date: row.date,
                     count: row.count

@@ -29,11 +29,18 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
     const url = new URL(req.url);
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
-
+    const productId = url.searchParams.get("productId");
+    console.log(startDate)
     validateDateParameters(startDate, endDate);
 
     try {
-        const metrics = await productsInteractionsService.getProductMetricsBetweenDates(new Date(startDate!), new Date(endDate!));
+        let metrics ;
+
+        if(productId){
+            metrics = await productsInteractionsService.getProductMetricsBetweenDates(new Date(startDate!), new Date(endDate!),productId);
+        }else{
+            metrics = await productsInteractionsService.getMetricsBetweenDates(new Date(startDate!), new Date(endDate!));
+        }
 
         return new Response(JSON.stringify(metrics), {
             status: 200,
