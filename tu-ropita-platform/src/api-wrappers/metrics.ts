@@ -1,13 +1,13 @@
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
-import {IProductMetricAggDaily} from "@/lib/backend/models/interfaces/productMetricAggDaily.interface";
 import {formatDateYYYYMMDD} from "@/lib/utils";
+import {IMetrics} from "@/lib/backend/models/metric.interface";
 
 const ADMIN_METRICS_PATH : string = `/admin/metrics`;
 class PrivateMetricsApiWrapper {
 
     //TODO: implement and try
 
-    async getMetricsAggDaily(auth_token: string, startDate: Date, endDate : Date): Promise<IProductMetricAggDaily[]> {
+    async getMetricsAggDaily(auth_token: string, startDate: Date, endDate : Date): Promise<IMetrics[]> {
         const [error, metrics] = await fetcher(`${ADMIN_METRICS_PATH}/daily?startDate=${formatDateYYYYMMDD(startDate)}&endDate=${formatDateYYYYMMDD(endDate)}`, {
             method: 'GET',
             headers: {
@@ -17,10 +17,10 @@ class PrivateMetricsApiWrapper {
         })
         if (error) {
             console.error(`Error getting metrics: ${error}`);
-            return [];
+            return [] as IMetrics[];
         }
         console.log(metrics)
-        return metrics as IProductMetricAggDaily[];
+        return metrics as IMetrics[];
     }
 
 }

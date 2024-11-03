@@ -106,10 +106,10 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
 
     async getMetricsBetweenDates(startDate: string, endDate: string): Promise<IMetrics[]> {
         const query = `
-            SELECT interaction, date, SUM(count) as count
+            SELECT interaction, SUM(count) as count
             FROM ProductMetricsAggDaily
             WHERE date BETWEEN $1 AND $2
-            GROUP BY date, interaction;
+            GROUP BY interaction;
         `;
 
         try {
@@ -117,7 +117,6 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
             return result.rows.map((row: any) => {
                 return {
                     interaction: row.interaction,
-                    date: row.date,
                     count: row.count
                 }
             });

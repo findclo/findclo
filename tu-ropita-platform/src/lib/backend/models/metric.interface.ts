@@ -1,5 +1,5 @@
 export interface IMetrics {
     interaction: string;
-    date: Date;
+    date?: Date;
     count: number;
 }
