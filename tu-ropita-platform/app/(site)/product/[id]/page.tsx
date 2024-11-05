@@ -5,8 +5,8 @@ import ImageGallery from '@/components/ImageGallery';
 import RelatedProducts from '@/components/RelatedProducts';
 import ShareButtons from '@/components/ShareButtons';
 import { IProduct } from '@/lib/backend/models/interfaces/product.interface';
-import { ShoppingCart } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import BuyButton from "@/components/BuyButton";
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
   const product = await publicProductsApiWrapper.getProductById(params.id);
@@ -41,14 +41,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
           <h2 className="text-xl font-semibold mb-2">{product.name}</h2>
           <p className="text-2xl font-bold mb-4">${product.price}</p>
           <p className="mb-6">{product.description}</p>
-          <div className="group">
-            <a href={product.url} target="_blank" rel="noopener noreferrer">
-              <button className="w-full bg-black text-white py-3 px-4 rounded mb-4 flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-green-600 hover:scale-105 hover:shadow-lg">
-                <ShoppingCart className="mr-2 transition-transform duration-300 ease-in-out group-hover:rotate-12" size={20} />
-                Comprar
-              </button>
-            </a>
-          </div>
+          <BuyButton productId={product.id.toString()} productUrl={product.url}/>
 
           <BrandLink
             brandId={brand.id.toString()}

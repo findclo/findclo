@@ -3,9 +3,25 @@ import {formatDateYYYYMMDD} from "@/lib/utils";
 import {IMetrics} from "@/lib/backend/models/metric.interface";
 
 const ADMIN_METRICS_PATH : string = `/admin/metrics`;
+const PUBLIC_METRICS_PATH : string = `/metrics/products`;
+
+class PublicMetricsApiWrapper {
+    async addClickBrandInteraction(productId: string): Promise<void> {
+        const [error, response] = await fetcher(`${PUBLIC_METRICS_PATH}/${productId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (error) {
+            console.error(`Error adding click brand interaction: ${error}`);
+            throw error;
+        }
+    }
+}
+
 class PrivateMetricsApiWrapper {
-
-
     private async fetchMetrics(auth_token: string, path: string, startDate: Date, endDate: Date): Promise<IMetrics[]> {
         const [error, metrics] = await fetcher(`${path}?startDate=${formatDateYYYYMMDD(startDate)}&endDate=${formatDateYYYYMMDD(endDate)}`, {
             method: 'GET',
@@ -45,5 +61,6 @@ class PrivateMetricsApiWrapper {
     }
 
 }
+export const publicMetricsApiWrapper = new PublicMetricsApiWrapper();
 
 export const privateMetricsApiWrapper = new PrivateMetricsApiWrapper();
