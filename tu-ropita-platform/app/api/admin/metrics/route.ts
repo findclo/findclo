@@ -1,40 +1,15 @@
 import {withAdminPermissionNoParams} from "@/lib/routes_middlewares";
 import {productsInteractionsService} from "@/lib/backend/services/productsInteractions.service";
 import {BadRequestException} from "@/lib/backend/exceptions/BadRequestException";
-import {parseErrorResponse} from "@/lib/utils";
-
-
-
-export const POST = withAdminPermissionNoParams(async(req: Request) => {
-    try{
-        await productsInteractionsService.syncProductMetricsAggDaily();
-
-        return new Response(JSON.stringify(""), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-    } catch (error: any){
-        return parseErrorResponse(error)
-    }
-});
 
 export const GET = withAdminPermissionNoParams(async (req: Request) => {
     const url = new URL(req.url);
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
-    const productId = url.searchParams.get("productId");
     validateDateParameters(startDate, endDate);
 
     try {
-        let metrics ;
-
-        if(productId){
-            metrics = await productsInteractionsService.getProductMetricsBetweenDates(new Date(startDate!), new Date(endDate!),productId);
-        }else{
-            metrics = await productsInteractionsService.getMetricsBetweenDatesAggDaily(new Date(startDate!), new Date(endDate!));
-        }
+        let metrics = await productsInteractionsService.getMetricsBetweenDates(new Date(startDate!), new Date(endDate!));
 
         return new Response(JSON.stringify(metrics), {
             status: 200,
@@ -43,7 +18,13 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
             },
         });
     } catch (error: any) {
-        return parseErrorResponse(error);
+        console.error("Error fetching product metrics between dates:", error);
+        return new Response(JSON.stringify({ error: error.message }), {
+            status: error.statusCode ? error.statusCode : 500,
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
     }
 });
 

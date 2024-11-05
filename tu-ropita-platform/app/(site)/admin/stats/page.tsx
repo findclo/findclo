@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { addDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
+import {CalendarIcon, RefreshCw} from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,24 +12,16 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-    ChartLegend,
-    ChartLegendContent
 } from '@/components/ui/chart';
-import { LineChart, Line } from 'recharts';
+import {LineChart, Line, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, Area} from 'recharts';
 import Cookies from "js-cookie";
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { privateMetricsApiWrapper } from "@/api-wrappers/metrics";
 import { IMetrics } from "@/lib/backend/models/metric.interface";
+import toast from "@/components/toast";
+import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/productInteraction.interface";
 
-enum ProductInteractionEnum {
-    VIEW_IN_LISTING_RELATED = 'view_in_listing_related',
-    VIEW_IN_LISTING_PROMOTED = 'view_in_listing_promoted',
-    CLICK = 'click',
-    NAVIGATE_TO_BRAND_SITE = 'navigate_to_brand_site'
-}
 
 export default function MarketplaceDashboard() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -37,6 +29,7 @@ export default function MarketplaceDashboard() {
         to: new Date(),
     });
     const [data, setData] = useState<IMetrics[]>([]);
+    const [dailyData, setDailyData] = useState<Record<string, any>[]>([]);
     const [brands, setBrands] = useState<IBrand[]>([]);
     const token = Cookies.get("Authorization");
 
@@ -47,29 +40,51 @@ export default function MarketplaceDashboard() {
 
     useEffect(() => {
         if (dateRange?.from && dateRange?.to) {
-            privateMetricsApiWrapper.getMetricsAggDaily(token!, dateRange.from, dateRange.to)
+            privateMetricsApiWrapper.getMetrics(token!, dateRange.from, dateRange.to)
                 .then(d => setData(d));
+
+            privateMetricsApiWrapper.getMetricsAggDaily(token!, dateRange.from, dateRange.to)
+                .then(metrics => {
+                    const transformedData = metrics.reduce((acc, metric) => {
+                        const dateKey = format(metric.date || new Date(), 'yyyy-MM-dd');
+                        if (!acc[dateKey]) {
+                            acc[dateKey] = { name: dateKey };
+                        }
+                        acc[dateKey][metric.interaction] = metric.count;
+                        return acc;
+                    }, {} as Record<string, any>);
+
+                    setDailyData(Object.values(transformedData));
+                });
         }
     }, [dateRange]);
 
-    const chartConfig = {
-        [ProductInteractionEnum.VIEW_IN_LISTING_RELATED]: {
-            label: 'Vistas en listado relacionado',
-            color: 'hsl(var(--chart-1))'
-        },
-        [ProductInteractionEnum.VIEW_IN_LISTING_PROMOTED]: {
-            label: 'Vistas en listado promocionado',
-            color: 'hsl(var(--chart-2))'
-        },
-        [ProductInteractionEnum.CLICK]: {
-            label: 'Clics',
-            color: 'hsl(var(--chart-3))'
-        },
-        [ProductInteractionEnum.NAVIGATE_TO_BRAND_SITE]: {
-            label: 'Navegaciones al sitio de la marca',
-            color: 'hsl(var(--chart-4))'
-        }
+    const getMaxValue = () => {
+        return Math.ceil(Math.max(...dailyData.flatMap(entry =>
+            Object.entries(entry)
+                .filter(([key]) => key !== 'name')
+                .map(([_, value]) => Number(value))
+        )) * 1.1);
     };
+
+    const chartConfig = {
+    [ProductInteractionEnum.VIEW_IN_LISTING_RELATED]: {
+        label: 'Vistas en listado relacionado',
+        color: 'hsl(45, 100%, 51%)' // Bright yellow
+    },
+    [ProductInteractionEnum.VIEW_IN_LISTING_PROMOTED]: {
+        label: 'Vistas en listado promocionado',
+        color: 'hsl(120, 100%, 40%)' // Bright green
+    },
+    [ProductInteractionEnum.CLICK]: {
+        label: 'Clics',
+        color: 'hsl(200, 100%, 50%)' // Bright blue
+    },
+    [ProductInteractionEnum.NAVIGATE_TO_BRAND_SITE]: {
+        label: 'Navegaciones al sitio de la marca',
+        color: 'hsl(340, 100%, 50%)' // Bright pink
+    }
+};
 
     return (
         <div className="container mx-auto p-4">
@@ -128,17 +143,65 @@ export default function MarketplaceDashboard() {
 
             <Card className="mb-6 w-full">
                 <CardHeader>
-                    <CardTitle>Evolución de Métricas para las marcas</CardTitle>
+                    <CardTitle>Evolución de Métricas</CardTitle>
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <p>Última actualización: {new Date().toLocaleString('es-AR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        })}</p>
+                        <button
+                           onClick={async () => {
+                                    try {
+                                        await privateMetricsApiWrapper.syncMetricsAggDaily(token!);
+                                        // Assuming you have a toast function available
+                                        toast({ type: 'success', message: "Metricas sincronizadas correctamente." });
+                                        window.location.reload();
+                                    } catch (error) {
+                                        console.error("Error syncing metrics:", error);
+                                        toast({ type: 'error', message: "Ocurrio un error al sincronizar las metricas. Intentelo de nuevo " });
+                                    }
+                                }}
+                            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                            title="Recargar página"
+                        >
+                            <RefreshCw className="w-4 h-4"/>
+                        </button>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <ChartContainer config={chartConfig} className="min-h-[200px] max-h-[600px] h-full w-full">
-                        <LineChart data={data}>
+                    <ChartContainer config={chartConfig} >
+                        <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                            <defs>
+                                {Object.entries(chartConfig).map(([key, config]) => (
+                                    <linearGradient key={key} id={`color${key}`} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={config.color} stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor={config.color} stopOpacity={0} />
+                                    </linearGradient>
+                                ))}
+                            </defs>
+                            <XAxis dataKey="name" />
+                            <YAxis
+                                domain={[0, getMaxValue()]}
+                                tickFormatter={(value) => value.toLocaleString()}
+                                width={60}
+                            />
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <Tooltip />
                             {Object.entries(chartConfig).map(([key, config]) => (
-                                <Line key={key} type="monotone" dataKey={key} stroke={config.color} strokeWidth={2} />
+                                <Area
+                                    key={key}
+                                    type="monotone"
+                                    dataKey={key}
+                                    stroke={config.color}
+                                    fillOpacity={1}
+                                    fill={`url(#color${key})`}
+                                />
                             ))}
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <ChartLegend content={<ChartLegendContent />} />
-                        </LineChart>
+                        </AreaChart>
                     </ChartContainer>
                 </CardContent>
             </Card>

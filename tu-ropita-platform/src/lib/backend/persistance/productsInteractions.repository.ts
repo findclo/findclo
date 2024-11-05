@@ -127,6 +127,30 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
         }
     }
 
+    async getMetricsBetweenDatesAggDaily(startDate: string, endDate: string): Promise<IMetrics[]> {
+        const query = `
+            SELECT interaction,date, SUM(count) as count
+            FROM ProductMetricsAggDaily
+            WHERE date BETWEEN $1 AND $2
+            GROUP BY date, interaction;
+        `;
+
+        try {
+            const result = await this.db.query(query, [startDate, endDate]);
+            return result.rows.map((row: any) => {
+                return {
+                    interaction: row.interaction,
+                    date: row.date,
+                    count: row.count
+                }
+            });
+
+        } catch (error) {
+            console.error('Error fetching product metrics between dates:', error);
+            throw error;
+        }
+    }
+
 
 }
 

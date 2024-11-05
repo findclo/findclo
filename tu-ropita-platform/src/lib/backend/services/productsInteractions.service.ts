@@ -57,6 +57,10 @@ class ProductsInteractionsService implements IProductsInteractionsService {
     public async getMetricsBetweenDates(startDate: Date, endDate: Date): Promise<IMetrics[]> {
         return productsInteractionsRepository.getMetricsBetweenDates(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate));
     }
+
+    public async getMetricsBetweenDatesAggDaily(startDate: Date, endDate: Date): Promise<IMetrics[]> {
+        return productsInteractionsRepository.getMetricsBetweenDatesAggDaily(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate));
+    }
 }
 
 export const productsInteractionsService = new ProductsInteractionsService();
