@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
     ChartContainer,
 } from '@/components/ui/chart';
-import {LineChart, Line, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, Area} from 'recharts';
+import { AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, Area} from 'recharts';
 import Cookies from "js-cookie";
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
@@ -53,8 +53,9 @@ export default function MarketplaceDashboard() {
                         acc[dateKey][metric.interaction] = metric.count;
                         return acc;
                     }, {} as Record<string, any>);
+                    const sortedData = Object.values(transformedData).sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
 
-                    setDailyData(Object.values(transformedData));
+                    setDailyData(Object.values(sortedData));
                 });
         }
     }, [dateRange]);
@@ -94,15 +95,15 @@ export default function MarketplaceDashboard() {
                 <Popover>
                     <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full sm:w-[300px] justify-start text-left font-normal">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            <CalendarIcon className="mr-2 h-4 w-4"/>
                             {dateRange?.from ? (
                                 dateRange.to ? (
                                     <>
-                                        {format(dateRange.from, "P", { locale: es })} -{" "}
-                                        {format(dateRange.to, "P", { locale: es })}
+                                        {format(dateRange.from, "P", {locale: es})} -{" "}
+                                        {format(dateRange.to, "P", {locale: es})}
                                     </>
                                 ) : (
-                                    format(dateRange.from, "P", { locale: es })
+                                    format(dateRange.from, "P", {locale: es})
                                 )
                             ) : (
                                 <span>Seleccionar rango de fechas</span>
@@ -121,90 +122,94 @@ export default function MarketplaceDashboard() {
                     </PopoverContent>
                 </Popover>
             </div>
+            <div className="flex flex-wrap gap-4 mb-6 w-full">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
+                    {Object.entries(chartConfig).map(([metric, config]) => {
+                        const metricData = data.find(d => d.interaction === metric);
+                        return (
+                            <Card key={metric} className="w-full">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{config.label}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">
+                                        {metricData ? metricData.count.toLocaleString() : '0'}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Total en el periodo</p>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(chartConfig).map(([metric, config]) => {
-                    const metricData = data.find(d => d.interaction === metric);
-                    return (
-                        <Card key={metric} className="w-full">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">{config.label}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">
-                                    {metricData ? metricData.count.toLocaleString() : '0'}
-                                </div>
-                                <p className="text-xs text-muted-foreground">Total en el periodo</p>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-            </div>
-
-            <Card className="mb-6 w-full">
-                <CardHeader>
-                    <CardTitle>Evolución de Métricas</CardTitle>
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <p>Última actualización: {new Date().toLocaleString('es-AR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                        })}</p>
-                        <button
-                           onClick={async () => {
+                <Card className="mb-6 w-full">
+                    <CardHeader>
+                        <CardTitle>Evolución de Métricas</CardTitle>
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <p>Última actualización: {new Date().toLocaleString('es-AR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            })}</p>
+                            <button
+                                onClick={async () => {
                                     try {
                                         await privateMetricsApiWrapper.syncMetricsAggDaily(token!);
                                         // Assuming you have a toast function available
-                                        toast({ type: 'success', message: "Metricas sincronizadas correctamente." });
+                                        toast({type: 'success', message: "Metricas sincronizadas correctamente."});
                                         window.location.reload();
                                     } catch (error) {
                                         console.error("Error syncing metrics:", error);
-                                        toast({ type: 'error', message: "Ocurrio un error al sincronizar las metricas. Intentelo de nuevo " });
+                                        toast({
+                                            type: 'error',
+                                            message: "Ocurrio un error al sincronizar las metricas. Intentelo de nuevo "
+                                        });
                                     }
                                 }}
-                            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                            title="Recargar página"
-                        >
-                            <RefreshCw className="w-4 h-4"/>
-                        </button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <ChartContainer config={chartConfig} >
-                        <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                            <defs>
-                                {Object.entries(chartConfig).map(([key, config]) => (
-                                    <linearGradient key={key} id={`color${key}`} x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={config.color} stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor={config.color} stopOpacity={0} />
-                                    </linearGradient>
-                                ))}
-                            </defs>
-                            <XAxis dataKey="name" />
-                            <YAxis
-                                domain={[0, getMaxValue()]}
-                                tickFormatter={(value) => value.toLocaleString()}
-                                width={60}
-                            />
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <Tooltip />
-                            {Object.entries(chartConfig).map(([key, config]) => (
-                                <Area
-                                    key={key}
-                                    type="monotone"
-                                    dataKey={key}
-                                    stroke={config.color}
-                                    fillOpacity={1}
-                                    fill={`url(#color${key})`}
+                                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                                title="Recargar página"
+                            >
+                                <RefreshCw className="w-4 h-4"/>
+                            </button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer config={chartConfig}>
+                            <AreaChart data={dailyData} margin={{top: 10, right: 10, left: 10, bottom: 10}}>
+                                <defs>
+                                    {Object.entries(chartConfig).map(([key, config]) => (
+                                        <linearGradient key={key} id={`color${key}`} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={config.color} stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor={config.color} stopOpacity={0}/>
+                                        </linearGradient>
+                                    ))}
+                                </defs>
+                                <XAxis dataKey="name"/>
+                                <YAxis
+                                    domain={[0, getMaxValue()]}
+                                    tickFormatter={(value) => value.toLocaleString()}
+                                    width={60}
                                 />
-                            ))}
-                        </AreaChart>
-                    </ChartContainer>
-                </CardContent>
-            </Card>
+                                <CartesianGrid strokeDasharray="3 3"/>
+                                <Tooltip/>
+                                {Object.entries(chartConfig).map(([key, config]) => (
+                                    <Area
+                                        key={key}
+                                        type="monotone"
+                                        dataKey={key}
+                                        stroke={config.color}
+                                        fillOpacity={1}
+                                        fill={`url(#color${key})`}
+                                    />
+                                ))}
+                            </AreaChart>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
