@@ -21,6 +21,8 @@ import { privateMetricsApiWrapper } from "@/api-wrappers/metrics";
 import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
 import toast from "@/components/toast";
 import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
+import {IProductMetric} from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
+import ProductsMetricsTable from "@/components/ProductsMetricsTable";
 
 
 export default function MarketplaceDashboard() {
@@ -29,6 +31,7 @@ export default function MarketplaceDashboard() {
         to: new Date(),
     });
     const [data, setData] = useState<IMetrics[]>([]);
+    const [productsMetrics, setProductsMetrics] = useState<IProductMetric[]>([]);
     const [dailyData, setDailyData] = useState<Record<string, any>[]>([]);
     const [brands, setBrands] = useState<IBrand[]>([]);
     const token = Cookies.get("Authorization");
@@ -57,6 +60,9 @@ export default function MarketplaceDashboard() {
 
                     setDailyData(Object.values(sortedData));
                 });
+
+            privateMetricsApiWrapper.getProductsMetrics(token!, dateRange.from, dateRange.to)
+                .then(metrics => setProductsMetrics(metrics));
         }
     }, [dateRange]);
 
@@ -209,6 +215,8 @@ export default function MarketplaceDashboard() {
                         </ChartContainer>
                     </CardContent>
                 </Card>
+
+                <ProductsMetricsTable metrics={productsMetrics}/>
             </div>
         </div>
     );

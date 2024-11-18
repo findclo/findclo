@@ -4,6 +4,7 @@ import pool from "@/lib/backend/conf/db.connections";
 import { IProductMetricAggDaily } from "@/lib/backend/models/interfaces/metrics/product.metric.aggDaily.interface";
 import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
 import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
+import {BrandStatus, IBrand} from "@/lib/backend/models/interfaces/brand.interface";
 
 export interface IProductsInteractionsRepository {
     addProductInteraction(productId: string, interaction: ProductInteractionEnum): Promise<void>;
@@ -59,16 +60,37 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
 
     async getProductMetricsBetweenDates(startDate: string, endDate: string, productId: string): Promise<IProductMetricAggDaily[]> {
         const query = `
-            SELECT product_id, interaction, date, SUM(count) as count
-            FROM ProductMetricsAggDaily
-            WHERE product_id = $1 AND date BETWEEN $2 AND $3
-            GROUP BY date, product_id, interaction;
+            SELECT metrics.product_id, metrics.interaction, metrics.date , metrics.count,
+                   p.brand_id as brandId, p.description as description,
+                   p.name as name, p.images as images, p.url as url, p.price as price
+            FROM products p JOIN (
+                SELECT product_id, interaction, date, SUM(count) as count
+                FROM ProductMetricsAggDaily
+                WHERE product_id = $1 AND date BETWEEN $2 AND $3
+                GROUP BY date, product_id, interaction
+            ) as metrics
+            ON metrics.product_id = p.id;
         `;
 
         const rows = await this.fetchMetrics(query, [productId, startDate, endDate]);
 
         return rows.map(row => ({
-            productId: row.product_id,
+            product: {
+                id: row.product_id,
+                name: row.name,
+                description: row.description ,
+                images: row.images ,
+                brand: {
+                    id: row.brand_id,
+                    name: '',
+                    image: '',
+                    websiteUrl: '',
+                    status: BrandStatus.ACTIVE, // this is to avoid tslint checks
+                    description: ''
+                },
+                price: row.price,
+                url: row.url,
+            },
             interaction: row.interaction,
             date: row.date,
             count: row.count,
@@ -110,16 +132,37 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
 
     async getMetricByProduct(startDate: string, endDate: string): Promise<IProductMetric[]> {
         const query = `
-            SELECT product_id, interaction, SUM(count) as count
-            FROM ProductMetricsAggDaily
-            WHERE date BETWEEN $1 AND $2
-            GROUP BY product_id, interaction;
+            SELECT metrics.product_id, metrics.interaction, metrics.count,
+                   p.brand_id as brandId, p.description as description,
+                   p.name as name, p.images as images, p.url as url, p.price as price
+            FROM products p JOIN (
+                    SELECT product_id, interaction, SUM(count) as count
+                    FROM ProductMetricsAggDaily
+                    WHERE date BETWEEN $1 AND $2
+                    GROUP BY product_id, interaction
+                    ) as metrics 
+                ON metrics.product_id = p.id;
         `;
 
         const rows = await this.fetchMetrics(query, [startDate, endDate]);
 
         return rows.map(row => ({
-            productId: row.product_id,
+            product: {
+                id: row.product_id,
+                name: row.name,
+                description: row.description ,
+                images: row.images ,
+                brand: {
+                    id: row.brand_id,
+                    name: '',
+                    image: '',
+                    websiteUrl: '',
+                    status: BrandStatus.ACTIVE, // this is to avoid tslint checks
+                    description: ''
+                },
+                price: row.price,
+                url: row.url,
+            },
             interaction: row.interaction,
             count: row.count,
         }));

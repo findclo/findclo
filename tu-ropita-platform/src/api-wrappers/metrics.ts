@@ -1,6 +1,7 @@
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
 import {formatDateYYYYMMDD} from "@/lib/utils";
 import {IMetrics} from "@/lib/backend/models/interfaces/metrics/metric.interface";
+import {IProductMetric} from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
 
 const ADMIN_METRICS_PATH : string = `/admin/metrics`;
 const PUBLIC_METRICS_PATH : string = `/metrics/products`;
@@ -22,7 +23,7 @@ class PublicMetricsApiWrapper {
 }
 
 class PrivateMetricsApiWrapper {
-    private async fetchMetrics(auth_token: string, path: string, startDate: Date, endDate: Date): Promise<IMetrics[]> {
+    private async fetchMetrics(auth_token: string, path: string, startDate: Date, endDate: Date): Promise<any[]> {
         const [error, metrics] = await fetcher(`${path}?startDate=${formatDateYYYYMMDD(startDate)}&endDate=${formatDateYYYYMMDD(endDate)}`, {
             method: 'GET',
             headers: {
@@ -32,9 +33,9 @@ class PrivateMetricsApiWrapper {
         });
         if (error) {
             console.error(`Error getting metrics: ${error}`);
-            return [] as IMetrics[];
+            return [] as any[];
         }
-        return metrics as IMetrics[];
+        return metrics as any[];
     }
 
     async getMetrics(auth_token: string, startDate: Date, endDate: Date): Promise<IMetrics[]> {
@@ -43,6 +44,10 @@ class PrivateMetricsApiWrapper {
 
     async getMetricsAggDaily(auth_token: string, startDate: Date, endDate: Date): Promise<IMetrics[]> {
         return this.fetchMetrics(auth_token, `${ADMIN_METRICS_PATH}/daily`, startDate, endDate);
+    }
+
+    async getProductsMetrics(auth_token: string, startDate: Date, endDate: Date): Promise<IProductMetric[]> {
+        return this.fetchMetrics(auth_token, `${ADMIN_METRICS_PATH}/products`, startDate, endDate);
     }
 
     async syncMetricsAggDaily(auth_token: string): Promise<void> {
