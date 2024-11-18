@@ -5,7 +5,9 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
-
+.idea/
+package-lock.json
+tu-ropita-platform/package-lock.json
 # testing
 /coverage
 
@@ -34,3 +36,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+tu-ropita-platform/package-lock.json
+tu-ropita-platform/package-lock.json
