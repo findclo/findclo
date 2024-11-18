@@ -23,6 +23,7 @@ import toast from "@/components/toast";
 import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 import {IProductMetric} from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
 import ProductsMetricsTable from "@/components/ProductsMetricsTable";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 
 export default function MarketplaceDashboard() {
@@ -35,6 +36,7 @@ export default function MarketplaceDashboard() {
     const [dailyData, setDailyData] = useState<Record<string, any>[]>([]);
     const [brands, setBrands] = useState<IBrand[]>([]);
     const token = Cookies.get("Authorization");
+    const [selectedBrand, setSelectedBrand] = useState<string>();
 
     useEffect(() => {
         privateBrandsApiWrapper.listAllBrands(token!)
@@ -43,10 +45,10 @@ export default function MarketplaceDashboard() {
 
     useEffect(() => {
         if (dateRange?.from && dateRange?.to) {
-            privateMetricsApiWrapper.getMetrics(token!, dateRange.from, dateRange.to)
+            privateMetricsApiWrapper.getMetrics(token!, dateRange.from, dateRange.to,selectedBrand)
                 .then(d => setData(d));
 
-            privateMetricsApiWrapper.getMetricsAggDaily(token!, dateRange.from, dateRange.to)
+            privateMetricsApiWrapper.getMetricsAggDaily(token!, dateRange.from, dateRange.to,selectedBrand)
                 .then(metrics => {
                     const transformedData = metrics.reduce((acc, metric) => {
                         const dateKey = format(metric.date || new Date(), 'yyyy-MM-dd');
@@ -61,10 +63,10 @@ export default function MarketplaceDashboard() {
                     setDailyData(Object.values(sortedData));
                 });
 
-            privateMetricsApiWrapper.getProductsMetrics(token!, dateRange.from, dateRange.to)
+            privateMetricsApiWrapper.getProductsMetrics(token!, dateRange.from, dateRange.to,selectedBrand)
                 .then(metrics => setProductsMetrics(metrics));
         }
-    }, [dateRange]);
+    }, [dateRange,selectedBrand]);
 
     const getMaxValue = () => {
         return Math.ceil(Math.max(...dailyData.flatMap(entry =>
@@ -127,6 +129,18 @@ export default function MarketplaceDashboard() {
                         />
                     </PopoverContent>
                 </Popover>
+                <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                        <SelectValue placeholder="Seleccionar marca" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {brands.map((brand) => (
+                            <SelectItem key={brand.id} value={brand.id.toString()}>
+                                {brand.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
             <div className="flex flex-wrap gap-4 mb-6 w-full">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">

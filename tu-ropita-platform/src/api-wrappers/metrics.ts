@@ -23,8 +23,12 @@ class PublicMetricsApiWrapper {
 }
 
 class PrivateMetricsApiWrapper {
-    private async fetchMetrics(auth_token: string, path: string, startDate: Date, endDate: Date): Promise<any[]> {
-        const [error, metrics] = await fetcher(`${path}?startDate=${formatDateYYYYMMDD(startDate)}&endDate=${formatDateYYYYMMDD(endDate)}`, {
+    private async fetchMetrics(auth_token: string, path: string, startDate: Date, endDate: Date, brandId?:string): Promise<any[]> {
+        let url = `${path}?startDate=${formatDateYYYYMMDD(startDate)}&endDate=${formatDateYYYYMMDD(endDate)}`;
+        if (brandId) {
+            url += `&brand=${brandId}`;
+        }
+        const [error, metrics] = await fetcher(url, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -38,16 +42,16 @@ class PrivateMetricsApiWrapper {
         return metrics as any[];
     }
 
-    async getMetrics(auth_token: string, startDate: Date, endDate: Date): Promise<IMetrics[]> {
-        return this.fetchMetrics(auth_token, ADMIN_METRICS_PATH, startDate, endDate);
+    async getMetrics(auth_token: string, startDate: Date, endDate: Date, brandId? : string): Promise<IMetrics[]> {
+        return this.fetchMetrics(auth_token, ADMIN_METRICS_PATH, startDate, endDate,brandId);
     }
 
-    async getMetricsAggDaily(auth_token: string, startDate: Date, endDate: Date): Promise<IMetrics[]> {
-        return this.fetchMetrics(auth_token, `${ADMIN_METRICS_PATH}/daily`, startDate, endDate);
+    async getMetricsAggDaily(auth_token: string, startDate: Date, endDate: Date, brandId? : string ): Promise<IMetrics[]> {
+        return this.fetchMetrics(auth_token, `${ADMIN_METRICS_PATH}/daily`, startDate, endDate,brandId);
     }
 
-    async getProductsMetrics(auth_token: string, startDate: Date, endDate: Date): Promise<IProductMetric[]> {
-        return this.fetchMetrics(auth_token, `${ADMIN_METRICS_PATH}/products`, startDate, endDate);
+    async getProductsMetrics(auth_token: string, startDate: Date, endDate: Date, brandId? : string): Promise<IProductMetric[]> {
+        return this.fetchMetrics(auth_token, `${ADMIN_METRICS_PATH}/products`, startDate, endDate,brandId);
     }
 
     async syncMetricsAggDaily(auth_token: string): Promise<void> {

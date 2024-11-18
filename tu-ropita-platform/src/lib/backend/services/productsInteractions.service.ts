@@ -55,16 +55,16 @@ class ProductsInteractionsService implements IProductsInteractionsService {
         return productsInteractionsRepository.getProductMetricsBetweenDates(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate), productId);
     }
 
-    public async getMetrics(startDate: Date, endDate: Date): Promise<IMetrics[]> {
-        return productsInteractionsRepository.getMetricsBetweenDates(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate));
+    public async getMetrics(startDate: Date, endDate: Date, brandId?:string): Promise<IMetrics[]> {
+        return productsInteractionsRepository.getMetricsBetweenDates(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate),brandId);
     }
 
-    public async getMetricsBetweenDatesAggDaily(startDate: Date, endDate: Date): Promise<IMetrics[]> {
-        return productsInteractionsRepository.getMetricsBetweenDatesAggDaily(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate));
+    public async getMetricsBetweenDatesAggDaily(startDate: Date, endDate: Date, brandId?:string): Promise<IMetrics[]> {
+        return productsInteractionsRepository.getMetricsBetweenDatesAggDaily(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate),brandId);
     }
 
-    public async getMetricByProduct(startDate: Date, endDate: Date): Promise<IProductMetric[]>{
-        return productsInteractionsRepository.getMetricByProduct(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate))
+    public async getMetricByProduct(startDate: Date, endDate: Date, brandId?:string): Promise<IProductMetric[]>{
+        return productsInteractionsRepository.getMetricByProduct(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate),brandId)
     }
 }
 

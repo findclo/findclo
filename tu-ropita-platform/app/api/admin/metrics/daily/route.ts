@@ -25,6 +25,7 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
     const productId = url.searchParams.get("productId");
+    const brandId = url.searchParams.get("brand") ?? undefined;
     validateDateParameters(startDate, endDate);
 
     try {
@@ -33,7 +34,7 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
         if(productId){
             metrics = await productsInteractionsService.getProductMetricsAggDaily(new Date(startDate!), new Date(endDate!),productId);
         }else{
-            metrics = await productsInteractionsService.getMetricsBetweenDatesAggDaily(new Date(startDate!), new Date(endDate!));
+            metrics = await productsInteractionsService.getMetricsBetweenDatesAggDaily(new Date(startDate!), new Date(endDate!), brandId);
         }
 
         return new Response(JSON.stringify(metrics), {
