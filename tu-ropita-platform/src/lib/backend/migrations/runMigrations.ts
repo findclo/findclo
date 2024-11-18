@@ -62,7 +62,10 @@ async function runMigration(filePath: string) {
 
 async function runMigrations() {
     try {
-        const files = fs.readdirSync(upMigrationsDir).filter(file => file.endsWith('.sql'));
+        const files = fs.readdirSync(upMigrationsDir)
+            .filter(file => file.endsWith('.sql'))
+            .sort((a, b) => parseInt(a.split('-')[0], 10) - parseInt(b.split('-')[0], 10));
+
 
         for (let file of files) {
             await runMigration(path.join(upMigrationsDir, file));
