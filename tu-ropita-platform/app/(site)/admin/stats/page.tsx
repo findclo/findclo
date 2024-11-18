@@ -18,9 +18,9 @@ import Cookies from "js-cookie";
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { privateMetricsApiWrapper } from "@/api-wrappers/metrics";
-import { IMetrics } from "@/lib/backend/models/metric.interface";
+import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
 import toast from "@/components/toast";
-import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/productInteraction.interface";
+import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 
 
 export default function MarketplaceDashboard() {

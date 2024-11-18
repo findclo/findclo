@@ -1,6 +1,6 @@
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
 import {formatDateYYYYMMDD} from "@/lib/utils";
-import {IMetrics} from "@/lib/backend/models/metric.interface";
+import {IMetrics} from "@/lib/backend/models/interfaces/metrics/metric.interface";
 
 const ADMIN_METRICS_PATH : string = `/admin/metrics`;
 const PUBLIC_METRICS_PATH : string = `/metrics/products`;

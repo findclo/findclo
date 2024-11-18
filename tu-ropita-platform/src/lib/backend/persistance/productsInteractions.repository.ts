@@ -1,56 +1,39 @@
-import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/productInteraction.interface";
-import {Pool} from "pg";
+import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
+import { Pool } from "pg";
 import pool from "@/lib/backend/conf/db.connections";
-import {IProductMetricAggDaily} from "@/lib/backend/models/interfaces/productMetricAggDaily.interface";
-import {IMetrics} from "@/lib/backend/models/metric.interface";
+import { IProductMetricAggDaily } from "@/lib/backend/models/interfaces/metrics/product.metric.aggDaily.interface";
+import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
+import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
 
 export interface IProductsInteractionsRepository {
     addProductInteraction(productId: string, interaction: ProductInteractionEnum): Promise<void>;
-
     addListOfProductInteractions(productIds: string[], interaction: ProductInteractionEnum): Promise<void>;
-
     syncProductMetricsAggDaily(): Promise<void>;
+    getProductMetricsBetweenDates(startDate: string, endDate: string, productId: string): Promise<IProductMetricAggDaily[]>;
+    getMetricsBetweenDates(startDate: string, endDate: string): Promise<IMetrics[]>;
+    getMetricByProduct(startDate: string, endDate: string): Promise<IProductMetric[]>
 }
 
 class ProductsInteractionsRepository implements IProductsInteractionsRepository {
     private db: Pool;
 
-    constructor(db: Pool ) {
+    constructor(db: Pool) {
         this.db = db;
     }
 
     async addProductInteraction(productId: string, interaction: ProductInteractionEnum): Promise<void> {
-        const query: string = 'INSERT INTO ProductInteractions (product_id, interaction) VALUES ($1, $2)';
-
-        try {
-            await this.db.query(query, [productId, interaction]);
-        } catch (error) {
-            console.error('Error adding product interaction:', error);
-            throw error;
-        }
+        const query = 'INSERT INTO ProductInteractions (product_id, interaction) VALUES ($1, $2)';
+        await this.executeQuery(query, [productId, interaction]);
     }
 
     async addListOfProductInteractions(productIds: string[], interaction: ProductInteractionEnum): Promise<void> {
-        if(!productIds || productIds.length === 0) {
-            return ;
-        }
-        const query: string = 'INSERT INTO ProductInteractions (product_id, interaction) VALUES ';
-        const values: string[] = [];
-        const params: string[] = [];
-        let valuesIdx = 0;
+        if (!productIds || productIds.length === 0) return;
 
-        for (const productId of productIds) {
-            values.push(`($${valuesIdx + 1}, $${valuesIdx + 2})`);
-            valuesIdx+=2;
-            params.push(productId, interaction);
-        }
+        const query = 'INSERT INTO ProductInteractions (product_id, interaction) VALUES ';
+        const values = productIds.map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`).join(',');
+        const params = productIds.flatMap(productId => [productId, interaction]);
 
-        try {
-            await this.db.query(query + values.join(','), params);
-        } catch (error) {
-            console.error('Error adding list of product interactions:', error);
-            throw error;
-        }
+        await this.executeQuery(query + values, params);
     }
 
     async syncProductMetricsAggDaily(): Promise<void> {
@@ -60,10 +43,10 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
                 FROM ProductMetricsAggDaily
             )
             INSERT INTO ProductMetricsAggDaily (product_id, interaction, date, count, last_updated)
-            SELECT 
-                product_id, 
-                interaction, 
-                created_at::DATE AS date, 
+            SELECT
+                product_id,
+                interaction,
+                created_at::DATE AS date,
                 COUNT(DISTINCT id) AS count,
                 NOW() AS last_updated
             FROM ProductInteractions
@@ -71,15 +54,10 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
             GROUP BY product_id, interaction, date;
         `;
 
-        try {
-            await this.db.query(query);
-        } catch (error) {
-            console.error('Error syncing product metrics:', error);
-            throw error;
-        }
+        await this.executeQuery(query, []);
     }
 
-    async getProductMetricsBetweenDates(startDate: string, endDate: string, productId:string): Promise<IProductMetricAggDaily[]> {
+    async getProductMetricsBetweenDates(startDate: string, endDate: string, productId: string): Promise<IProductMetricAggDaily[]> {
         const query = `
             SELECT product_id, interaction, date, SUM(count) as count
             FROM ProductMetricsAggDaily
@@ -87,21 +65,14 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
             GROUP BY date, product_id, interaction;
         `;
 
-        try {
-            const result = await this.db.query(query, [productId,startDate, endDate]);
-            return result.rows.map((row: any) => {
-                return {
-                    productId: row.product_id,
-                    interaction: row.interaction,
-                    date: row.date,
-                    count: row.count
-                }
-            });
+        const rows = await this.fetchMetrics(query, [productId, startDate, endDate]);
 
-        } catch (error) {
-            console.error('Error fetching product metrics between dates:', error);
-            throw error;
-        }
+        return rows.map(row => ({
+            productId: row.product_id,
+            interaction: row.interaction,
+            date: row.date,
+            count: row.count,
+        }));
     }
 
     async getMetricsBetweenDates(startDate: string, endDate: string): Promise<IMetrics[]> {
@@ -112,46 +83,67 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
             GROUP BY interaction;
         `;
 
-        try {
-            const result = await this.db.query(query, [startDate, endDate]);
-            return result.rows.map((row: any) => {
-                return {
-                    interaction: row.interaction,
-                    count: row.count
-                }
-            });
+        const rows = await this.fetchMetrics(query, [startDate, endDate]);
 
-        } catch (error) {
-            console.error('Error fetching product metrics between dates:', error);
-            throw error;
-        }
+        return rows.map(row => ({
+            interaction: row.interaction,
+            count: row.count,
+        }));
     }
 
     async getMetricsBetweenDatesAggDaily(startDate: string, endDate: string): Promise<IMetrics[]> {
         const query = `
-            SELECT interaction,date, SUM(count) as count
+            SELECT interaction, date, SUM(count) as count
             FROM ProductMetricsAggDaily
             WHERE date BETWEEN $1 AND $2
             GROUP BY date, interaction;
         `;
 
-        try {
-            const result = await this.db.query(query, [startDate, endDate]);
-            return result.rows.map((row: any) => {
-                return {
-                    interaction: row.interaction,
-                    date: row.date,
-                    count: row.count
-                }
-            });
+        const rows = await this.fetchMetrics(query, [startDate, endDate]);
 
+        return rows.map(row => ({
+            interaction: row.interaction,
+            date: row.date,
+            count: row.count,
+        }));
+    }
+
+    async getMetricByProduct(startDate: string, endDate: string): Promise<IProductMetric[]> {
+        const query = `
+            SELECT product_id, interaction, SUM(count) as count
+            FROM ProductMetricsAggDaily
+            WHERE date BETWEEN $1 AND $2
+            GROUP BY product_id, interaction;
+        `;
+
+        const rows = await this.fetchMetrics(query, [startDate, endDate]);
+
+        return rows.map(row => ({
+            productId: row.product_id,
+            interaction: row.interaction,
+            count: row.count,
+        }));
+    }
+
+
+    private async executeQuery(query: string, params: any[]): Promise<void> {
+        try {
+            await this.db.query(query, params);
         } catch (error) {
-            console.error('Error fetching product metrics between dates:', error);
+            console.error('Database query error:', error);
             throw error;
         }
     }
 
-
+    private async fetchMetrics(query: string, params: any[]): Promise<any[]> {
+        try {
+            const result = await this.db.query(query, params);
+            return result.rows;
+        } catch (error) {
+            console.error('Error fetching metrics:', error);
+            throw error;
+        }
+    }
 }
 
 export const productsInteractionsRepository = new ProductsInteractionsRepository(pool);

@@ -1,8 +1,9 @@
-import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/productInteraction.interface";
+import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 import {productsInteractionsRepository} from "@/lib/backend/persistance/productsInteractions.repository";
-import {IProductMetricAggDaily} from "@/lib/backend/models/interfaces/productMetricAggDaily.interface";
-import {IMetrics} from "@/lib/backend/models/metric.interface";
+import {IProductMetricAggDaily} from "@/lib/backend/models/interfaces/metrics/product.metric.aggDaily.interface";
+import {IMetrics} from "@/lib/backend/models/interfaces/metrics/metric.interface";
 import {formatDateYYYYMMDD} from "@/lib/utils";
+import {IProductMetric} from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
 
 export interface IProductsInteractionsService {
     // Single product interactions
@@ -16,8 +17,8 @@ export interface IProductsInteractionsService {
 
     // AggDaily metrics
     syncProductMetricsAggDaily(): Promise<void>;
-    getProductMetricsBetweenDates(startDate: Date, endDate: Date, productId : string): Promise<IProductMetricAggDaily[]>
-    getMetricsBetweenDates(startDate: Date, endDate: Date): Promise<IMetrics[]>;
+    getProductMetricsAggDaily(startDate: Date, endDate: Date, productId : string): Promise<IProductMetricAggDaily[]>
+    getMetrics(startDate: Date, endDate: Date): Promise<IMetrics[]>;
 }
 
 class ProductsInteractionsService implements IProductsInteractionsService {
@@ -50,16 +51,20 @@ class ProductsInteractionsService implements IProductsInteractionsService {
         return productsInteractionsRepository.syncProductMetricsAggDaily();
     }
 
-    public async getProductMetricsBetweenDates(startDate: Date, endDate: Date, productId : string): Promise<IProductMetricAggDaily[]> {
+    public async getProductMetricsAggDaily(startDate: Date, endDate: Date, productId : string): Promise<IProductMetricAggDaily[]> {
         return productsInteractionsRepository.getProductMetricsBetweenDates(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate), productId);
     }
 
-    public async getMetricsBetweenDates(startDate: Date, endDate: Date): Promise<IMetrics[]> {
+    public async getMetrics(startDate: Date, endDate: Date): Promise<IMetrics[]> {
         return productsInteractionsRepository.getMetricsBetweenDates(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate));
     }
 
     public async getMetricsBetweenDatesAggDaily(startDate: Date, endDate: Date): Promise<IMetrics[]> {
         return productsInteractionsRepository.getMetricsBetweenDatesAggDaily(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate));
+    }
+
+    public async getMetricByProduct(startDate: Date, endDate: Date): Promise<IProductMetric[]>{
+        return productsInteractionsRepository.getMetricByProduct(formatDateYYYYMMDD(startDate), formatDateYYYYMMDD(endDate))
     }
 }
 

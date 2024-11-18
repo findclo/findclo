@@ -1,7 +1,7 @@
 import {withAdminPermissionNoParams} from "@/lib/routes_middlewares";
 import {productsInteractionsService} from "@/lib/backend/services/productsInteractions.service";
 import {BadRequestException} from "@/lib/backend/exceptions/BadRequestException";
-import {parseErrorResponse} from "@/lib/utils";
+import {parseErrorResponse, validateDateParameters} from "@/lib/utils";
 
 
 
@@ -31,7 +31,7 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
         let metrics ;
 
         if(productId){
-            metrics = await productsInteractionsService.getProductMetricsBetweenDates(new Date(startDate!), new Date(endDate!),productId);
+            metrics = await productsInteractionsService.getProductMetricsAggDaily(new Date(startDate!), new Date(endDate!),productId);
         }else{
             metrics = await productsInteractionsService.getMetricsBetweenDatesAggDaily(new Date(startDate!), new Date(endDate!));
         }
@@ -47,20 +47,4 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
     }
 });
 
-function validateDateParameters(startDateStr: string | null, endDateStr: string | null): void {
-    if (!startDateStr || !endDateStr) {
-        throw new BadRequestException("Missing startDate or endDate parameters");
-    }
 
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        throw new BadRequestException("Invalid startDate or endDate format. Must be YYYY-MM-DD");
-    }
-
-    if (endDate < startDate) {
-        throw new BadRequestException("endDate must be equal to or after startDate");
-    }
-
-}

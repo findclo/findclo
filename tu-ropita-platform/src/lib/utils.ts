@@ -97,7 +97,23 @@ export function formatDateYYYYMMDD(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+export function validateDateParameters(startDateStr: string | null, endDateStr: string | null): void {
+  if (!startDateStr || !endDateStr) {
+    throw new BadRequestException("Missing startDate or endDate parameters");
+  }
 
+  const startDate = new Date(startDateStr);
+  const endDate = new Date(endDateStr);
+
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    throw new BadRequestException("Invalid startDate or endDate format. Must be YYYY-MM-DD");
+  }
+
+  if (endDate < startDate) {
+    throw new BadRequestException("endDate must be equal to or after startDate");
+  }
+
+}
 // TODO MOVE TO A MIDDLEWARE
 export function parseErrorResponse(error:any): Response {
   const statusCode = error.statusCode ? error.statusCode : 500;

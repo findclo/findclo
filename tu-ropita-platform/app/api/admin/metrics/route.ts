@@ -9,7 +9,7 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
     validateDateParameters(startDate, endDate);
 
     try {
-        let metrics = await productsInteractionsService.getMetricsBetweenDates(new Date(startDate!), new Date(endDate!));
+        let metrics = await productsInteractionsService.getMetrics(new Date(startDate!), new Date(endDate!));
 
         return new Response(JSON.stringify(metrics), {
             status: 200,
