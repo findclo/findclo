@@ -147,15 +147,27 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
+    // async deleteProduct(id: number): Promise<boolean> {
+    //     const query = `DELETE FROM Products WHERE id = $1`;
+    //     const values = [id];
+
+    //     try {
+    //         const res = await this.db.query(query, values);
+    //         return res.rowCount!= null? res.rowCount > 0: false;
+    //     } catch (error: any) {
+    //         console.log(error); // No need to raise error.
+    //         return false;
+    //     }
+    // }
     async deleteProduct(id: number): Promise<boolean> {
-        const query = `DELETE FROM Products WHERE id = $1`;
-        const values = [id];
+        const query = `UPDATE Products SET status = $1 WHERE id = $2`;
+        const values = ['DELETED', id];
 
         try {
             const res = await this.db.query(query, values);
-            return res.rowCount!= null? res.rowCount > 0: false;
+            return res.rowCount != null ? res.rowCount > 0 : false;
         } catch (error: any) {
-            console.log(error); // No need to raise error.
+            console.log(error);
             return false;
         }
     }
@@ -214,7 +226,7 @@ class ProductsRepository implements IProductRepository{
             name: row.name,
             price: parseFloat(row.price),
             description: row.description,
-            images: row.images[0].split(';'),
+            images: row.images && row.images.length > 0 ? row.images : [],
             status: row.status,
             url: row.url,
             brand: {

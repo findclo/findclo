@@ -159,12 +159,23 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                             <TableCell className="hidden md:table-cell">{product.description}</TableCell>
                                             <TableCell>
                                                 <div className="flex items-center space-x-2">
-                                                    <Switch
-                                                        checked={product.status === 'ACTIVE'}
-                                                        onCheckedChange={(checked) => handleStatusChange(product.id.toString(), checked)}
-                                                        disabled={product.status === 'PAUSED'}
-                                                    />
-                                                    <span>{product.status === 'ACTIVE' ? 'Activo' : (product.status === 'PAUSED_BY_ADMIN' ? 'Pausado' : 'Pausado por el comercio')}</span>
+                                                    {product.status !== 'DELETED' ? (
+                                                        <Switch
+                                                            checked={product.status === 'ACTIVE'}
+                                                            onCheckedChange={(checked) => handleStatusChange(product.id.toString(), checked)}
+                                                            disabled={product.status === 'PAUSED'}
+                                                        />
+                                                    ) : null}
+                                                    <span className={product.status === 'DELETED' ? 'text-red-500' : ''}>
+                                                        {product.status === 'ACTIVE' 
+                                                            ? 'Activo' 
+                                                            : product.status === 'PAUSED_BY_ADMIN'
+                                                            ? 'Pausado'
+                                                            : product.status === 'DELETED'
+                                                            ? 'Eliminado'
+                                                            : 'Pausado por el comercio'
+                                                        }
+                                                    </span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>

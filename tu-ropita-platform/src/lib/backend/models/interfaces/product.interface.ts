@@ -1,4 +1,4 @@
-import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
+import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 
 export interface IProduct {
     id: number;
@@ -6,7 +6,7 @@ export interface IProduct {
     price: number;
     description: string;
     images: string[];
-    status?: string;
+    status?: "ACTIVE" | "PAUSED" | "PAUSED_BY_ADMIN" | "DELETED";
     brand: IBrand;
     url: string;
 };

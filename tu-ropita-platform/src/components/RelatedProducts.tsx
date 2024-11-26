@@ -28,7 +28,7 @@ export default function RelatedProducts({ brandName, products }: RelatedProducts
     <section className="relative px-4 md:px-0"> {/* Add relative positioning and mobile-friendly padding */}
       {brandName && <h2 className="text-2xl mb-6">Otros productos de <span className="font-bold">{brandName}</span></h2>}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {displayedProducts.map((product) => (
+        {displayedProducts.filter(product => product.status === "ACTIVE").map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>

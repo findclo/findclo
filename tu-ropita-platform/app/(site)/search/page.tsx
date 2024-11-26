@@ -26,6 +26,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     try {
         const result = await publicProductsApiWrapper.getFilteredProducts(query, { tags:tags });
+        if (result && result.products.length > 0) {
+            result.products = result.products.filter(p => p.status !== 'DELETED' && p.status !== 'PAUSED' && p.status !== 'PAUSED_BY_ADMIN');
+        }
+
         if (!result || result.products.length === 0) {
             noProductsFound = true;
         } else {
@@ -42,6 +46,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     try {
         const result = await publicProductsApiWrapper.getFeaturedProducts();
         if (result && result.products.length > 0) {
+            result.products = result.products.filter(p => p.status !== 'DELETED' && p.status !== 'PAUSED' && p.status !== 'PAUSED_BY_ADMIN');
+        }
+        
+        if (result && result.products.length > 0) {
+
             recommendedProducts = result.products;
         }
     } catch (error) {

@@ -18,8 +18,8 @@ function mapProductsToCarouselItems(products: IProduct[]): CarouselItem[] {
 }
 
 export default async function Home() {
-  const featuredProducts = await publicProductsApiWrapper.getFeaturedProducts();
-  const carouselItems = featuredProducts ? mapProductsToCarouselItems(featuredProducts.products) : [];
+  const featuredProducts = (await publicProductsApiWrapper.getFeaturedProducts())?.products.filter(p => p.status !== 'DELETED' && p.status !== 'PAUSED' && p.status !== 'PAUSED_BY_ADMIN');
+  const carouselItems = featuredProducts ? mapProductsToCarouselItems(featuredProducts) : [];
 
   return (
     <>

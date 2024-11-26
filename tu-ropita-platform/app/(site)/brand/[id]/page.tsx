@@ -52,7 +52,7 @@ async function BrandPage({ params }: { params: { id: string } }) {
 
         <h2 className="text-2xl font-semibold mb-4">Productos de la marca</h2>
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products? products.products.map((product) => (
+          {products? products.products.filter(p => p.status !== 'DELETED' && p.status !== 'PAUSED' && p.status !== 'PAUSED_BY_ADMIN').map((product) => (
             <ProductCard key={product.id} product={product} />
           )):
           <div>Nada que ver por aquí...</div>
