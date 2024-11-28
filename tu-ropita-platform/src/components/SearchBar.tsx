@@ -68,7 +68,7 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
       <div className="flex justify-center w-full mb-4">
         <form 
           onSubmit={handleSearch} 
-          className="flex w-full items-center space-x-2 bg-white shadow-lg rounded-full p-2 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 transition-shadow"
+          className="flex w-full items-center space-x-2 bg-white shadow-lg rounded-full p-2 focus-within:ring-2 focus-within:ring-details focus-within:ring-offset-2 transition-shadow"
         >
           <Input
             ref={inputRef}

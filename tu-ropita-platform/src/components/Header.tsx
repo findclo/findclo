@@ -6,6 +6,7 @@ import { IUser, UserTypeEnum } from '@/lib/backend/models/interfaces/user.interf
 import { cn } from "@/lib/utils"; // Make sure you have this utility function
 import { useUser } from '@/providers/ClientUserProvider';
 import { BarChart, CreditCard, Home, LogOut, Menu, Package, ShoppingBag, Store, User } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -59,8 +60,17 @@ const Header = () => {
       {/* Top header for mobile */}
       <header className="border-b md:hidden fixed top-0 left-0 right-0 bg-white z-50">
         <div className="container flex h-12 items-center justify-between">
-          <Link href="/" className="text-xl font-bold">
-            FindClo
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo.webp"
+              alt="FindClo Logo"
+              width={100}
+              height={32}
+              className="h-8 w-auto object-contain"
+              priority
+              unoptimized
+              style={{ minWidth: '100px' }}
+            />
           </Link>
           <Sheet>
             <SheetTrigger asChild>
@@ -76,7 +86,7 @@ const Header = () => {
                     href={item.href} 
                     className={cn(
                       "flex items-center gap-2 py-2",
-                      pathname === item.href && "font-bold border-b-2 border-primary"
+                      pathname === item.href && "font-bold border-b-2 border-details"
                     )}
                   >
                     <item.icon className="h-5 w-5" />
@@ -112,8 +122,17 @@ const Header = () => {
       {/* Existing header for desktop */}
       <header className="border-b hidden md:block">
         <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="text-xl font-bold">
-            FindClo
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo.webp"
+              alt="FindClo Logo"
+              width={120}
+              height={40}
+              className="h-10 w-auto object-contain"
+              priority
+              unoptimized
+              style={{ minWidth: '120px' }}
+            />
           </Link>
           <nav className="flex items-center gap-4">
             {menuItems.map((item, index) => (
@@ -122,7 +141,7 @@ const Header = () => {
                 asChild 
                 variant="ghost"
                 className={cn(
-                  pathname === item.href && "font-bold border-b-2 border-primary"
+                  pathname === item.href && "font-bold border-b-2 border-details"
                 )}
               >
                 <Link href={item.href} className="flex items-center gap-2">

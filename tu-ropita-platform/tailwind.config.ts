@@ -19,6 +19,10 @@ const config = {
     },
     extend: {
       colors: {
+        details: {
+          DEFAULT: "hsl(var(--details))",
+          foreground: "hsl(var(--details-foreground))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
