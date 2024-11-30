@@ -7,6 +7,17 @@ class BillsRepository {
     constructor(private readonly db: Pool) {
     }
 
+
+    public async changeBillStatus(billId: number) {
+        const query = `
+            UPDATE bills
+            SET ispayed = (SELECT NOT ispayed FROM bills WHERE id = $1)
+            WHERE id = $1;
+        `;
+
+        await this.db.query(query, [billId]);
+    }
+
     public async listBillsWithDetails(): Promise<IBill[]> {
         const query = `
             SELECT b.id     AS bill_id,

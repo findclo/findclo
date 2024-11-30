@@ -8,6 +8,10 @@ class BillsService {
     async listBillsWithDetails() {
         return billsRepository.listBillsWithDetails();
     }
+
+    async changeBillStatus(billId: number) {
+        return billsRepository.changeBillStatus(billId);
+    }
 }
 
 export const billsService = new BillsService();

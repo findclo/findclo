@@ -20,6 +20,21 @@ class PrivateBillsApiWrapper {
 
         return bills as IBill[];
     }
+
+    async changeBillStatus(auth_token: string, billId: number): Promise<void> {
+        const [error] = await fetcher(`${ADMIN_BILLS_PATH}/${billId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (error) {
+            console.error(`Error changing bill status: ${error}`);
+            throw error;
+        }
+    }
 }
 
 export const privateBillsApiWrapper = new PrivateBillsApiWrapper();

@@ -39,12 +39,20 @@ export default function BillingDashboard() {
     const paidBills = filteredBills.filter(bill => bill.isPaid)
 
     const togglePaidStatus = (billId: number) => {
-        setBillsData(prevBills =>
-            prevBills.map(bill =>
-                bill.billId === billId ? {...bill, isPaid: !bill.isPaid} : bill
-            )
-        )
-    }
+        setBillsData((prevBills) => {
+            const bill = prevBills.find((b) => b.billId === billId);
+            if (!bill) return prevBills;
+
+            if (!confirm(`¿Estás seguro de ${bill.isPaid ? 'marcar como pendiente' : 'marcar como paga'} esta factura?`)) {
+                return prevBills;
+            }
+            privateBillsApiWrapper.changeBillStatus(token!, billId);
+            return prevBills.map((b) =>
+                b.billId === billId ? { ...b, isPaid: !b.isPaid } : b
+            );
+        });
+    };
+
 
     return (
         <div className="container mx-auto py-6">
