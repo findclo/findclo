@@ -4,6 +4,10 @@ class BillsService {
     async generateBill() {
         return billsRepository.generateBill();
     }
+
+    async listBillsWithDetails() {
+        return billsRepository.listBillsWithDetails();
+    }
 }
 
 export const billsService = new BillsService();
