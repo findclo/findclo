@@ -5,7 +5,7 @@ import {parseErrorResponse, validateDateParameters} from "@/lib/utils";
 
 
 
-export const POST = withAdminPermissionNoParams(async(req: Request) => {
+export const POST = (async(req: Request) => {
     try{
         await productsInteractionsService.syncProductMetricsAggDaily();
 

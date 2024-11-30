@@ -7,10 +7,15 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import Cookies from "js-cookie";
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import {privateMetricsApiWrapper} from "@/api-wrappers/metrics";
+import toast from "@/components/toast";
+import {addDays, format} from "date-fns";
+import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 
 export default function ShopAdminPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
   const [products, setProducts] = useState<IProduct[]>([]);
+  const [metrics, setMetrics] = useState<IMetrics[]>([]);
   const authToken = Cookies.get('Authorization')!;
 
   const fetchBrandDetails = useCallback(async () => {
@@ -26,15 +31,23 @@ export default function ShopAdminPage() {
     }
   }, []);
 
+  const fetchBrandMetrics = useCallback(async (brandId: string) => {
+    const from = addDays(new Date(), -30);
+    const to = new Date();
+    privateMetricsApiWrapper.getBrandMetrics(authToken!, from, to, brandId)
+        .then(d => setMetrics(d));
+  }, []);
+
   useEffect(() => {
     async function loadData() {
       const brandData = await fetchBrandDetails();
       if (brandData) {
         await fetchProducts(brandData.id.toString());
+        await fetchBrandMetrics(brandData.id.toString());
       }
     }
     loadData();
-  }, [fetchBrandDetails, fetchProducts]);
+  }, [fetchBrandDetails, fetchProducts, fetchBrandMetrics]);
 
   if (!brand) {
     return (
@@ -43,6 +56,20 @@ export default function ShopAdminPage() {
       </div>
     )
   }
+
+  const handleRefresh = async () => {
+    try {
+      await privateMetricsApiWrapper.syncMetricsAggDaily(authToken!);
+      toast({ type: 'success', message: "Metricas sincronizadas correctamente." });
+      window.location.reload();
+    } catch (error) {
+      console.error("Error syncing metrics:", error);
+      toast({
+        type: 'error',
+        message: "Ocurrio un error al sincronizar las metricas. Intentelo de nuevo "
+      });
+    }
+  };
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -58,7 +85,7 @@ export default function ShopAdminPage() {
             hour12: true
           })}</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={handleRefresh}
             className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
             title="Recargar página"
           >
@@ -95,7 +122,13 @@ export default function ShopAdminPage() {
             <CardTitle>Clicks totales</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-gray-700">0</p>
+            <p className="text-3xl font-bold text-gray-700">
+              {metrics
+                  .filter((m) => m.interaction === ProductInteractionEnum.CLICK)
+                  .reduce((sum, m) => sum + m.count, 0)
+                  .toString()}
+            </p>
+
             <p className="text-sm text-gray-500 mt-2">Últimos 30 días</p>
           </CardContent>
         </Card>
