@@ -4,6 +4,7 @@ import {IMetrics} from "@/lib/backend/models/interfaces/metrics/metric.interface
 import {IProductMetric} from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
 
 const ADMIN_METRICS_PATH : string = `/admin/metrics`;
+const SHOP_ADMIN_METRICS_PATH : string = `/brands`;
 const PUBLIC_METRICS_PATH : string = `/metrics/products`;
 
 class PublicMetricsApiWrapper {
@@ -28,6 +29,7 @@ class PrivateMetricsApiWrapper {
         if (brandId) {
             url += `&brand=${brandId}`;
         }
+        console.log(url)
         const [error, metrics] = await fetcher(url, {
             method: 'GET',
             headers: {
@@ -54,6 +56,18 @@ class PrivateMetricsApiWrapper {
         return this.fetchMetrics(auth_token, `${ADMIN_METRICS_PATH}/products`, startDate, endDate,brandId);
     }
 
+    async getBrandMetrics(auth_token: string, startDate: Date, endDate: Date, brandId : string): Promise<IMetrics[]> {
+        return this.fetchMetrics(auth_token, `${this.getBrandsPath(brandId)}`, startDate, endDate,brandId);
+    }
+
+    async getBrandMetricsAggDaily(auth_token: string, startDate: Date, endDate: Date, brandId : string ): Promise<IMetrics[]> {
+        return this.fetchMetrics(auth_token, `${this.getBrandsPath(brandId)}/daily`, startDate, endDate,brandId);
+    }
+
+    async getBrandsProductsMetrics(auth_token: string, startDate: Date, endDate: Date, brandId : string): Promise<IProductMetric[]> {
+        return this.fetchMetrics(auth_token, `${this.getBrandsPath(brandId)}/products`, startDate, endDate,brandId);
+    }
+
     async syncMetricsAggDaily(auth_token: string): Promise<void> {
         const [error, response] = await fetcher(`${ADMIN_METRICS_PATH}/daily`, {
             method: 'POST',
@@ -67,6 +81,11 @@ class PrivateMetricsApiWrapper {
             throw error;
         }
 
+    }
+
+
+    private getBrandsPath(brandId: string): string {
+        return `${SHOP_ADMIN_METRICS_PATH}/${brandId}/metrics`;
     }
 
 }

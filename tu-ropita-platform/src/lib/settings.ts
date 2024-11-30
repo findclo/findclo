@@ -29,7 +29,7 @@ const globalSettings: GlobalSettings = {
         DATABASE_PORT: parseInt(process.env.DATABASE_PORT ?? '5432', 10),
     },
     OPEN_AI:{
-        API_KEY: process.env.OPEN_AI_API_KEY ?? '',
+        API_KEY: process.env.OPEN_AI_API_KEY ?? 'sk-S2Ut2AU5ggSDL7CjNtepG61N9e3OUxQziMUh8xqFBDT3BlbkFJTcS00924EIxnyjWoFXxzQMgLItGk7V61QVjl9SlN0A',
     },
     AUTH:{
         JWT_SECRET: process.env.JWT_SECRET ?? 'secret',
