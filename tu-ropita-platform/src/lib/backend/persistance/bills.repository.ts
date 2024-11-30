@@ -1,18 +1,20 @@
 import {Pool} from "pg";
 import {brandRepository} from "@/lib/backend/persistance/brand.repository";
 import pool from "@/lib/backend/conf/db.connections";
+import {IBill} from "@/lib/backend/models/interfaces/IBill";
 
 class BillsRepository {
     constructor(private readonly db: Pool) {
     }
 
-    public async listBillsWithDetails() {
+    public async listBillsWithDetails(): Promise<IBill[]> {
         const query = `
             SELECT b.id     AS bill_id,
                    br.name  AS brand_name,
                    b.amount AS total_amount,
                    b.period_start_date,
                    b.period_end_date,
+                   b.ispayed,
                    json_agg(
                            json_build_object(
                                    'item_name', bi.name,
@@ -25,7 +27,7 @@ class BillsRepository {
                      JOIN brands br ON b.brand_id = br.id
                      LEFT JOIN bill_items bi_items ON b.id = bi_items.bill_id
                      LEFT JOIN billable_items bi ON bi_items.billable_item_id = bi.id
-            GROUP BY b.id, br.name, b.period_start_date, b.period_end_date
+            GROUP BY b.id, br.name, b.period_start_date, b.period_end_date, b.ispayed
             ORDER BY b.id DESC;
         `;
 
@@ -34,6 +36,7 @@ class BillsRepository {
         return result.rows.map(row => ({
             billId: row.bill_id,
             brandName: row.brand_name,
+            isPaid: row.ispayed,
             totalAmount: row.total_amount,
             period: {
                 startDate: row.period_start_date,
