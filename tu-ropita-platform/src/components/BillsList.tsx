@@ -16,13 +16,27 @@ import {
 } from "@/components/ui/table"
 import {Check, X} from 'lucide-react'
 import {IBill} from "@/lib/backend/models/interfaces/IBill";
+import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 
 interface BillsListProps {
     bills: IBill[];
     isPaid: boolean;
     onTogglePaidStatus: (billId: number) => void;
 }
-
+const itemNamesMap  = {
+    [ProductInteractionEnum.VIEW_IN_LISTING_RELATED]: {
+        label: 'Vistas en listado relacionado',
+    },
+    [ProductInteractionEnum.VIEW_IN_LISTING_PROMOTED]: {
+        label: 'Vistas en listado promocionado',
+    },
+    [ProductInteractionEnum.CLICK]: {
+        label: 'Clics',
+    },
+    [ProductInteractionEnum.NAVIGATE_TO_BRAND_SITE]: {
+        label: 'Navegaciones al sitio de la marca',
+    }
+};
 export function BillsList({bills, isPaid, onTogglePaidStatus}: BillsListProps) {
     return (
         <div className="space-y-4 border border-gray-400 p-4 rounded-lg">
@@ -84,7 +98,7 @@ export function BillsList({bills, isPaid, onTogglePaidStatus}: BillsListProps) {
                                         <TableBody>
                                             {bill.billableItems.map((item, index) => (
                                                 <TableRow key={index}>
-                                                    <TableCell>{item.item_name}</TableCell>
+                                                    <TableCell>{item.item_name ? (itemNamesMap[item.item_name]?.label || item.item_name) : "N/A"}</TableCell>
                                                     <TableCell>{item.quantity}</TableCell>
                                                     <TableCell>${item.unit_price?.toFixed(2)}</TableCell>
                                                     <TableCell>${item.total_price?.toFixed(2)}</TableCell>
