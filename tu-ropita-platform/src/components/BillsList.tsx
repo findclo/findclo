@@ -1,11 +1,11 @@
-import {Button} from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
     Table,
     TableBody,
@@ -13,10 +13,10 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
-import {Check, X} from 'lucide-react'
-import {IBill} from "@/lib/backend/models/interfaces/IBill";
-import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
+} from "@/components/ui/table";
+import { IBill } from "@/lib/backend/models/interfaces/IBill";
+import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
+import { Check, X } from 'lucide-react';
 
 interface BillsListProps {
     bills: IBill[];
@@ -98,7 +98,7 @@ export function BillsList({bills, isPaid, onTogglePaidStatus}: BillsListProps) {
                                         <TableBody>
                                             {bill.billableItems.map((item, index) => (
                                                 <TableRow key={index}>
-                                                    <TableCell>{item.item_name ? (itemNamesMap[item.item_name]?.label || item.item_name) : "N/A"}</TableCell>
+                                                    <TableCell>{item.item_name ? ((itemNamesMap[item.item_name as keyof typeof itemNamesMap]?.label as string) || item.item_name) : "N/A"}</TableCell>
                                                     <TableCell>{item.quantity}</TableCell>
                                                     <TableCell>${item.unit_price?.toFixed(2)}</TableCell>
                                                     <TableCell>${item.total_price?.toFixed(2)}</TableCell>

@@ -1,16 +1,17 @@
 'use client'
 
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
+import { privateMetricsApiWrapper } from "@/api-wrappers/metrics";
+import toast from "@/components/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
+import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { addDays } from "date-fns";
 import Cookies from "js-cookie";
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import {privateMetricsApiWrapper} from "@/api-wrappers/metrics";
-import toast from "@/components/toast";
-import {addDays, format} from "date-fns";
-import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 
 export default function ShopAdminPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);

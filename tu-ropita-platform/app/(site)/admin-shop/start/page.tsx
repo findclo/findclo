@@ -13,6 +13,7 @@ export default function StartPage() {
     name: '',
     image: '',
     websiteUrl: '',
+    description: '',
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
