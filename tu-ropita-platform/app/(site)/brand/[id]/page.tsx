@@ -1,10 +1,10 @@
 import { publicBrandsApiWrapper } from '@/api-wrappers/brands';
 import { publicProductsApiWrapper } from '@/api-wrappers/products';
-import ProductCard from '@/components/ProductCard';
 import { Button } from "@/components/ui/button";
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import ProductsSection from './ProductsSection';
 
 async function BrandPage({ params }: { params: { id: string } }) {
   try {
@@ -50,14 +50,11 @@ async function BrandPage({ params }: { params: { id: string } }) {
           </>
         )}
 
-        <h2 className="text-2xl font-semibold mb-4">Productos de la marca</h2>
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products? products.products.filter(p => p.status !== 'DELETED' && p.status !== 'PAUSED' && p.status !== 'PAUSED_BY_ADMIN').map((product) => (
-            <ProductCard key={product.id} product={product} />
-          )):
+{products ? (
+          <ProductsSection products={products.products} />
+        ) : (
           <div>Nada que ver por aquí...</div>
-          }
-        </div>
+        )}
       </div>
     );
   } catch (error) {
