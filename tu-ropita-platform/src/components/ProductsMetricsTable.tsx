@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useMemo } from 'react'
-import Image from 'next/image'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Table,
     TableBody,
@@ -10,11 +10,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface"
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface"
 import { ArrowUpDown } from 'lucide-react'
-import {IProductMetric} from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import Image from 'next/image'
+import { useMemo, useState } from 'react'
 
 interface GroupedMetrics {
     [key: number]: {
@@ -106,6 +106,7 @@ export default function ProductsMetricsTable({ metrics }: ProductsMetricsTablePr
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[300px]">Producto</TableHead>
+                                <TableHead className="text-center">Estado</TableHead>
                                 <TableHead className="text-center">
                                     <Button variant="ghost" onClick={() => handleSort('views')} className="w-full justify-center">
                                         Vistas
@@ -150,6 +151,37 @@ export default function ProductsMetricsTable({ metrics }: ProductsMetricsTablePr
                                                 <div className="font-bold">{product.name}</div>
                                             </div>
                                         </div>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        {(() => {
+                                            switch (product.status) {
+                                                case 'DELETED':
+                                                    return (
+                                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                                            Eliminado
+                                                        </span>
+                                                    );
+                                                case 'PAUSED':
+                                                    return (
+                                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                            Pausado
+                                                        </span>
+                                                    );
+                                                case 'PAUSED_BY_ADMIN':
+                                                    return (
+                                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                            Pausado por Admin
+                                                        </span>
+                                                    );
+                                                case 'ACTIVE':
+                                                default:
+                                                    return (
+                                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                            Activo
+                                                        </span>
+                                                    );
+                                            }
+                                        })()}
                                     </TableCell>
                                     <TableCell className="text-center">{views}</TableCell>
                                     <TableCell className="text-center">{clicks}</TableCell>

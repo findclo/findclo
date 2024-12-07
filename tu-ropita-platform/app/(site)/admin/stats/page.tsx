@@ -1,25 +1,25 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
 import { addDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 
+import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
+import { privateMetricsApiWrapper } from "@/api-wrappers/metrics";
+import MetricCardsGrid from "@/components/MetricCardsGrid";
+import MetricsChart from "@/components/ProductsMetricChart";
+import ProductsMetricsTable from "@/components/ProductsMetricsTable";
+import toast from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import Cookies from "js-cookie";
-import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
-import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
-import { privateMetricsApiWrapper } from "@/api-wrappers/metrics";
-import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
-import toast from "@/components/toast";
-import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
-import ProductsMetricsTable from "@/components/ProductsMetricsTable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import MetricsChart from "@/components/ProductsMetricChart";
-import MetricCardsGrid from "@/components/MetricCardsGrid";
+import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
+import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
+import Cookies from "js-cookie";
 
 export default function AdminDashboard() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>({

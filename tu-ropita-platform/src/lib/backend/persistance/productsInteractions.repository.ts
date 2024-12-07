@@ -1,10 +1,10 @@
+import pool from "@/lib/backend/conf/db.connections";
+import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
+import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
+import { IProductMetricAggDaily } from "@/lib/backend/models/interfaces/metrics/product.metric.aggDaily.interface";
+import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
 import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 import { Pool } from "pg";
-import pool from "@/lib/backend/conf/db.connections";
-import { IProductMetricAggDaily } from "@/lib/backend/models/interfaces/metrics/product.metric.aggDaily.interface";
-import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
-import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface";
-import { BrandStatus, IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 
 export interface IProductsInteractionsRepository {
     addProductInteraction(productId: string, interaction: ProductInteractionEnum): Promise<void>;
@@ -48,6 +48,7 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
                 name: row.name,
                 description: row.description,
                 images: row.images,
+                status: row.status,
                 brand: {
                     id: row.brand_id,
                     name: '',
@@ -104,7 +105,7 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
     async getProductMetricsBetweenDates(startDate: string, endDate: string, productId: string): Promise<IProductMetricAggDaily[]> {
         const query = `
             SELECT metrics.product_id, metrics.interaction, metrics.date, metrics.count,
-                   p.brand_id as brandId, p.description, p.name, p.images, p.url, p.price
+                   p.brand_id as brandId, p.description, p.name, p.images, p.url, p.price, p.status
             FROM products p JOIN (
                 SELECT product_id, interaction, date, SUM(count) as count
                 FROM ProductMetricsAggDaily
@@ -176,7 +177,7 @@ class ProductsInteractionsRepository implements IProductsInteractionsRepository 
     async getMetricByProduct(startDate: string, endDate: string, brandId?: string): Promise<IProductMetric[]> {
         let query = `
             SELECT metrics.product_id, metrics.interaction, metrics.count,
-                   p.brand_id as brandId, p.description, p.name, p.images, p.url, p.price
+                   p.brand_id as brandId, p.description, p.name, p.images, p.url, p.price, p.status
             FROM products p
                      JOIN (
                 SELECT product_id, interaction, SUM(count) as count
