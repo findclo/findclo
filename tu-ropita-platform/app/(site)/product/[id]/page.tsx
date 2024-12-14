@@ -1,16 +1,16 @@
 import { publicBrandsApiWrapper } from '@/api-wrappers/brands';
 import { publicProductsApiWrapper } from '@/api-wrappers/products';
 import BrandLink from '@/components/BrandLink';
+import BuyButton from "@/components/BuyButton";
 import ImageGallery from '@/components/ImageGallery';
 import RelatedProducts from '@/components/RelatedProducts';
 import ShareButtons from '@/components/ShareButtons';
 import { IProduct } from '@/lib/backend/models/interfaces/product.interface';
 import { notFound } from 'next/navigation';
-import BuyButton from "@/components/BuyButton";
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
   const product = await publicProductsApiWrapper.getProductById(params.id);
-  if (!product) {
+  if (!product || (product && product.status !== 'ACTIVE')) {
     notFound();
   }
 

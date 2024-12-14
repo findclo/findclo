@@ -5,7 +5,11 @@ const API_BASE_URL = `${globalSettings.BASE_URL}/api`;
 
 export const fetcher = async (path: string, options: RequestInit = {}): Promise<[Error | null, any | null]> => {
     try {
-        const res = await fetch(`${API_BASE_URL}${path}`, options);
+        const res = await fetch(`${API_BASE_URL}${path}`, {
+            ...options,
+            cache: 'no-store',
+        });
+        
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
         }

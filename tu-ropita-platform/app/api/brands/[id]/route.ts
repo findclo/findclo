@@ -1,7 +1,7 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { brandService } from "@/lib/backend/services/brand.service";
-import {getBrandDtoFromBody, parseErrorResponse} from "@/lib/utils";
-import {withAdminPermission, withBrandPermission} from "@/lib/routes_middlewares";
+import { withAdminPermission, withBrandPermission } from "@/lib/routes_middlewares";
+import { getBrandDtoFromBody, parseErrorResponse } from "@/lib/utils";
 
 export async function GET(req: Request, {params}: {params: {id:string}}) {
     try {

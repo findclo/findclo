@@ -9,7 +9,7 @@ import ProductsSection from './ProductsSection';
 async function BrandPage({ params }: { params: { id: string } }) {
   try {
     const brand = await publicBrandsApiWrapper.getBrandById(params.id);
-    if (!brand) {
+    if (!brand || (brand && brand.status === 'PAUSED')) {
       notFound();
     }
 

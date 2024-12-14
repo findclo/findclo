@@ -1,6 +1,6 @@
-import {withAdminPermissionNoParams, withBrandPermission} from "@/lib/routes_middlewares";
-import {productsInteractionsService} from "@/lib/backend/services/productsInteractions.service";
-import {validateDateParameters} from "@/lib/utils";
+import { productsInteractionsService } from "@/lib/backend/services/productsInteractions.service";
+import { withBrandPermission } from "@/lib/routes_middlewares";
+import { validateDateParameters } from "@/lib/utils";
 
 export const GET = withBrandPermission(async (req: Request, { params }: { params: { id: string } }) => {
     const url = new URL(req.url);
