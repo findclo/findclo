@@ -15,6 +15,7 @@ export default function ResetPassword() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
@@ -23,6 +24,7 @@ export default function ResetPassword() {
         e.preventDefault();
         setMessage('');
         setError('');
+        setIsLoading(true);
 
         try {
             await publicUsersApiWrapper.requestPasswordReset(email);
@@ -33,6 +35,8 @@ export default function ResetPassword() {
             } else {
                 setError('Ocurrió un error al solicitar el restablecimiento de contraseña. Por favor, inténtalo de nuevo.');
             }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -116,7 +120,9 @@ export default function ResetPassword() {
                                 </div>
                             </div>
                             <CardFooter className="flex justify-center mt-4">
-                                <Button type="submit">Solicitar Restablecimiento</Button>
+                                <Button type="submit" disabled={isLoading}>
+                                    {isLoading ? "Enviando..." : "Solicitar Restablecimiento"}
+                                </Button>
                             </CardFooter>
                         </form>
                     )}

@@ -10,6 +10,7 @@ import { brandRepository } from "../persistance/brand.repository";
 import { userPersistance } from "../persistance/user.repository";
 import { authService } from "./auth.service";
 import { brandService } from "./brand.service";
+import { mailingService } from "./mailing.service";
 
 class UserService {
 
@@ -104,11 +105,7 @@ class UserService {
             globalSettings.AUTH.JWT_SECRET,
             { expiresIn: '1h' }
         );
-
-        // TODO: Implement email sending logic
-        // For now, we'll just log the reset link
-        console.log(`Password reset link: http://localhost:4000/signin/reset-password?token=${resetToken}`);
-
+        await mailingService.sendPasswordResetEmail(user.email, resetToken);
         return resetToken;
     }
 
