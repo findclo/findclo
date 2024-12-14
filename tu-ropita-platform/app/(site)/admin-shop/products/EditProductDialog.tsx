@@ -25,11 +25,10 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
   handleUpdateProduct,
 }) => {
   const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
   useEffect(() => {
     setEditingProduct(product);
-    console.log("aca 1");
-    console.log(product);
   }, [product]);
 
   const onUpdateProduct = () => {
@@ -108,6 +107,14 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
             <div className="col-span-3 space-y-2">
               {editingProduct?.images.map((image, index) => (
                 <div key={index} className="flex gap-2">
+                  {image && (
+                    <img
+                      src={image}
+                      alt={`Preview ${index + 1}`}
+                      className="h-10 w-10 object-cover rounded cursor-pointer"
+                      onClick={() => setFullScreenImage(image)}
+                    />
+                  )}
                   <Input
                     value={image}
                     onChange={(e) => handleImageChange(index, e.target.value)}
@@ -165,6 +172,17 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
         </div>
         <Button onClick={onUpdateProduct}>Actualizar Producto</Button>
       </DialogContent>
+      {fullScreenImage && (
+        <Dialog open={!!fullScreenImage} onOpenChange={() => setFullScreenImage(null)}>
+          <DialogContent className="max-w-[60vw] max-h-[60vh] p-4">
+            <img
+              src={fullScreenImage}
+              alt="Full size preview"
+              className="max-w-[55vw] max-h-[55vh] object-contain"
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 };
