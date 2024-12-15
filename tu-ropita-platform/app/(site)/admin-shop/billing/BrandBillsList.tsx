@@ -1,17 +1,14 @@
-import {Button} from "@/components/ui/button";
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,} from "@/components/ui/dialog";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
 import {IBill} from "@/lib/backend/models/interfaces/IBill";
 import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
-import {Check, X} from 'lucide-react';
 import React from "react";
 
-interface BillsListProps {
+interface BrandsBillListProps {
     bills: IBill[];
-    isPaid: boolean;
-    onTogglePaidStatus: (billId: number) => void;
 }
-const itemNamesMap  = {
+
+const itemNamesMap = {
     [ProductInteractionEnum.VIEW_IN_LISTING_RELATED]: {
         label: 'Vistas en listado relacionado',
     },
@@ -25,12 +22,13 @@ const itemNamesMap  = {
         label: 'Navegaciones al sitio de la marca',
     }
 };
-export function BillsList({bills, isPaid, onTogglePaidStatus}: BillsListProps) {
+
+export function BrandsBillList({bills}: BrandsBillListProps) {
     return (
         <div className="space-y-4 border border-gray-400 p-4 rounded-lg">
-            <h3 className="text-xl font-semibold">{isPaid ? 'Facturas pagadas' : 'Facturas pendientes'}</h3>
+            <h3 className="text-xl font-semibold">Facturas de su comercio</h3>
             {bills.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No hay facturas {isPaid ? 'pagadas' : 'pendientes'} en
+                <p className="text-gray-500 text-center py-4">No hay facturas en
                     este momento.</p>
             ) : (
                 <div className="border rounded-lg">
@@ -49,22 +47,10 @@ export function BillsList({bills, isPaid, onTogglePaidStatus}: BillsListProps) {
                                     </div>
                                     <div className="flex items-center gap-4">
                                       <span
-                                          className={`px-2 py-1 text-sm rounded ${isPaid ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
+                                          className={`px-2 py-1 text-sm rounded ${bill.isPaid ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
                                             {bill.isPaid ? 'PAGADO' : 'PENDIENTE'}
                                         </span>
                                         <span className="font-semibold">${bill.totalAmount}</span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onTogglePaidStatus(bill.billId);
-                                            }}
-                                        >
-                                            {bill.isPaid ? <X className="h-4 w-4 mr-2"/> :
-                                                <Check className="h-4 w-4 mr-2"/>}
-                                            {bill.isPaid ? 'Marcar como no pagada' : 'Marcar como pagada'}
-                                        </Button>
                                     </div>
                                 </div>
                             </DialogTrigger>

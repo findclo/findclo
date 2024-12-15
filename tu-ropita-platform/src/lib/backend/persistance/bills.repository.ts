@@ -2,6 +2,7 @@ import {Pool} from "pg";
 import {brandRepository} from "@/lib/backend/persistance/brand.repository";
 import pool from "@/lib/backend/conf/db.connections";
 import {IBill} from "@/lib/backend/models/interfaces/IBill";
+import {format} from "date-fns";
 
 class BillsRepository {
     constructor(private readonly db: Pool) {
@@ -18,31 +19,72 @@ class BillsRepository {
         await this.db.query(query, [billId]);
     }
 
-    public async listBillsWithDetails(): Promise<IBill[]> {
+    public async listBillsWithDetails(period: string): Promise<IBill[]> {
         const query = `
-            SELECT b.id     AS bill_id,
-                   br.name  AS brand_name,
-                   b.amount AS total_amount,
-                   b.period_start_date,
-                   b.period_end_date,
-                   b.ispayed,
-                   json_agg(
-                           json_build_object(
-                                   'item_name', bi.name,
-                                   'quantity', bi_items.quantity,
-                                   'unit_price', bi.price,
-                                   'total_price', bi_items.total
-                           )
-                   )        AS billable_items
-            FROM bills b
-                     JOIN brands br ON b.brand_id = br.id
-                     LEFT JOIN bill_items bi_items ON b.id = bi_items.bill_id
-                     LEFT JOIN billable_items bi ON bi_items.billable_item_id = bi.id
-            GROUP BY b.id, br.name, b.period_start_date, b.period_end_date, b.ispayed
-            ORDER BY b.id DESC;
-        `;
+        SELECT b.id     AS bill_id,
+               br.name  AS brand_name,
+               b.amount AS total_amount,
+               b.period_start_date,
+               b.period_end_date,
+               b.ispayed,
+               json_agg(
+                       json_build_object(
+                               'item_name', bi.name,
+                               'quantity', bi_items.quantity,
+                               'unit_price', bi.price,
+                               'total_price', bi_items.total
+                       )
+               )        AS billable_items
+        FROM bills b
+                 JOIN brands br ON b.brand_id = br.id
+                 LEFT JOIN bill_items bi_items ON b.id = bi_items.bill_id
+                 LEFT JOIN billable_items bi ON bi_items.billable_item_id = bi.id
+        WHERE TO_CHAR(b.period_start_date, 'yyyy-MM') = $1
+        GROUP BY b.id, br.name, b.period_start_date, b.period_end_date, b.ispayed
+        ORDER BY b.id DESC;
+    `;
 
-        const result = await this.db.query(query);
+        const result = await this.db.query(query, [period]);
+
+        return result.rows.map(row => ({
+            billId: row.bill_id,
+            brandName: row.brand_name,
+            isPaid: row.ispayed,
+            totalAmount: row.total_amount,
+            period: {
+                startDate: row.period_start_date,
+                endDate: row.period_end_date
+            },
+            billableItems: row.billable_items || []
+        }));
+    }
+
+    public async listBrandBillsWithDetails(brandId: string): Promise<IBill[]> {
+        const query = `
+        SELECT b.id     AS bill_id,
+               br.name  AS brand_name,
+               b.amount AS total_amount,
+               b.period_start_date,
+               b.period_end_date,
+               b.ispayed,
+               json_agg(
+                       json_build_object(
+                               'item_name', bi.name,
+                               'quantity', bi_items.quantity,
+                               'unit_price', bi.price,
+                               'total_price', bi_items.total
+                       )
+               )        AS billable_items
+        FROM bills b
+                 JOIN brands br ON b.brand_id = br.id
+                 LEFT JOIN bill_items bi_items ON b.id = bi_items.bill_id
+                 LEFT JOIN billable_items bi ON bi_items.billable_item_id = bi.id
+        WHERE br.id = $1
+        GROUP BY b.id, br.name, b.period_start_date, b.period_end_date, b.ispayed
+        ORDER BY b.id DESC;
+    `;
+
+        const result = await this.db.query(query, [brandId]);
 
         return result.rows.map(row => ({
             billId: row.bill_id,

@@ -8,18 +8,32 @@ import {IBill} from "@/lib/backend/models/interfaces/IBill";
 import {privateBillsApiWrapper} from "@/api-wrappers/bills";
 import Cookies from "js-cookie";
 import {BillsList} from "@/components/BillsList";
+import {format, subMonths} from 'date-fns'
+import {es} from "date-fns/locale";
 
+function generateLastTwelveMonths() {
+    const months = []
+    for (let i = 0; i < 12; i++) {
+        const date = subMonths(new Date(), i)
+        const value = format(date, 'yyyy-MM')
+        const label = format(date, 'MMMM yyyy', {locale: es})
+        months.push({value, label})
+    }
+    return months
+}
 
 export default function BillingDashboard() {
     const [search, setSearch] = useState("")
     const [billsData, setBillsData] = useState<IBill[]>([])
     const [loading, setLoading] = useState(true)
     const token = Cookies.get("Authorization");
+    const [selectedPeriod, setSelectedPeriod] = useState(format(new Date(), 'yyyy-MM'))
+    const months = generateLastTwelveMonths()
 
     useEffect(() => {
         const fetchBills = async () => {
             try {
-                const bills = await privateBillsApiWrapper.getBills(token!)
+                const bills = await privateBillsApiWrapper.getBills(token!,selectedPeriod)
                 setBillsData(bills)
             } catch (error) {
                 console.error("Error fetching bills:", error)
@@ -29,7 +43,7 @@ export default function BillingDashboard() {
         }
 
         fetchBills()
-    }, [token])
+    }, [token, selectedPeriod])
 
     const filteredBills = billsData.filter(bill =>
         bill.brandName.toLowerCase().includes(search.toLowerCase())
@@ -48,7 +62,7 @@ export default function BillingDashboard() {
             }
             privateBillsApiWrapper.changeBillStatus(token!, billId);
             return prevBills.map((b) =>
-                b.billId === billId ? { ...b, isPaid: !b.isPaid } : b
+                b.billId === billId ? {...b, isPaid: !b.isPaid} : b
             );
         });
     };
@@ -58,13 +72,16 @@ export default function BillingDashboard() {
         <div className="container mx-auto py-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Facturación del período</h2>
-                <Select defaultValue="current">
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Seleccionar mes"/>
+                <Select defaultValue={selectedPeriod} onValueChange={setSelectedPeriod}>
+                    <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Seleccionar mes y año"/>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="current">Mes actual</SelectItem>
-                        <SelectItem value="previous">Mes anterior</SelectItem>
+                        {months.map((month) => (
+                            <SelectItem key={month.value} value={month.value}>
+                                {month.label}
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>

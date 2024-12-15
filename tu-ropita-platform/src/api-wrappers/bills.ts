@@ -2,10 +2,11 @@ import { fetcher } from "@/lib/fetcher/fetchWrapper";
 import {IBill} from "@/lib/backend/models/interfaces/IBill";
 
 const ADMIN_BILLS_PATH: string = `/admin/bills`;
+const BRANDS_BILLS_PATH: string = `/brands`;
 
 class PrivateBillsApiWrapper {
-    async getBills(auth_token: string): Promise<IBill[]> {
-        const [error, bills] = await fetcher(ADMIN_BILLS_PATH, {
+    async getBills(auth_token: string, period:string): Promise<IBill[]> {
+        const [error, bills] = await fetcher(`${ADMIN_BILLS_PATH}?period=${period}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -37,4 +38,24 @@ class PrivateBillsApiWrapper {
     }
 }
 
+class PrivateBrandsBillsApiWrapper {
+    async getBrandBills(auth_token: string, brandId: string): Promise<IBill[]> {
+        const [error, bills] = await fetcher(`${BRANDS_BILLS_PATH}/${brandId}/bills`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (error) {
+            console.error(`Error getting brand bills: ${error}`);
+            throw error;
+        }
+
+        return bills as IBill[];
+    }
+}
+
 export const privateBillsApiWrapper = new PrivateBillsApiWrapper();
+export const privateBrandsBillsApiWrapper = new PrivateBrandsBillsApiWrapper();

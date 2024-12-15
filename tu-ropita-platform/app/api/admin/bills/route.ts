@@ -3,7 +3,10 @@ import {withAdminPermissionNoParams} from "@/lib/routes_middlewares";
 
 export const GET = withAdminPermissionNoParams(async (req: Request) => {
     try {
-        const bills = await billsService.listBillsWithDetails();
+        const url = new URL(req.url);
+        const period = url.searchParams.get('period') || undefined;
+
+        const bills = await billsService.listBillsWithDetails(period);
         return new Response(JSON.stringify(bills), {
             status: 200,
             headers: {
@@ -18,7 +21,7 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
 
 export const POST = withAdminPermissionNoParams(async (req: Request) => {
     try {
-         await billsService.generateBill();
+        await billsService.generateBill();
         return new Response(JSON.stringify(null), {
             status: 200,
             headers: {
