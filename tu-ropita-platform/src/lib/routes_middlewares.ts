@@ -79,13 +79,26 @@ export function withBrandPermission(handler: RouteHandler) {
                 throw new BadRequestException();
             }
 
-            const brandId = params.params.id;
-            const user = (req as any).user; // Use the user from auth tokens
+            let brandId;
+            if(params.params && params.params.id){
+                brandId = params.params.id;
 
-            const hasPermission = await userService.userBelongsToBrand(user.id, brandId);
-            if (user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
-                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+                const user = (req as any).user; // Use the user from auth tokens
+                const hasPermission = await userService.userBelongsToBrand(user.id, brandId);
+                if (user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
+                    return new NextResponse(JSON.stringify({ error: 'Forbidden' }), {
+                        status: 403,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }
+            }else{
+                brandId = (await userService.getUserBrand((req as any).user.id)).id;
             }
+
+            (req as any).brandId = brandId;
+            //se podria poner el brand entero en el request en vez de solo el id
 
             return handler(req, params);
         } catch (err) {
@@ -104,7 +117,12 @@ export function withAdminPermission(handler: RouteHandler) {
 
             const user = (req as any).user;
             if (user.user_type !== UserTypeEnum.ADMIN) {
-                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), {
+                    status: 403,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
             }
 
             return handler(req, params);
@@ -121,7 +139,12 @@ export function withAdminPermissionNoParams(handler: RouteHandler) {
 
             const user = (req as any).user;
             if (user.user_type !== UserTypeEnum.ADMIN) {
-                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), {
+                    status: 403,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
             }
 
             return handler(req);
@@ -145,7 +168,12 @@ export function withProductBrandPermission(handler: RouteHandler) {
 
             const hasPermission = await userService.userBelongsToBrand(user.id, product.brand.id);
             if (user.user_type !== UserTypeEnum.ADMIN && !hasPermission) {
-                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+                return new NextResponse(JSON.stringify({ error: 'Forbidden' }), {
+                    status: 403,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
             }
 
             return handler(req,  params );
