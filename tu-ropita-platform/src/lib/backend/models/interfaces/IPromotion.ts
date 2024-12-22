@@ -1,5 +1,6 @@
 
 export interface IPromotion {
+    id: number;
     product_id: number;
     credits_allocated: number;
     show_on_landing: boolean;

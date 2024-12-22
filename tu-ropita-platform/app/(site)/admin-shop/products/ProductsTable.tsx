@@ -1,3 +1,4 @@
+import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { privateProductsApiWrapper } from "@/api-wrappers/products";
 import toast from "@/components/toast";
 import { Button } from "@/components/ui/button";
@@ -5,39 +6,53 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
+import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
+import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import Cookies from "js-cookie";
-import { Edit, Trash2 } from "lucide-react";
+import { ArrowBigDownDash, ArrowBigUpDash, Edit, Trash2 } from "lucide-react";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import EditProductDialog from "./EditProductDialog";
+import PromoteProductDialog from "./PromoteProductDialog";
 
 interface ProductTableProps {
   products: IProduct[];
+  promotions: IPromotion[];
   brandId: string;
   onProductsUpdate: (updatedProducts: IProduct[]) => void;
   onProductUpdate: (updatedProduct: IProduct) => void;
   onProductDelete: (deletedProductId: string) => void;
+  onProductPromotion: (productId: number, credits_allocated: number, show_on_landing: boolean) => void;
 }
 
 const ProductTable: React.FC<ProductTableProps> = ({
   products,
+  promotions,
   brandId,
   onProductsUpdate,
   onProductUpdate,
   onProductDelete,
+  onProductPromotion,
 }) => {
+  const [promotionsList, setPromotionsList] = useState<IPromotion[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
+  const [brandCredits, setBrandCredits] = useState<IBrandCredits | null>(null);
   const [search, setSearch] = useState("");
   const authToken = Cookies.get("Authorization")!;
+
+  useEffect(() => {
+    setPromotionsList(promotions);
+  }, [promotions]);
 
   const filteredProducts = products.filter(
     (product) =>
@@ -138,6 +153,48 @@ const ProductTable: React.FC<ProductTableProps> = ({
     setIsEditDialogOpen(true);
   };
 
+  const openPromotionDialog = (product: IProduct) => {
+    setSelectedProduct(product);
+    setIsPromotionDialogOpen(true);
+  };
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+        if (brandId) {
+            const credits = await privateBrandsApiWrapper.getBrandCredits(
+                authToken,
+                brandId
+            );
+            if (credits) {
+                setBrandCredits(credits);
+            }
+        }
+    };
+    fetchCredits();
+}, [brandId]);
+
+const handleStopPromotion = async (promotionId: string) => {
+  try {
+    if(confirm("¿Estás seguro de que quieres detener la promoción?")){
+      const result = await privateBrandsApiWrapper.stopPromotion(authToken, brandId, parseInt(promotionId));
+      if(!result){
+        throw new Error("Error al detener la promoción.");
+      }
+      toast({
+        type: "success",
+        message: "Promoción detenida correctamente.",
+      });
+      setPromotionsList(promotionsList.filter(promotion => promotion.id !== parseInt(promotionId)));
+    }
+  } catch (error) {
+    console.error("Error stopping promotion:", error);
+    toast({
+      type: "error",
+      message: "Error al detener la promoción. Intente nuevamente.",
+    });
+  }
+};
+
   return (
     <>
       <div className="ml-4 mb-4">
@@ -229,6 +286,21 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
+                      {product.status === "ACTIVE" && !promotionsList.some(promotion => promotion.product_id === product.id && promotion.is_active) && <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openPromotionDialog(product)}
+                      >
+                        <ArrowBigUpDash className="h-4 w-4" />
+                      </Button>}
+                      {promotionsList.some(promotion => promotion.product_id === product.id && promotion.is_active) && <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStopPromotion(promotionsList.find(promotion => promotion.product_id === product.id)?.id.toString() || "")}
+                      >
+                        <ArrowBigDownDash className="h-4 w-4 text-orange-500" />
+                      </Button>}
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -236,6 +308,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+
                       <Button
                         variant="destructive"
                         size="sm"
@@ -245,6 +318,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
+
                     </div>
                   </TableCell>
                 </TableRow>
@@ -267,6 +341,15 @@ const ProductTable: React.FC<ProductTableProps> = ({
           setIsOpen={setIsEditDialogOpen}
           product={selectedProduct}
           handleUpdateProduct={handleUpdateProduct}
+        />
+      )}
+      {selectedProduct && (
+        <PromoteProductDialog
+          isOpen={isPromotionDialogOpen}
+          setIsOpen={setIsPromotionDialogOpen}
+          product={selectedProduct}
+          brandCredits={brandCredits}
+          handleProductPromotion={onProductPromotion}
         />
       )}
     </>

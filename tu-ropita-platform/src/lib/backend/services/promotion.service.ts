@@ -48,6 +48,10 @@ class PromotionService {
         return promotionRepository.hasPromotionForProduct(productId);
     }
 
+    async stopPromotion(promotionId: number): Promise<void> {
+        return promotionRepository.stopPromotion(promotionId);
+    }
+
 }
 
 export const promotionService = new PromotionService();

@@ -1,11 +1,13 @@
 import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
 import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
+import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
 
 const BRANDS_PATH : string = `/brands`;
 const ADMIN_BRANDS_PATH : string = `/admin/brands`;
-
+const CREDITS_PATH: (brandId: string) => string = (brandId: string) => `/brands/${brandId}/credits`;
 
 class PublicBrandsApiWrapper {
 
@@ -127,7 +129,48 @@ class PrivateBrandsApiWrapper {
         }
         return products as IListProductResponseDto;
     }
-   
+
+    async getBrandCredits(auth_token: string, brandId: string): Promise<IBrandCredits | null> {
+        const [error, credits] = await fetcher(`${CREDITS_PATH(brandId)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+        });
+        if (error) {
+            console.error(`Error fetching credits for brand ${brandId}: ${error}`);
+            return null;
+        }
+        return credits as IBrandCredits;
+    }
+
+    async getBrandPromotions(auth_token: string, brandId: string): Promise<IPromotion[] | null> {
+        const [error, promotions] = await fetcher(`${BRANDS_PATH}/${brandId}/promotions`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+        });
+        if (error) {
+            console.error(`Error fetching promotions for brand ${brandId}: ${error}`);
+            return null;
+        }
+        return promotions as IPromotion[];
+    }
+
+    async stopPromotion(auth_token: string, brandId: string, promotion_id: number): Promise<{success: boolean} | null> {
+        const [error, promotion_response] = await fetcher(`${BRANDS_PATH}/${brandId}/promotions/${promotion_id}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+        });
+        if(error){
+            console.error(`Error stopping promotion. [promotion_id: ${promotion_id}]`, error);
+            return null;
+        }
+        return {success: true};
+    }
 }
 
 export const publicBrandsApiWrapper = new PublicBrandsApiWrapper();

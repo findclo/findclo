@@ -22,7 +22,19 @@ class PromotionRepository {
     }
 
     async getPromotionsByBrandId(brandId: number): Promise<IPromotion[]> {
-        const query_result = await this.db.query('SELECT * FROM promotions WHERE brand_id = $1', [brandId]);
+        const query_result = await this.db.query(
+            `SELECT 
+                promotions.id as id,
+                promotions.product_id,
+                promotions.keywords,
+                promotions.credits_allocated,
+                promotions.show_on_landing,
+                promotions.is_active
+            FROM promotions 
+            INNER JOIN products ON promotions.product_id = products.id 
+            WHERE products.brand_id = $1`, 
+            [brandId]
+        );
         if (query_result.rowCount === 0) {
             return [];
         }
@@ -42,11 +54,18 @@ class PromotionRepository {
     }
 
     async hasPromotionForProduct(productId: number): Promise<boolean> {
-        const query_result = await this.db.query('SELECT * FROM promotions WHERE product_id = $1', [productId]);
+        const query_result = await this.db.query('SELECT * FROM promotions WHERE product_id = $1 AND is_active = true', [productId]);
         if(query_result.rowCount === 0){
             return false;
         }
         return true;
+    }
+
+    async stopPromotion(promotionId: number): Promise<void> {
+        const query_result = await this.db.query('UPDATE promotions SET is_active = false WHERE id = $1', [promotionId]);
+        if(query_result.rowCount === 0){
+            throw new Error('Failed to stop promotion');
+        }
     }
 
 }

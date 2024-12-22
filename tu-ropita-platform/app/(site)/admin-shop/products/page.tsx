@@ -2,6 +2,7 @@
 
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { privateProductsApiWrapper } from "@/api-wrappers/products";
+import { privatePromotionsApiWrapper } from "@/api-wrappers/promotions";
 import toast from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,7 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import Cookies from "js-cookie";
 import {
@@ -18,13 +20,14 @@ import {
   Loader2,
   Upload
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import AddProductDialog from "./AddProductDialog";
 import ProductTable from "./ProductsTable";
 
 export default function ShopAdminProductsPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
   const [products, setProducts] = useState<IProduct[]>([]);
+  const [promotions, setPromotions] = useState<IPromotion[]>([]);
   const [newProduct, setNewProduct] = useState<Partial<IProduct>>({
     name: "",
     price: 0,
@@ -50,22 +53,28 @@ export default function ShopAdminProductsPage() {
         );
       if (productsData) {
         setProducts(productsData.products);
-        console.log("aca 3");
-        console.log(productsData.products);
       }
     },
     []
   );
+
+  const fetchPromotions = useCallback(async (brandId: string) => {
+    const promotions = await privateBrandsApiWrapper.getBrandPromotions(authToken, brandId);
+    if(promotions){
+      setPromotions(promotions);
+    }
+  }, []);
 
   useEffect(() => {
     async function loadData() {
       const brandData = await fetchBrandDetails();
       if (brandData) {
         await fetchProducts(brandData.id.toString());
+        await fetchPromotions(brandData.id.toString());
       }
     }
     loadData();
-  }, [fetchBrandDetails, fetchProducts]);
+  }, [fetchBrandDetails, fetchProducts, fetchPromotions]);
 
   if (!brand) {
     return (
@@ -223,6 +232,35 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
     document.body.removeChild(link);
   };
 
+  const handleProductPromotion = async (productId: number, credits_allocated: number, show_on_landing: boolean, keywords?: string[]) => {
+    try{
+      const promotion = await privatePromotionsApiWrapper.createPromotion(authToken, {
+        product_id: productId,
+        credits_allocated: credits_allocated,
+        show_on_landing: show_on_landing,
+        keywords: keywords || []
+      });
+      
+      if(promotion){
+        toast({
+          type: "success",
+          message: "Promoción creada correctamente.",
+        });
+        fetchPromotions(brand.id.toString());
+      } else {
+        toast({
+          type: "error",
+          message: "Error al crear la promoción.",
+        });
+      }
+    }catch(error){
+      toast({
+        type: "error",
+        message: "Ocurrió un error al crear la promoción. Vuelva a intentarlo mas tarde.",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between mb-4">
@@ -251,13 +289,17 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-xl font-bold">Productos</CardTitle>
         </CardHeader>
-        <ProductTable
-          products={products}
-          brandId={brand?.id.toString() || ""}
-          onProductsUpdate={setProducts}
-          onProductUpdate={handleProductUpdate}
-          onProductDelete={handleProductDelete}
-        />
+        <Suspense fallback={<div>Cargando productos...</div>}>
+          <ProductTable
+            products={products}
+            promotions={promotions}
+            brandId={brand?.id.toString() || ""}
+            onProductsUpdate={setProducts}
+            onProductUpdate={handleProductUpdate}
+            onProductDelete={handleProductDelete}
+            onProductPromotion={handleProductPromotion}
+          />
+        </Suspense>
       </Card>
       <div className="flex justify-end mt-4 space-x-2">
         <Button variant="outline" onClick={handleExport}>
