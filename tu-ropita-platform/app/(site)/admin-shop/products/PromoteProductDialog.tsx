@@ -1,7 +1,7 @@
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { useEffect, useState } from "react";
@@ -84,12 +84,12 @@ const PromoteProductDialog: React.FC<PromoteProductDialogProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
-          <Checkbox
+          <Switch
             id="show_on_landing"
             checked={show_on_landing}
-            onCheckedChange={(checked) => setShowOnLanding(checked as boolean)}
+            onCheckedChange={setShowOnLanding}
           />
-          <Label htmlFor="show_on_landing">
+          <Label htmlFor="show_on_landing" className="cursor-pointer">
             Mostrar en la página de inicio<span className="text-red-500">*</span>
           </Label>
         </div>

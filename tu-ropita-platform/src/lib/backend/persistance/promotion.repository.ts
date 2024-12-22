@@ -62,7 +62,6 @@ class PromotionRepository {
     }
 
     async stopPromotion(promotionId: number): Promise<void> {
-        console.log('Stopping promotion', promotionId);
         const query_result = await this.db.query('UPDATE promotions SET is_active = false WHERE id = $1', [promotionId]);
         if(query_result.rowCount === 0){
             throw new Error('Failed to stop promotion');

@@ -349,7 +349,17 @@ const handleStopPromotion = async (promotionId: string) => {
           setIsOpen={setIsPromotionDialogOpen}
           product={selectedProduct}
           brandCredits={brandCredits}
-          handleProductPromotion={onProductPromotion}
+          handleProductPromotion={async (productId, credits, showOnLanding) => {
+            await onProductPromotion(productId, credits, showOnLanding);
+            // Re-fetch brand credits after promotion
+            const updatedCredits = await privateBrandsApiWrapper.getBrandCredits(
+              authToken,
+              brandId
+            );
+            if (updatedCredits) {
+              setBrandCredits(updatedCredits);
+            }
+          }}
         />
       )}
     </>
