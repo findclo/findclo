@@ -296,7 +296,7 @@ const handleStopPromotion = async (promotionId: string) => {
                       {promotionsList.some(promotion => promotion.product_id === product.id && promotion.is_active) && <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStopPromotion(promotionsList.find(promotion => promotion.product_id === product.id)?.id.toString() || "")}
+                        onClick={() => handleStopPromotion(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id.toString() || "")}
                       >
                         <ArrowBigDownDash className="h-4 w-4 text-orange-500" />
                       </Button>}
