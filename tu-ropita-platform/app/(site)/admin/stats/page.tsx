@@ -112,11 +112,15 @@ export default function AdminDashboard() {
                         />
                     </PopoverContent>
                 </Popover>
-                <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                <Select 
+                    value={selectedBrand || "all"} 
+                    onValueChange={(value) => setSelectedBrand(value === 'all' ? undefined : value)}
+                >
                     <SelectTrigger className="w-full sm:w-[200px]">
                         <SelectValue placeholder="Seleccionar marca" />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">Todas las marcas</SelectItem>
                         {brands.map((brand) => (
                             <SelectItem key={brand.id} value={brand.id.toString()}>
                                 {brand.name}
