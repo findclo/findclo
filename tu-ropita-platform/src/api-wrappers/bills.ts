@@ -1,5 +1,5 @@
+import { IBill } from "@/lib/backend/models/interfaces/IBill";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
-import {IBill} from "@/lib/backend/models/interfaces/IBill";
 
 const ADMIN_BILLS_PATH: string = `/admin/bills`;
 const BRANDS_BILLS_PATH: string = `/brands`;
@@ -23,7 +23,7 @@ class PrivateBillsApiWrapper {
     }
 
     async changeBillStatus(auth_token: string, billId: number): Promise<void> {
-        const [error] = await fetcher(`${ADMIN_BILLS_PATH}/${billId}`, {
+        const [error, _] = await fetcher(`${ADMIN_BILLS_PATH}/${billId}`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,

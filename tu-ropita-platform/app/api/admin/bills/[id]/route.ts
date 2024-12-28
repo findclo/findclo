@@ -1,12 +1,12 @@
-import {withAdminPermission, withAdminPermissionNoParams} from "@/lib/routes_middlewares";
-import {billsService} from "@/lib/backend/services/bills.service";
+import { billsService } from "@/lib/backend/services/bills.service";
+import { withAdminPermission } from "@/lib/routes_middlewares";
 
 export const PUT = withAdminPermission(async (req: Request, params) => {
     try {
         const billId = params.params.id;
-        const bills = await billsService.changeBillStatus(billId);
-        return new Response(JSON.stringify(bills), {
-            status: 200,
+        await billsService.changeBillStatus(billId);
+        return new Response(null, {
+            status: 204,
             headers: {
                 'Content-Type': 'application/json'
             }
