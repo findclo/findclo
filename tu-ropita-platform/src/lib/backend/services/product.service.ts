@@ -10,6 +10,7 @@ import { openAIService } from "@/lib/backend/services/openAI.service";
 import { tagsService } from "@/lib/backend/services/tags.service";
 import { ConflictException } from "../exceptions/ConflictException";
 import {productsInteractionsService} from "@/lib/backend/services/productsInteractions.service";
+import {productTagsService} from "@/lib/backend/services/productsTags.service";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
@@ -64,8 +65,13 @@ class ProductService implements IProductService{
             const aiResponse: IAITagsResponse = await openAIService.runAssistant(params.search);
             const tagNames = Object.values(aiResponse).flat();
             if (tagNames.length > 0) {
-                tags = tags.concat( await tagsService.getTagsByName(tagNames))
+                if(tags){
+                    tags = tags.concat( await tagsService.getTagsByName(tagNames))
+                }else{
+                    tags = await tagsService.getTagsByName(tagNames);
+                }
             }
+            console.log("AIResponse: ", tags)
         }
 
         if(params.excludeBrandPaused == undefined){
@@ -91,13 +97,16 @@ class ProductService implements IProductService{
         const products : IProductDTO[] = await this.parser.parse(file);
 
         const dbRes = await productRepository.bulkProductInsert(products,brandId);
+        productTagsService.tagPendingProductsByBrand(parseInt(brandId)).then(r => {});
 
         console.log(`db insert result ${dbRes}`);
         return dbRes > 0;
     }
 
     public async createProduct(product: IProductDTO, brandId: string): Promise<IProduct> {
-        return productRepository.createProduct(product, brandId);
+        const prod=  await productRepository.createProduct(product, brandId);
+        productTagsService.tagPendingProductsByBrand(parseInt(brandId)).then(r => {});
+        return prod;
     }
 
     public async deleteProduct(id: number): Promise<boolean> {

@@ -6,43 +6,21 @@ import { productTagsRepository } from "@/lib/backend/persistance/productsTags.re
 import { tagsRepository } from "@/lib/backend/persistance/tags.repository";
 import { openAIService } from "@/lib/backend/services/openAI.service";
 import { TagNotFoundException } from "../exceptions/tagNotFound.exception";
+import {productService} from "@/lib/backend/services/product.service";
 
 export interface IProductsTagsService {
     tagPendingProducts(): Promise<void>;
+    tagPendingProductsByBrand(brandId: number): Promise<void>;
     tagProductByCategoryName(tags: string[], categoryName : string ,productId: number): Promise<void>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ProductsTagsService implements IProductsTagsService {
-    
+
     async tagPendingProducts(): Promise<void> {
         const pendingProductsToTag : IProduct[] = await productRepository.listProducts({tagged: false});
-
-        for (const prod of pendingProductsToTag) {
-            if(prod.description) {
-                // TODO Agregar nombre, marca etc al prompt
-                const toTag = `brand:{}`
-                openAIService.runAssistant(prod.description).then(
-                    aiResponse =>{
-                        if (aiResponse) {
-                            console.log(`GPT respose ${JSON.stringify(aiResponse)}`)
-
-                            for (const [categoryName, tags] of Object.entries(aiResponse)) {
-                                if (tags && tags.length > 0) {
-                                    this.tagProductByCategoryName(tags, categoryName, prod.id);
-                                }
-                            }
-
-                            productRepository.markProductAsTagged(prod.id);
-                            console.log(aiResponse)
-                        }
-                    }
-                );
-
-            }
-        }
-
+        await this.tagProducts(pendingProductsToTag);
     }
 
     async tagProductByCategoryName(tags: string[], categoryName: string, productId: number): Promise<void> {
@@ -73,6 +51,34 @@ class ProductsTagsService implements IProductsTagsService {
         );
 
         await productTagsRepository.insertTagsToProduct(tagObjects, productId);
+    }
+
+
+    async tagPendingProductsByBrand(brandId: number): Promise<void> {
+        const iListProductResponseDto = (await productService.listProducts({brandId: brandId}));
+        if(iListProductResponseDto){
+            await this.tagProducts(iListProductResponseDto.products);
+        }
+    }
+
+    private async tagProducts(products: IProduct[]): Promise<void> {
+        for (const prod of products) {
+            const toTag = `brand:${prod.brand}, description:${prod.description}, name: ${prod.name}`;
+            openAIService.runAssistant(toTag).then(
+                aiResponse => {
+                    if (aiResponse) {
+                        console.log(`GPT respose ${JSON.stringify(aiResponse)}`)
+
+                        for (const [categoryName, tags] of Object.entries(aiResponse)) {
+                            if (tags && tags.length > 0) {
+                                this.tagProductByCategoryName(tags, categoryName, prod.id);
+                            }
+                        }
+                        productRepository.markProductAsTagged(prod.id);
+                    }
+                }
+            );
+        }
     }
 }
 
