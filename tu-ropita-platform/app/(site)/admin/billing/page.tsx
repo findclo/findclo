@@ -1,15 +1,15 @@
 'use client'
 
-import {Search} from 'lucide-react'
-import {useEffect, useState} from "react"
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select"
-import {Input} from "@/components/ui/input"
-import {IBill} from "@/lib/backend/models/interfaces/IBill";
-import {privateBillsApiWrapper} from "@/api-wrappers/bills";
-import Cookies from "js-cookie";
-import {BillsList} from "@/components/BillsList";
-import {format, subMonths} from 'date-fns'
-import {es} from "date-fns/locale";
+import { privateBillsApiWrapper } from "@/api-wrappers/bills"
+import { BillsList } from "@/components/BillsList"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
+import { IBill } from "@/lib/backend/models/interfaces/IBill"
+import { format, subMonths } from 'date-fns'
+import { es } from "date-fns/locale"
+import Cookies from "js-cookie"
+import { Search } from 'lucide-react'
+import { useEffect, useState } from "react"
 
 function generateLastTwelveMonths() {
     const months = []
@@ -70,7 +70,7 @@ export default function BillingDashboard() {
 
     return (
         <div className="container mx-auto py-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold">Facturación del período</h2>
                 <Select defaultValue={selectedPeriod} onValueChange={setSelectedPeriod}>
                     <SelectTrigger className="w-[200px]">
