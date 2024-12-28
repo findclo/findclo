@@ -5,6 +5,7 @@ import { privateMetricsApiWrapper } from "@/api-wrappers/metrics";
 import toast from "@/components/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
 import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
 import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
@@ -17,6 +18,7 @@ export default function ShopAdminPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
   const [products, setProducts] = useState<IProduct[]>([]);
   const [metrics, setMetrics] = useState<IMetrics[]>([]);
+  const [promotions, setPromotions] = useState<IPromotion[] | null>(null);
   const authToken = Cookies.get('Authorization')!;
 
   const fetchBrandDetails = useCallback(async () => {
@@ -39,16 +41,24 @@ export default function ShopAdminPage() {
         .then(d => setMetrics(d));
   }, []);
 
+  const fetchBrandPromotions = useCallback(async (brandId: string) => {
+    const promotions = await privateBrandsApiWrapper.getBrandPromotions(authToken!, brandId);
+    if (promotions) {
+      setPromotions(promotions);
+    }
+  }, []);
+
   useEffect(() => {
     async function loadData() {
       const brandData = await fetchBrandDetails();
       if (brandData) {
         await fetchProducts(brandData.id.toString());
         await fetchBrandMetrics(brandData.id.toString());
+        await fetchBrandPromotions(brandData.id.toString());
       }
     }
     loadData();
-  }, [fetchBrandDetails, fetchProducts, fetchBrandMetrics]);
+  }, [fetchBrandDetails, fetchProducts, fetchBrandMetrics, fetchBrandPromotions]);
 
   if (!brand) {
     return (
@@ -149,10 +159,33 @@ export default function ShopAdminPage() {
             <CardTitle className="text-amber-800">Productos pausados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-6 h-6 text-amber-500" />
-              <p className="text-3xl font-bold text-amber-700">{products.filter(product => product.status !== 'ACTIVE').length}</p>
+            <div className="flex flex-col gap-3">
+              {Object.entries(
+                products.reduce((acc, product) => {
+                  if (product.status !== 'ACTIVE' && product.status !== 'DELETED') {
+                    acc[product.status!] = (acc[product.status!] || 0) + 1;
+                  }
+                  return acc;
+                }, {} as Record<string, number>)
+              ).map(([status, count]) => (
+                <div key={status} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span className="text-amber-800">{status.toLowerCase() === 'paused' ? 'Productos pausados' : 'Productos pausados por administrador'}</span>
+                  </div>
+                  <span className="text-xl font-bold text-amber-700">{count}</span>
+                </div>
+              ))}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle>Promociones activas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-gray-700">{promotions?.length || 0}</p>
           </CardContent>
         </Card>
       </div>
