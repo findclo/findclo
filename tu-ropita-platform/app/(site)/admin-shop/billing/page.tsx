@@ -37,6 +37,7 @@ export default function BillingDashboard() {
     const fetchBills = useCallback(
         async (brandId: string) => {
             try {
+                setLoading(true);
                 const bills = await privateBrandsBillsApiWrapper.getBrandBills(token!, brandId)
                 setBillsData(bills)
             } catch (error) {
@@ -63,34 +64,43 @@ export default function BillingDashboard() {
     return (
         <div className="container mx-auto py-6">
             <div className="max-w-3xl mx-auto space-y-6">
-                 Periodo
+                <h2 className="text-2xl font-bold">Ultimo periodo</h2>
                 <div className="space-y-4">
-                    <div className=" border border-gray-700 rounded-lg p-4 space-y-4">
-                        <div className="flex justify-between text-sm">
-                            <span>Cliente: {currentBill?.brandName || 'N/A'}</span>
-                            <span>Fecha: {format(new Date(currentBill?.period.startDate), 'dd/MM/yyyy', {locale: es})}</span>
-                        </div>
-
-                        <div className="space-y-2">
-                            {currentBill?.billableItems.map((item, index) => (
-                                <div key={index} className=" p-3 rounded">
-                                    {item.item_name}: {item.quantity}
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="pt-4 border-t border-gray-700">
-                            <div className=" p-3 rounded">
-                                Total: ${currentBill?.totalAmount || '0.00'}
+                    {billsData.length > 0 ? (
+                        <div className="border border-gray-700 rounded-lg p-4 space-y-4">
+                            <div className="flex justify-between text-sm">
+                                <span>Cliente: {currentBill?.brandName || 'N/A'}</span>
+                                <span>Fecha desde: {format(new Date(currentBill?.period.startDate), 'dd/MM/yyyy', {locale: es})}</span>
+                                <span>Fecha hasta: {format(new Date(currentBill?.period.endDate), 'dd/MM/yyyy', {locale: es})}</span>
                             </div>
-                        </div>
 
-                        <div className="flex justify-center">
-                            <Button className="  bg-gray-500 text-white border-gray-700 hover:bg-[#444]">
-                                Descargar
-                            </Button>
+                            <div className="space-y-2">
+                                {currentBill?.billableItems.map((item, index) => (
+                                    <div key={index} className="p-3 rounded">
+                                        {item.item_name}: {item.quantity}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-700">
+                                <div className="p-3 rounded">
+                                    Total: ${currentBill?.totalAmount || '0.00'}
+                                </div>
+                            </div>
+
+                            {/*<div className="flex justify-center">*/}
+                            {/*    <Button className="bg-gray-500 text-white border-gray-700 hover:bg-[#444]">*/}
+                            {/*        Descargar*/}
+                            {/*    </Button>*/}
+                            {/*</div>*/}
                         </div>
-                    </div>
+                    ) : (
+                        <div className="border border-gray-700 rounded-lg p-4 text-center">
+                            <p className="text-lg font-semibold">No hay facturas disponibles</p>
+                            <p className="text-sm text-gray-500">No se encontraron facturas para mostrar en
+                                este periodo.</p>
+                        </div>
+                    )}
                 </div>
 
                 <BrandsBillList bills={billsData}/>
