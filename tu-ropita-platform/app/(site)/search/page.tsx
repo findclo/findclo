@@ -6,13 +6,13 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 
 interface SearchPageProps {
     searchParams: {
-        q?: string;
+        search?: string;
         tags?: string | string[];
     };
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-    const query = searchParams.q || '';
+    const query = searchParams.search || '';
     const tags = Array.isArray(searchParams.tags)
         ? searchParams.tags
         : searchParams.tags

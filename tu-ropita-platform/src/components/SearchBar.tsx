@@ -39,13 +39,14 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
     if (searchQuery.trim()) {
       try {
         setIsLoading(true);
+        const queryParams = new URLSearchParams();
+        queryParams.append('search', searchQuery.trim());
         const result = await publicProductsApiWrapper.getFilteredProducts(searchQuery.trim(), {});
         if (result && result.appliedTags) {
           const newTagsName = result.appliedTags.map(tag => tag.name);
-          const queryParams = new URLSearchParams();
           newTagsName.forEach(name => queryParams.append('tags', name.toString()));
-          router.push(`/search?${queryParams.toString()}`);
         }
+        router.push(`/search?${queryParams.toString()}`);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching filtered products:', error);

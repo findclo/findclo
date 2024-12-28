@@ -49,7 +49,8 @@ class OpenAIService implements IAIService {
 
         } catch (error) {
             console.log(`Error using OpenAI Assistants API: ${error}`);
-            throw error;
+            return {};
+            // throw error;
         }
     }
 

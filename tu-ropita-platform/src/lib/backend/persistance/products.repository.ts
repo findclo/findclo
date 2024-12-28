@@ -1,43 +1,54 @@
 import pool from "@/lib/backend/conf/db.connections";
-import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
-import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
-import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
-import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
-import { Pool, QueryResult } from "pg";
+import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
+import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
+import {BrandStatus} from "@/lib/backend/models/interfaces/brand.interface";
+import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
+import {Pool, QueryResult} from "pg";
 
-export interface  IListProductsParams {
-    search?:string;
-    brandId?:number;
+export interface IListProductsParams {
+    search?: string;
+    brandId?: number;
     tagged?: boolean;
     tags?: string[];
     productId?: number;
     userQuery?: boolean;
     excludeBrandPaused?: boolean;
 }
+
 // TODO ADD (brand, tags, etc.)
 
 export interface IProductRepository {
-    getProductById(productId: number,excludeBrandPaused:boolean): Promise<IProduct | null>;
-    listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>;
-    bulkProductInsert(products : IProductDTO[], brandId: string): Promise<number>;
+    getProductById(productId: number, excludeBrandPaused: boolean): Promise<IProduct | null>;
+
+    listProducts(params: IListProductsParams, tags?: ITag[]): Promise<IProduct[]>;
+
+    bulkProductInsert(products: IProductDTO[], brandId: string): Promise<number>;
+
     markProductAsTagged(productId: number): Promise<void>;
+
     deleteProduct(productId: number): Promise<boolean>;
+
     updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
+
     markProductAsUntagged(productId: number): Promise<void>;
+
     updateProductStatus(id: number, status: string): Promise<IProduct>;
 };
 
 
-class ProductsRepository implements IProductRepository{
+class ProductsRepository implements IProductRepository {
     private db: Pool;
 
-    constructor(db: Pool ) {
+    constructor(db: Pool) {
         this.db = db;
     }
 
-    public async getProductById(productId: number,excludeBrandPaused:boolean): Promise<IProduct | null> {
-        let query = `SELECT p.*, b.status as brand_status FROM Products p JOIN Brands b ON p.brand_id = b.id WHERE p.id = $1`;
+    public async getProductById(productId: number, excludeBrandPaused: boolean): Promise<IProduct | null> {
+        let query = `SELECT p.*, b.status as brand_status
+                     FROM Products p
+                              JOIN Brands b ON p.brand_id = b.id
+                     WHERE p.id = $1`;
         const values: any[] = [productId];
 
         if (excludeBrandPaused) {
@@ -47,7 +58,7 @@ class ProductsRepository implements IProductRepository{
 
         try {
             const res = await this.db.query(query, values);
-            if(res.rowCount == null || res.rowCount <= 0){
+            if (res.rowCount == null || res.rowCount <= 0) {
                 return null;
             }
             return this.mapProductRows(res.rows)[0];
@@ -57,8 +68,8 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
-    public async listProducts(params: IListProductsParams, tags?: ITag[]) : Promise<IProduct[]>{
-        const {query, values} = this.constructListQuery(params,tags);
+    public async listProducts(params: IListProductsParams, tags?: ITag[]): Promise<IProduct[]> {
+        const {query, values} = this.constructListQuery(params, tags);
         try {
             const res = await this.db.query(query, values);
             return this.mapProductRows(res.rows);
@@ -68,12 +79,12 @@ class ProductsRepository implements IProductRepository{
         }
     }
 
-    public async bulkProductInsert(products : IProductDTO[], brandId: string): Promise<number>{
+    public async bulkProductInsert(products: IProductDTO[], brandId: string): Promise<number> {
         console.log("INSERTING")
         const valuePlaceholders = products.map((_, index) => {
             const offset = index * 8;
             return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, 
-            to_tsvector('spanish', coalesce($${offset + 6}, '') || ' ' || coalesce($${offset + 7}, '')),$${offset+8}
+            to_tsvector('spanish', coalesce($${offset + 6}, '') || ' ' || coalesce($${offset + 7}, '')),$${offset + 8}
         )`;
         });
 
@@ -89,7 +100,7 @@ class ProductsRepository implements IProductRepository{
         ]);
 
         const query = `
-            INSERT INTO Products (name, price, description, images, brand_id, tsv,url)
+            INSERT INTO Products (name, price, description, images, brand_id, tsv, url)
             VALUES ${valuePlaceholders.join(', ')}
         `;
 
@@ -97,7 +108,7 @@ class ProductsRepository implements IProductRepository{
         try {
             const res = await pool.query(query, values);
             console.log('Products inserted successfully');
-            return res.rowCount == null? 0:res.rowCount;
+            return res.rowCount == null ? 0 : res.rowCount;
         } catch (error) {
             console.error('Error inserting products:', error);
             return -1;
@@ -106,8 +117,9 @@ class ProductsRepository implements IProductRepository{
 
     public async createProduct(product: IProductDTO, brandId: string): Promise<IProduct> {
         const query = `INSERT INTO Products (name, price, description, images, brand_id, tsv, url)
-            VALUES ($1, $2, $3, $4, $5, to_tsvector('spanish', coalesce($6, '') || ' ' || coalesce($7, '')), $8)
-            RETURNING *`;
+                           VALUES ($1, $2, $3, $4, $5,
+                                   to_tsvector('spanish', coalesce($6, '') || ' ' || coalesce($7, '')), $8)
+                               RETURNING *`;
         const values = [product.name, product.price, product.description, product.images, brandId, product.name, product.description, product.url];
         try {
             const res = await pool.query(query, values);
@@ -119,21 +131,21 @@ class ProductsRepository implements IProductRepository{
     }
 
     async markProductAsTagged(productId: number): Promise<void> {
-        this.markProductIsTagged(productId,true);
+        this.markProductIsTagged(productId, true);
     }
 
     async markProductAsUntagged(productId: number): Promise<void> {
-        this.markProductIsTagged(productId,false);
+        this.markProductIsTagged(productId, false);
     }
 
 
     private async markProductIsTagged(productId: number, isTagged: boolean): Promise<void> {
         const query: string = `UPDATE Products
-            SET has_tags_generated = $1
-            WHERE id = $2;`;
+                               SET has_tags_generated = $1
+                               WHERE id = $2;`;
 
         try {
-            const result = await pool.query(query, [isTagged,productId]);
+            const result = await pool.query(query, [isTagged, productId]);
 
             if (result.rowCount === 0) {
                 // TODO HANDLE THIS
@@ -160,7 +172,9 @@ class ProductsRepository implements IProductRepository{
     //     }
     // }
     async deleteProduct(id: number): Promise<boolean> {
-        const query = `UPDATE Products SET status = $1 WHERE id = $2`;
+        const query = `UPDATE Products
+                       SET status = $1
+                       WHERE id = $2`;
         const values = ['DELETED', id];
 
         try {
@@ -184,7 +198,7 @@ class ProductsRepository implements IProductRepository{
                 has_tags_generated = false,
                 tsv = to_tsvector('spanish', coalesce($1, '') || ' ' || coalesce($3, ''))
             WHERE id = $6
-            RETURNING *
+                RETURNING *
         `;
 
         const values = [product.name, product.price, product.description, product.images, product.url, id];
@@ -218,7 +232,7 @@ class ProductsRepository implements IProductRepository{
 
 
     private mapProductRows(rows: any[]): IProduct[] {
-        if(rows.length == 0){
+        if (rows.length == 0) {
             return [];
         }
         return rows.map(row => ({
@@ -256,24 +270,24 @@ class ProductsRepository implements IProductRepository{
         }
 
 
-        if(params.excludeBrandPaused){
+        if (params.excludeBrandPaused) {
             query += ' JOIN Brands b ON p.brand_id = b.id ';
             conditions.push(`b.status != $${values.length + 1}`);
             values.push(BrandStatus.PAUSED);
         }
 
-        // if (params.search && params.search.trim().length > 1) {
-        //     console.log(params.search)
-        //     const sanitizedSearch = params.search
-        //         .trim()
-        //         .replace(/[^a-zA-Z0-9\s]/g, '')
-        //         .split(/\s+/)
-        //         .map(word => word + ':*')
-        //         .join(' & ');
-        //     conditions.push(`tsv @@ to_tsquery('spanish', $${values.length + 1})`);
-        //
-        //     values.push(sanitizedSearch);
-        // }
+        if (params.search && params.search.trim().length > 0) {
+            console.log(params.search)
+            const sanitizedSearch = params.search
+                .trim()
+                .replace(/[^a-zA-Z0-9\s]/g, '')
+                .split(/\s+/)
+                .map(word => word + ':*')
+                .join(' & ');
+            conditions.push(`tsv @@ to_tsquery('spanish', $${values.length + 1})`);
+
+            values.push(sanitizedSearch);
+        }
 
         if (params.brandId) {
             conditions.push(`p.brand_id = $${values.length + 1}`);
@@ -294,9 +308,14 @@ class ProductsRepository implements IProductRepository{
             query += ` WHERE ` + conditions.join(' AND ');
         }
 
-        query += ` GROUP BY p.id;`;
+        if (tags && tags.length > 0) {
+            query += ` GROUP BY p.id HAVING COUNT(DISTINCT t.name) = ${tags.length};`;
+        } else {
+            query += ` GROUP BY p.id;`;
+        }
 
-        return { query, values };
+        console.log(query, values);
+        return {query, values};
     }
 
 }
