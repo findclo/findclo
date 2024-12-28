@@ -38,6 +38,7 @@ export interface IProductRepository {
 
 
 class ProductsRepository implements IProductRepository {
+    private readonly TAGS_MINIMUM_COUNT = 2;
     private db: Pool;
 
     constructor(db: Pool) {
@@ -257,6 +258,7 @@ class ProductsRepository implements IProductRepository {
     private constructListQuery(params: IListProductsParams, tags?: ITag[]): { query: string, values: any[] } {
         let query = `SELECT DISTINCT p.* FROM products p`;
         const conditions: string[] = [];
+        const orConditions: string[] = [];
         const values: any[] = [];
 
         if (tags && tags.length > 0) {
@@ -276,15 +278,16 @@ class ProductsRepository implements IProductRepository {
             values.push(BrandStatus.PAUSED);
         }
 
-        if (params.search && params.search.trim().length > 0) {
+        if (!tags && params.search && params.search.trim().length > 0) {
             console.log(params.search)
             const sanitizedSearch = params.search
                 .trim()
-                .replace(/[^a-zA-Z0-9\s]/g, '')
-                .split(/\s+/)
-                .map(word => word + ':*')
-                .join(' & ');
-            conditions.push(`tsv @@ to_tsquery('spanish', $${values.length + 1})`);
+                .replace(/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚüÜ]/g, '')
+                .split(/\s+/)  // Separar por palabras
+                .map(word => word.toLowerCase())
+                .join(' | ');
+
+            orConditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
 
             values.push(sanitizedSearch);
         }
@@ -308,8 +311,16 @@ class ProductsRepository implements IProductRepository {
             query += ` WHERE ` + conditions.join(' AND ');
         }
 
+        if (orConditions.length > 0) {
+            if (conditions.length > 0) {
+                query += ` OR (${orConditions.join(' OR ')})`;
+            } else {
+                query += ` WHERE ${orConditions.join(' OR ')}`;
+            }
+        }
+
         if (tags && tags.length > 0) {
-            query += ` GROUP BY p.id HAVING COUNT(DISTINCT t.name) = ${tags.length};`;
+            query += ` GROUP BY p.id HAVING COUNT(DISTINCT t.name) >= ${(this.TAGS_MINIMUM_COUNT)};`;
         } else {
             query += ` GROUP BY p.id;`;
         }
