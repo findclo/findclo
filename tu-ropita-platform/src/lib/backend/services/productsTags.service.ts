@@ -7,11 +7,15 @@ import { tagsRepository } from "@/lib/backend/persistance/tags.repository";
 import { openAIService } from "@/lib/backend/services/openAI.service";
 import { TagNotFoundException } from "../exceptions/tagNotFound.exception";
 import {productService} from "@/lib/backend/services/product.service";
+import {IProductTag} from "@/lib/backend/models/interfaces/productTag.interface";
+import { parse } from "json2csv";
 
 export interface IProductsTagsService {
     tagPendingProducts(): Promise<void>;
     tagPendingProductsByBrand(brandId: number): Promise<void>;
     tagProductByCategoryName(tags: string[], categoryName : string ,productId: number): Promise<void>;
+    getProductsTagsFromBrand(brandId: number): Promise<IProductTag[]>;
+    getProductsTagsFromBrandAsCsv(brandId: number): Promise<string>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +57,29 @@ class ProductsTagsService implements IProductsTagsService {
         await productTagsRepository.insertTagsToProduct(tagObjects, productId);
     }
 
+    async getProductsTagsFromBrand(brandId: number): Promise<IProductTag[]> {
+        return productTagsRepository.getProductsTagsFromBrand(brandId);
+    }
+
+    async getProductsTagsFromBrandAsCsv(brandId: number): Promise<string> {
+        return this.generateCSVFromProductTags(
+            await productTagsRepository.getProductsTagsFromBrand(brandId)
+        );
+    }
+
+    private generateCSVFromProductTags(productTags: IProductTag[]): string {
+        const fields = ['name', 'description', 'price', 'images', 'url', 'tags'];
+        const data = productTags.map(productTag => ({
+            name: productTag.product.name,
+            description: productTag.product.description,
+            price: productTag.product.price,
+            images: productTag.product.images.join(', '),
+            url: productTag.product.url,
+            tags: productTag.tags.map(tag => tag.name).join(', ')
+        }));
+
+        return parse(data, {fields});
+    }
 
     async tagPendingProductsByBrand(brandId: number): Promise<void> {
         const iListProductResponseDto = (await productService.listProducts({brandId: brandId}));
