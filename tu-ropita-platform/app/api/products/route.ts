@@ -10,12 +10,17 @@ export async function GET(req: Request) {
         search: queryParams.get('search') || undefined,
         brandId: queryParams.has('brandId') ? Number(queryParams.get('brandId')) : undefined,
         tags: queryParams.has('tags') ? queryParams.get('tags')!.split(',') : undefined,
-        productId: queryParams.has('productId') ? Number(queryParams.get('productId')) : undefined
+        productId: queryParams.has('productId') ? Number(queryParams.get('productId')) : undefined,
+        featured: queryParams.has('featured') ? true : false,
+        isLandingPage: queryParams.has('isLandingPage') ? queryParams.get('isLandingPage') === 'true' : false
     };
 
     try {
         listProductParams.userQuery = true;
         const products : IListProductResponseDto = await productService.listProducts(listProductParams);
+
+        //TODO: ver si aca se handelea el tema de los creditos de la promotion
+
         return new Response(JSON.stringify(products), {
             status: 200,
             headers: {

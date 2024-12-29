@@ -37,10 +37,8 @@ class PublicProductsApiWrapper {
         return products as IListProductResponseDto;
     }
 
-    async getFeaturedProducts(): Promise<IListProductResponseDto | null> {
-        //TODO: 'featured' query param not implemented yet
-        // return null;
-        return this.getFilteredProducts("", { featured: true });
+    async getFeaturedProducts(isLandingPage: boolean = false): Promise<IListProductResponseDto | null> {
+        return this.getFilteredProducts("", { featured: true, isLandingPage });
     }
 }
 

@@ -1,10 +1,10 @@
 import pool from "@/lib/backend/conf/db.connections";
-import {IProductDTO} from "@/lib/backend/dtos/product.dto.interface";
-import {ProductNotFoundException} from "@/lib/backend/exceptions/productNotFound.exception";
-import {BrandStatus} from "@/lib/backend/models/interfaces/brand.interface";
-import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
-import {ITag} from "@/lib/backend/models/interfaces/tag.interface";
-import {Pool, QueryResult} from "pg";
+import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
+import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
+import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
+import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
+import { Pool, QueryResult } from "pg";
 
 export interface IListProductsParams {
     search?: string;
@@ -14,6 +14,8 @@ export interface IListProductsParams {
     productId?: number;
     userQuery?: boolean;
     excludeBrandPaused?: boolean;
+    featured?: boolean;
+    isLandingPage?: boolean;
 }
 
 // TODO ADD (brand, tags, etc.)
@@ -261,6 +263,20 @@ class ProductsRepository implements IProductRepository {
         const conditions: string[] = [];
         const values: any[] = [];
 
+        if (params.featured) {
+            query += ` JOIN promotions prom ON prom.product_id = p.id`;
+            conditions.push(`prom.is_active = true`);
+            if(params.isLandingPage){
+                conditions.push(`prom.show_on_landing = true`);
+            }
+        }
+
+        if (params.excludeBrandPaused) {
+            query += ' JOIN Brands b ON p.brand_id = b.id ';
+            conditions.push(`b.status != $${values.length + 1}`);
+            values.push(BrandStatus.PAUSED);
+        }
+
         if (tags && tags.length > 0) {
             query += ` JOIN Product_Tags pt ON p.id = pt.product_id
                        JOIN Tags t ON pt.tag_id = t.id`;
@@ -271,12 +287,6 @@ class ProductsRepository implements IProductRepository {
             values.push(...tagNames);
         }
 
-
-        if (params.excludeBrandPaused) {
-            query += ' JOIN Brands b ON p.brand_id = b.id ';
-            conditions.push(`b.status != $${values.length + 1}`);
-            values.push(BrandStatus.PAUSED);
-        }
         if (params.search && params.search.trim().length > 0) {
             searchByTsQuery = `UNION SELECT p.* FROM products p where tsv @@ plainto_tsquery('spanish', $${values.length + 1})`
             const sanitizedSearch = params.search

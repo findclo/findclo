@@ -44,7 +44,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     let recommendedProducts: IProduct[] = [];
     try {
-        const result = await publicProductsApiWrapper.getFeaturedProducts();
+        const result = await publicProductsApiWrapper.getFeaturedProducts(false);
         if (result && result.products.length > 0) {
             result.products = result.products.filter(p => p.status !== 'DELETED' && p.status !== 'PAUSED' && p.status !== 'PAUSED_BY_ADMIN');
         }
