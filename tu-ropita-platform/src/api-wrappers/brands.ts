@@ -3,7 +3,7 @@ import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
 import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
-import { fetcher } from "@/lib/fetcher/fetchWrapper";
+import {baseFetcher, fetcher} from "@/lib/fetcher/fetchWrapper";
 
 const BRANDS_PATH : string = `/brands`;
 const ADMIN_BRANDS_PATH : string = `/admin/brands`;
@@ -170,6 +170,21 @@ class PrivateBrandsApiWrapper {
             return null;
         }
         return {success: true};
+    }
+
+    async getBrandProductsTagsCsvAsPrivilegedUser(auth_token: string, brandId: number): Promise<Blob | null> {
+        const [error, products] = await baseFetcher(`${BRANDS_PATH}/${brandId}/products/tags`,{
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+        });
+        if (error) {
+            console.error(`Error fetching products by brand id ${brandId}: ${error}`);
+            return null;
+        }
+        console.log(products)
+        return await products.blob();
     }
 }
 
