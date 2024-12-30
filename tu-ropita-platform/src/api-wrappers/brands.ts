@@ -3,7 +3,7 @@ import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
 import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
-import {baseFetcher, fetcher} from "@/lib/fetcher/fetchWrapper";
+import { baseFetcher, fetcher } from "@/lib/fetcher/fetchWrapper";
 
 const BRANDS_PATH : string = `/brands`;
 const ADMIN_BRANDS_PATH : string = `/admin/brands`;
@@ -142,6 +142,21 @@ class PrivateBrandsApiWrapper {
             return null;
         }
         return credits as IBrandCredits;
+    }
+
+    async addBrandCredits(auth_token: string, brandId: string, credits: number): Promise<IBrandCredits | null> {
+        const [error, credits_response] = await fetcher(`${CREDITS_PATH(brandId)}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+            body: JSON.stringify({ add_credits: credits }),
+        });
+        if (error) {
+            console.error(`Error adding credits for brand ${brandId}: ${error}`);
+            return null;
+        }
+        return credits_response as IBrandCredits;
     }
 
     async getBrandPromotions(auth_token: string, brandId: string): Promise<IPromotion[] | null> {

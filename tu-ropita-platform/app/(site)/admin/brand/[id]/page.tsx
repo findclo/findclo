@@ -5,12 +5,24 @@ import { privateMetricsApiWrapper } from "@/api-wrappers/metrics"
 import { privateProductsApiWrapper } from "@/api-wrappers/products"
 import MetricCardsGrid from "@/components/MetricCardsGrid"
 import MetricsChart from "@/components/ProductsMetricChart"
+import toast from "@/components/toast"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface"
+import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits"
 import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface"
 import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface"
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface"
@@ -35,12 +47,15 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     const router = useRouter();
     const [brand, setBrand] = useState<IBrand | null>(null);
     const [products, setProducts] = useState<IProduct[]>([]);
+    const [brandCredits, setBrandCredits] = useState<IBrandCredits | null>(null);
     const token = Cookies.get('Authorization')!;
     const [metrics, setMetrics] = useState<IMetrics[]>([]);
     const [dailyData, setDailyData] = useState<Record<string, any>[]>([]);
     const [productsMetrics, setProductsMetrics] = useState<IProductMetric[]>([]);
     const [sortColumn, setSortColumn] = useState<string>('views');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [isAddCreditsOpen, setIsAddCreditsOpen] = useState(false)
+    const [creditsToAdd, setCreditsToAdd] = useState<string>('')
 
     const groupedMetrics: GroupedMetrics = useMemo(() => {
         return productsMetrics.reduce((acc, metric) => {
@@ -83,6 +98,19 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
             }
         }
 
+        async function fetchCredits() {
+            if (id) {
+                const credits = await privateBrandsApiWrapper.getBrandCredits(
+                    token,
+                    id
+                );
+                if (credits) {
+                    setBrandCredits(credits);
+                }
+            }
+        };
+
+        fetchCredits();
         fetchBrandDetails();
         fetchProducts();
     }, [id]);
@@ -187,6 +215,38 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
         });
     }, [products, groupedMetrics, sortColumn, sortDirection]);
 
+    const handleAddCredits = () => {
+        setIsAddCreditsOpen(true)
+    }
+
+    const handleConfirmAddCredits = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const credits = parseInt(creditsToAdd)
+        if (isNaN(credits) || credits <= 0) {
+            toast({
+                type: 'error',
+                message: 'Por favor ingrese un número válido de créditos'
+            })
+            return
+        }
+
+        const result = await privateBrandsApiWrapper.addBrandCredits(token, id, credits)
+        if (result) {
+            setBrandCredits(result)
+            toast({
+                type: 'success',
+                message: `Se agregaron ${credits} créditos exitosamente`
+            })
+            setCreditsToAdd('')
+            setIsAddCreditsOpen(false)
+        } else {
+            toast({
+                type: 'error',
+                message: 'Error al agregar créditos'
+            })
+        }
+    }
+
     if (!brand) {
         return <div className="flex items-center justify-center h-screen">Loading...</div>
     }
@@ -227,31 +287,77 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-2xl font-bold">Detalles</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col sm:flex-row items-start justify-between">
-                    <div className="flex items-center space-x-4 mb-4 sm:mb-0">
-                        <Image
-                            src={brand.image || '/placeholder.svg'}
-                            alt="Brand Logo"
-                            width={64}
-                            height={64}
-                            className="rounded-full"
-                        />
-                        <div>
-                            <h2 className="text-2xl font-bold">{brand.name}</h2>
-                            <p className="text-sm text-muted-foreground">{brand.websiteUrl}</p>
+                <CardContent className="flex flex-col sm:flex-row items-start justify-between space-y-4 sm:space-y-0">
+                    <div className="flex flex-col w-full">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div className="flex items-center space-x-4">
+                                <Image
+                                    src={brand.image || '/placeholder.svg'}
+                                    alt="Brand Logo"
+                                    width={64}
+                                    height={64}
+                                    className="rounded-full"
+                                />
+                                <div>
+                                    <h2 className="text-2xl font-bold">{brand.name}</h2>
+                                    <p className="text-sm text-muted-foreground">{brand.websiteUrl}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 w-full sm:w-auto">
+                                <div className="flex flex-col items-start sm:items-end">
+                                    <span className="text-sm text-muted-foreground">Créditos disponibles</span>
+                                    <span className="text-2xl font-bold">{ (brandCredits?.credits_available || 0) - (brandCredits?.credits_spent || 0) || 0}</span>
+                                </div>
+                                <Button variant="outline" onClick={handleAddCredits}>
+                                    <span className="hidden sm:inline">Agregar créditos</span>
+                                </Button>
+                                <Dialog open={isAddCreditsOpen} onOpenChange={setIsAddCreditsOpen}>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                        <DialogHeader>
+                                            <DialogTitle>Agregar créditos</DialogTitle>
+                                            <DialogDescription>
+                                                Agregar créditos para {brand.name}
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form onSubmit={handleConfirmAddCredits}>
+                                            <div className="grid gap-4 py-4">
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="credits" className="text-right">
+                                                        Créditos
+                                                    </Label>
+                                                    <Input
+                                                        id="credits"
+                                                        type="number"
+                                                        className="col-span-3"
+                                                        value={creditsToAdd}
+                                                        onChange={(e) => setCreditsToAdd(e.target.value)}
+                                                        min="1"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button type="button" variant="outline" onClick={() => setIsAddCreditsOpen(false)}>
+                                                    Cancelar
+                                                </Button>
+                                                <Button type="submit">Agregar</Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                                <a
+                                    href={brand.websiteUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <Button>
+                                        <span className="hidden sm:inline">Ir a la pagina del comercio</span>
+                                        <span className="sm:hidden">🔗</span>
+                                    </Button>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    <a
-                        href={brand.websiteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full sm:w-auto"
-                    >
-                        <Button className="w-full sm:w-auto">
-                            <span className="hidden sm:inline">Ir a la pagina del comercio</span>
-                            <span className="sm:hidden">🔗</span>
-                        </Button>
-                    </a>
                 </CardContent>
             </Card>
 
