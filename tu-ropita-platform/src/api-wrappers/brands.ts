@@ -2,7 +2,7 @@ import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
 import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
-import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
+import { IPromotion, IPromotionAdmin } from "@/lib/backend/models/interfaces/IPromotion";
 import { baseFetcher, fetcher } from "@/lib/fetcher/fetchWrapper";
 
 const BRANDS_PATH : string = `/brands`;
@@ -173,6 +173,20 @@ class PrivateBrandsApiWrapper {
         return promotions as IPromotion[];
     }
 
+    async getProductPromotion(auth_token: string, brandId: string, promotionId: number): Promise<IPromotionAdmin | null> {
+        const [error, promotion] = await fetcher(`${BRANDS_PATH}/${brandId}/promotions/${promotionId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+        });
+        if (error) {
+            console.error(`Error fetching promotion for promotion ${promotionId}: ${error}`);
+            return null;
+        }
+        return promotion as IPromotionAdmin;
+    }
+
     async stopPromotion(auth_token: string, brandId: string, promotion_id: number): Promise<{success: boolean} | null> {
         const [error, promotion_response] = await fetcher(`${BRANDS_PATH}/${brandId}/promotions/${promotion_id}`, {
             method: 'PATCH',
@@ -198,7 +212,6 @@ class PrivateBrandsApiWrapper {
             console.error(`Error fetching products by brand id ${brandId}: ${error}`);
             return null;
         }
-        console.log(products)
         return await products.blob();
     }
 }

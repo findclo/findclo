@@ -1,5 +1,5 @@
 import { NotFoundException } from "../exceptions/NotFoundException";
-import { IPromotion } from "../models/interfaces/IPromotion";
+import { IPromotion, IPromotionAdmin } from "../models/interfaces/IPromotion";
 import { IProduct } from "../models/interfaces/product.interface";
 import { productRepository } from "../persistance/products.repository";
 import { promotionRepository } from "../persistance/promotion.repository";
@@ -9,6 +9,14 @@ class PromotionService {
 
     async createPromotion(promotion: IPromotion): Promise<IPromotion> {
         return promotionRepository.createPromotion(promotion);
+    }
+
+    async getPromotionById(promotionId: number): Promise<IPromotionAdmin> {
+        const promotion = await promotionRepository.getPromotionById(promotionId);
+        if(!promotion) {
+            throw NotFoundException.createFromMessage(`Promotion not found. [promotion_id: ${promotionId}]`);
+        }
+        return promotion;
     }
 
     async getPromotionsByBrandId(brandId: number): Promise<IPromotion[]> {

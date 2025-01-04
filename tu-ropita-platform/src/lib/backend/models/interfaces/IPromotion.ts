@@ -16,4 +16,5 @@ export interface IPromotionAdmin {
     credits_per_view: number;
     show_on_landing: boolean;
     is_active: boolean;
+    created_at: Date;
 }

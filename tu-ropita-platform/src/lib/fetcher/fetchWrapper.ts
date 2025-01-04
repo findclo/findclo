@@ -9,6 +9,11 @@ export const fetcher = async (path: string, options: RequestInit = {}): Promise<
         if (error) {
             throw error;
         }
+        // If it's a 204 response, return the data as is
+        if (data.status === 204) {
+            return [null, data];
+        }
+        // Otherwise, parse the JSON
         data = await data.json();
         return [null, data];
     } catch (error) {

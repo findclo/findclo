@@ -17,10 +17,11 @@ import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
 import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import Cookies from "js-cookie";
-import { ArrowBigDownDash, ArrowBigUpDash, Edit, Trash2 } from "lucide-react";
+import { ArrowBigDownDash, ArrowBigUpDash, Edit, ExternalLink, Info, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import EditProductDialog from "./EditProductDialog";
+import ProductPromotionDetailsDialog from "./ProductPromotionDetailsDialog";
 import PromoteProductDialog from "./PromoteProductDialog";
 
 interface ProductTableProps {
@@ -49,6 +50,8 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const [brandCredits, setBrandCredits] = useState<IBrandCredits | null>(null);
   const [search, setSearch] = useState("");
   const authToken = Cookies.get("Authorization")!;
+  const [isPromotionDetailsDialogOpen, setIsPromotionDetailsDialogOpen] = useState(false);
+  const [selectedPromotionId, setSelectedPromotionId] = useState<number | null>(null);
 
   useEffect(() => {
     setPromotionsList(promotions);
@@ -177,6 +180,7 @@ const handleStopPromotion = async (promotionId: string) => {
   try {
     if(confirm("¿Estás seguro de que quieres detener la promoción?")){
       const result = await privateBrandsApiWrapper.stopPromotion(authToken, brandId, parseInt(promotionId));
+      console.log(result);
       if(!result){
         throw new Error("Error al detener la promoción.");
       }
@@ -195,15 +199,32 @@ const handleStopPromotion = async (promotionId: string) => {
   }
 };
 
+const openPromotionDetails = (promotionId: number) => {
+  setSelectedPromotionId(promotionId);
+  setIsPromotionDetailsDialogOpen(true);
+};
+
   return (
     <>
-      <div className="ml-4 mb-4">
-        <Input
-          placeholder="Buscar productos..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
+      <div className="ml-4 mb-4 flex gap-2">
+        <div className="relative max-w-sm">
+          <Input
+            placeholder="Buscar productos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pr-8"
+          />
+          {search && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+              onClick={() => setSearch("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <ScrollArea className="h-[400px] overflow-auto">
@@ -223,7 +244,7 @@ const handleStopPromotion = async (promotionId: string) => {
                 Descripción
               </TableHead>
               <TableHead className="sticky top-0 bg-background">
-                URL
+                Enlace
               </TableHead>
               <TableHead className="sticky top-0 bg-background">
                 Estado
@@ -254,14 +275,13 @@ const handleStopPromotion = async (promotionId: string) => {
                     {product.description}
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
-                    <a
-                      href={product.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(product.url, '_blank')}
                     >
-                      {product.url}
-                    </a>
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
@@ -293,13 +313,24 @@ const handleStopPromotion = async (promotionId: string) => {
                       >
                         <ArrowBigUpDash className="h-4 w-4" />
                       </Button>}
-                      {promotionsList.some(promotion => promotion.product_id === product.id && promotion.is_active) && <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStopPromotion(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id.toString() || "")}
-                      >
-                        <ArrowBigDownDash className="h-4 w-4 text-orange-500" />
-                      </Button>}
+                      {promotionsList.some(promotion => promotion.product_id === product.id && promotion.is_active) && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleStopPromotion(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id.toString() || "")}
+                          >
+                            <ArrowBigDownDash className="h-4 w-4 text-orange-500" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openPromotionDetails(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id || 0)}
+                          >
+                            <Info className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
 
                       <Button
                         variant="outline"
@@ -362,6 +393,12 @@ const handleStopPromotion = async (promotionId: string) => {
           }}
         />
       )}
+      <ProductPromotionDetailsDialog
+        isOpen={isPromotionDetailsDialogOpen}
+        setIsOpen={setIsPromotionDetailsDialogOpen}
+        promotionId={selectedPromotionId || 0}
+        brandId={brandId}
+      />
     </>
   );
 };

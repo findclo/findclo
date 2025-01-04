@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import pool from "../conf/db.connections";
-import { IPromotion } from "../models/interfaces/IPromotion";
+import { IPromotion, IPromotionAdmin } from "../models/interfaces/IPromotion";
 
 class PromotionRepository {
 
@@ -19,6 +19,14 @@ class PromotionRepository {
             throw new Error('Failed to create promotion');
         }
         return query_result.rows[0] as IPromotion;
+    }
+
+    async getPromotionById(promotionId: number): Promise<IPromotionAdmin> {
+        const query_result = await this.db.query('SELECT * FROM promotions WHERE id = $1', [promotionId]);
+        if (query_result.rowCount === 0) {
+            throw new Error('Promotion not found');
+        }
+        return query_result.rows[0] as IPromotionAdmin;
     }
 
     async getPromotionsByBrandId(brandId: number, activeOnly: boolean = true): Promise<IPromotion[]> {
