@@ -36,6 +36,7 @@ class PromotionRepository {
                 promotions.product_id,
                 promotions.keywords,
                 promotions.credits_allocated,
+                promotions.credits_spent,
                 promotions.show_on_landing,
                 promotions.is_active
             FROM promotions 

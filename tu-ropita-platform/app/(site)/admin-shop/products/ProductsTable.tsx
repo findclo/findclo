@@ -351,13 +351,22 @@ const openPromotionDetails = (promotionId: number) => {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openPromotionDetails(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id || 0)}
-                                >
-                                  <Info className="h-4 w-4" />
-                                </Button>
+                                <div className="relative">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openPromotionDetails(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id || 0)}
+                                  >
+                                    <Info className="h-4 w-4" />
+                                  </Button>
+                                  {promotionsList.find(promotion => 
+                                    promotion.product_id === product.id && 
+                                    promotion.is_active && 
+                                    (promotion.credits_allocated - promotion.credits_spent <= 0)
+                                  ) && (
+                                    <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+                                  )}
+                                </div>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Ver detalles de promoción</p>
@@ -449,6 +458,7 @@ const openPromotionDetails = (promotionId: number) => {
         setIsOpen={setIsPromotionDetailsDialogOpen}
         promotionId={selectedPromotionId || 0}
         brandId={brandId}
+        handleStopPromotion={handleStopPromotion}
       />
     </>
   );

@@ -94,11 +94,11 @@ const PromoteProductDialog: React.FC<PromoteProductDialogProps> = ({
           </Label>
         </div>
 
-        {(credits_allocated === 0 || credits_allocated > (brandCredits?.credits_available || 0)) && (
+        {(credits_allocated === 0 || credits_allocated > (brandCredits?.credits_available || 0) - (brandCredits?.credits_spent || 0)) && (
           <p className="text-sm text-red-500 text-center">
             {credits_allocated === 0 
               ? "Debes asignar al menos 1 crédito"
-              : `No tienes suficientes créditos disponibles. Máximo: ${brandCredits?.credits_available}`
+              : `No tienes suficientes créditos disponibles. Máximo: ${(brandCredits?.credits_available || 0) - (brandCredits?.credits_spent || 0)}`
             }
           </p>
         )}
@@ -108,7 +108,8 @@ const PromoteProductDialog: React.FC<PromoteProductDialogProps> = ({
           disabled={
             !brandCredits || 
             credits_allocated > brandCredits.credits_available ||
-            credits_allocated === 0
+            credits_allocated === 0 ||
+            !(credits_allocated > 0 && show_on_landing)
           }
           className="w-full rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >

@@ -3,6 +3,7 @@ export interface IPromotion {
     id: number;
     product_id: number;
     credits_allocated: number;
+    credits_spent: number;
     show_on_landing: boolean;
     keywords?: string[];
     is_active?: boolean;
