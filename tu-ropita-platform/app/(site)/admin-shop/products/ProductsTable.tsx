@@ -13,6 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
 import { IPromotion } from "@/lib/backend/models/interfaces/IPromotion";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
@@ -305,50 +311,95 @@ const openPromotionDetails = (promotionId: number) => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
-                      {product.status === "ACTIVE" && !promotionsList.some(promotion => promotion.product_id === product.id && promotion.is_active) && <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openPromotionDialog(product)}
-                      >
-                        <ArrowBigUpDash className="h-4 w-4" />
-                      </Button>}
+                    <div className="flex space-x-2 justify-end">
+                      {product.status === "ACTIVE" && !promotionsList.some(promotion => promotion.product_id === product.id && promotion.is_active) && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openPromotionDialog(product)}
+                              >
+                                <ArrowBigUpDash className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Promocionar producto</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                       {promotionsList.some(promotion => promotion.product_id === product.id && promotion.is_active) && (
                         <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleStopPromotion(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id.toString() || "")}
-                          >
-                            <ArrowBigDownDash className="h-4 w-4 text-orange-500" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openPromotionDetails(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id || 0)}
-                          >
-                            <Info className="h-4 w-4" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleStopPromotion(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id.toString() || "")}
+                                >
+                                  <ArrowBigDownDash className="h-4 w-4 text-orange-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Detener promoción</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openPromotionDetails(promotionsList.find(promotion => (promotion.product_id === product.id && promotion.is_active))?.id || 0)}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Ver detalles de promoción</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </>
                       )}
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(product)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(product)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar producto</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() =>
-                          handleDeleteProduct(product.id.toString())
-                        }
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteProduct(product.id.toString())}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Eliminar producto</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
                     </div>
                   </TableCell>
