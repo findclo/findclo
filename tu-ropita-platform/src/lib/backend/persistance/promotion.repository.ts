@@ -76,6 +76,13 @@ class PromotionRepository {
         }
     }
 
+    async spendProductPromotionsCredits(product_ids: number[]): Promise<void> {
+        const query_result = await this.db.query('UPDATE promotions SET credits_spent = credits_spent + 1 WHERE product_id = ANY($1) AND is_active = true', [product_ids]);
+        if(query_result.rowCount === 0){
+            throw new Error('Failed to spend products promotion credits');
+        }
+    }
+
 }
 
 export const promotionRepository = new PromotionRepository(pool);  

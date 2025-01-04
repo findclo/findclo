@@ -1,6 +1,7 @@
 import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
 import { IListProductsParams } from "@/lib/backend/persistance/products.repository";
 import { productService } from "@/lib/backend/services/product.service";
+import { promotionService } from "@/lib/backend/services/promotion.service";
 
 export async function GET(req: Request) {
     const url = new URL(req.url);
@@ -19,7 +20,10 @@ export async function GET(req: Request) {
         listProductParams.userQuery = true;
         const products : IListProductResponseDto = await productService.listProducts(listProductParams);
 
-        //TODO: ver si aca se handelea el tema de los creditos de la promotion
+        if(listProductParams.featured){
+            const products_ids = products.products.map(p => p.id);
+            await promotionService.spendProductPromotionsCredits(products_ids);
+        }
 
         return new Response(JSON.stringify(products), {
             status: 200,

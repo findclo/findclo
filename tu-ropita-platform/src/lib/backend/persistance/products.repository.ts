@@ -266,6 +266,7 @@ class ProductsRepository implements IProductRepository {
         if (params.featured) {
             query += ` JOIN promotions prom ON prom.product_id = p.id`;
             conditions.push(`prom.is_active = true`);
+            conditions.push(`prom.credits_spent < prom.credits_allocated`);
             if(params.isLandingPage){
                 conditions.push(`prom.show_on_landing = true`);
             }

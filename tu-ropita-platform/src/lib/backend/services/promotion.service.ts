@@ -60,6 +60,10 @@ class PromotionService {
         return promotionRepository.stopPromotion(promotionId);
     }
 
+    async spendProductPromotionsCredits(product_ids: number[]): Promise<void> {
+        return promotionRepository.spendProductPromotionsCredits(product_ids);
+    }
+
 }
 
 export const promotionService = new PromotionService();
