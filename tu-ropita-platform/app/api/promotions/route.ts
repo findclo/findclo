@@ -76,7 +76,7 @@ export const POST = withBrandPermission(async (req: Request) => {
         });
     }
 
-    const promotion = await promotionService.createPromotion({...promotionDto, id: 0});
+    const promotion = await promotionService.createPromotion({...promotionDto, id: 0, credits_spent: 0});
     
     await brandCreditsService.spendBrandCredits(brandId, promotionDto.credits_allocated);
     return new Response(JSON.stringify(promotion), { 
