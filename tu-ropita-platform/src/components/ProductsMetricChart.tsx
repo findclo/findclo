@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from '@/components/ui/chart'
-import { AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, Area } from 'recharts'
-import { RefreshCw } from 'lucide-react'
 import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface"
+import { RefreshCw } from 'lucide-react'
+import { useState } from 'react'
+import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts'
 
 interface MetricsChartProps {
     dailyData: Record<string, any>[]
@@ -29,12 +30,26 @@ export default function MetricsChart({ dailyData, onRefresh }: MetricsChartProps
         }
     }
 
+    const [visibleLines, setVisibleLines] = useState<Record<string, boolean>>(() => 
+        Object.keys(chartConfig).reduce((acc, key) => ({
+            ...acc,
+            [key]: true
+        }), {})
+    )
+
     const getMaxValue = () => {
         return Math.ceil(Math.max(...dailyData.flatMap(entry =>
             Object.entries(entry)
-                .filter(([key]) => key !== 'name')
+                .filter(([key]) => key !== 'name' && visibleLines[key])
                 .map(([_, value]) => Number(value))
         )) * 1.1)
+    }
+
+    const toggleLine = (key: string) => {
+        setVisibleLines(prev => ({
+            ...prev,
+            [key]: !prev[key]
+        }))
     }
 
     return (
@@ -60,6 +75,25 @@ export default function MetricsChart({ dailyData, onRefresh }: MetricsChartProps
                 </div>
             </CardHeader>
             <CardContent>
+                <div className="mb-4 flex flex-wrap gap-4">
+                    {Object.entries(chartConfig).map(([key, config]) => (
+                        <button
+                            key={key}
+                            onClick={() => toggleLine(key)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                                visibleLines[key] 
+                                    ? 'bg-gray-100 hover:bg-gray-200' 
+                                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                            }`}
+                        >
+                            <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: config.color }} 
+                            />
+                            {config.label}
+                        </button>
+                    ))}
+                </div>
                 <ChartContainer config={chartConfig}>
                     <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                         <defs>
@@ -79,14 +113,16 @@ export default function MetricsChart({ dailyData, onRefresh }: MetricsChartProps
                         <CartesianGrid strokeDasharray="3 3" />
                         <Tooltip />
                         {Object.entries(chartConfig).map(([key, config]) => (
-                            <Area
-                                key={key}
-                                type="monotone"
-                                dataKey={key}
-                                stroke={config.color}
-                                fillOpacity={1}
-                                fill={`url(#color${key})`}
-                            />
+                            visibleLines[key] && (
+                                <Area
+                                    key={key}
+                                    type="monotone"
+                                    dataKey={key}
+                                    stroke={config.color}
+                                    fillOpacity={1}
+                                    fill={`url(#color${key})`}
+                                />
+                            )
                         ))}
                     </AreaChart>
                 </ChartContainer>

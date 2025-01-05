@@ -1,8 +1,9 @@
 "use client"
 
-import { addDays, format } from 'date-fns';
+import { addDays, format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 
@@ -22,16 +23,30 @@ import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.
 import Cookies from "js-cookie";
 
 export default function AdminDashboard() {
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: addDays(new Date(), -30),
-        to: new Date(),
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+        const fromParam = searchParams.get('from');
+        const toParam = searchParams.get('to');
+        
+        if (fromParam && toParam) {
+            return {
+                from: parse(fromParam, 'yyyy-MM-dd', new Date()),
+                to: parse(toParam, 'yyyy-MM-dd', new Date())
+            };
+        }
+        
+        return {
+            from: addDays(new Date(), -30),
+            to: new Date(),
+        };
     });
     const [data, setData] = useState<IMetrics[]>([]);
     const [productsMetrics, setProductsMetrics] = useState<IProductMetric[]>([]);
     const [dailyData, setDailyData] = useState<Record<string, any>[]>([]);
     const [brands, setBrands] = useState<IBrand[]>([]);
     const token = Cookies.get("Authorization");
-    const [selectedBrand, setSelectedBrand] = useState<string>();
+    const [selectedBrand, setSelectedBrand] = useState<string>(searchParams.get('brand_id') || 'all');
 
     useEffect(() => {
         privateBrandsApiWrapper.listAllBrands(token!)
@@ -40,10 +55,10 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         if (dateRange?.from && dateRange?.to) {
-            privateMetricsApiWrapper.getMetrics(token!, dateRange.from, dateRange.to, selectedBrand)
+            privateMetricsApiWrapper.getMetrics(token!, dateRange.from, dateRange.to, selectedBrand === 'all' ? undefined : selectedBrand)
                 .then(d => setData(d));
 
-            privateMetricsApiWrapper.getMetricsAggDaily(token!, dateRange.from, dateRange.to, selectedBrand)
+            privateMetricsApiWrapper.getMetricsAggDaily(token!, dateRange.from, dateRange.to, selectedBrand === 'all' ? undefined : selectedBrand)
                 .then(metrics => {
                     const transformedData = metrics.reduce((acc, metric) => {
                         const dateKey = format(metric.date || new Date(), 'yyyy-MM-dd');
@@ -58,7 +73,7 @@ export default function AdminDashboard() {
                     setDailyData(Object.values(sortedData));
                 });
 
-            privateMetricsApiWrapper.getProductsMetrics(token!, dateRange.from, dateRange.to, selectedBrand)
+            privateMetricsApiWrapper.getProductsMetrics(token!, dateRange.from, dateRange.to, selectedBrand === 'all' ? undefined : selectedBrand)
                 .then(metrics => setProductsMetrics(metrics));
         }
     }, [dateRange, selectedBrand]);
@@ -77,6 +92,36 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleBrandChange = (value: string) => {
+        setSelectedBrand(value);
+        
+        // Update URL
+        const params = new URLSearchParams(searchParams.toString());
+        if (value === 'all') {
+            params.delete('brand_id');
+            router.push(`?${params.toString()}`);
+        } else {
+            params.set('brand_id', value);
+            router.push(`?${params.toString()}`);
+        }
+    };
+
+    const handleDateRangeChange = (newDateRange: DateRange | undefined) => {
+        setDateRange(newDateRange);
+        
+        const params = new URLSearchParams(searchParams.toString());
+        if (newDateRange?.from) {
+            params.set('from', format(newDateRange.from, 'yyyy-MM-dd'));
+        } else {
+            params.delete('from');
+        }
+        if (newDateRange?.to) {
+            params.set('to', format(newDateRange.to, 'yyyy-MM-dd'));
+        } else {
+            params.delete('to');
+        }
+        router.push(`?${params.toString()}`);
+    };
 
     return (
         <div className="container mx-auto p-4">
@@ -107,14 +152,14 @@ export default function AdminDashboard() {
                             mode="range"
                             defaultMonth={dateRange?.from}
                             selected={dateRange}
-                            onSelect={setDateRange}
+                            onSelect={handleDateRangeChange}
                             numberOfMonths={2}
                         />
                     </PopoverContent>
                 </Popover>
                 <Select 
-                    value={selectedBrand || "all"} 
-                    onValueChange={(value) => setSelectedBrand(value === 'all' ? undefined : value)}
+                    value={selectedBrand} 
+                    onValueChange={handleBrandChange}
                 >
                     <SelectTrigger className="w-full sm:w-[200px]">
                         <SelectValue placeholder="Seleccionar marca" />
@@ -134,7 +179,7 @@ export default function AdminDashboard() {
                 <MetricCardsGrid data={data}/>
                 <MetricsChart dailyData={dailyData} onRefresh={handleRefresh} />
 
-                <ProductsMetricsTable metrics={productsMetrics}/>
+                <ProductsMetricsTable metrics={productsMetrics} />
             </div>
         </div>
     );

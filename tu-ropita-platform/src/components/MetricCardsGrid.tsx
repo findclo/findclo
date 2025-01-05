@@ -1,7 +1,6 @@
-import React from 'react'
-import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface"
-import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface"
 import MetricCard from "@/components/MetricCard";
+import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface";
+import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 
 interface MetricCardsGridProps {
     data: IMetrics[]

@@ -462,9 +462,9 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                                         </span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right">{views.toLocaleString()}</TableCell>
-                                                <TableCell className="text-right">{clicks.toLocaleString()}</TableCell>
-                                                <TableCell className="text-right">{ctr}%</TableCell>
+                                                <TableCell className="text-center">{Number(views).toLocaleString()}</TableCell>
+                                                <TableCell className="text-center">{Number(clicks).toLocaleString()}</TableCell>
+                                                <TableCell className="text-center">{Number(ctr)}%</TableCell>
                                             </TableRow>
                                         );
                                     })

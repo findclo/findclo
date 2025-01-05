@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
     Table,
     TableBody,
@@ -40,6 +42,7 @@ interface ProductsMetricsTableProps {
 export default function ProductsMetricsTable({ metrics }: ProductsMetricsTableProps) {
     const [sortColumn, setSortColumn] = useState<keyof ProductMetrics>('views')
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+    const [hideDeleted, setHideDeleted] = useState(true)
 
     const groupedMetrics: GroupedMetrics = useMemo(() => {
         return metrics.reduce((acc, metric) => {
@@ -54,37 +57,53 @@ export default function ProductsMetricsTable({ metrics }: ProductsMetricsTablePr
 
             switch (metric.interaction) {
                 case 'view_in_listing_related':
-                    acc[metric.product.id].views += metric.count
-                    break
+                    acc[metric.product.id].views += Number(metric.count) || 0;
+                    break;
                 case 'click':
-                    acc[metric.product.id].clicks += metric.count
-                    break
+                    acc[metric.product.id].clicks += Number(metric.count) || 0;
+                    break;
                 case 'navigate_to_brand_site':
-                    acc[metric.product.id].navigations += metric.count
-                    break
+                    acc[metric.product.id].navigations += Number(metric.count) || 0;
+                    break;
             }
 
-            return acc
+            return acc;
         }, {} as GroupedMetrics)
     }, [metrics])
 
     const productMetrics: ProductMetrics[] = useMemo(() => {
         return Object.values(groupedMetrics).map(({ product, views, clicks, navigations }) => ({
             product,
-            views,
-            clicks,
-            navigations,
-            conversionRate: views > 0 ? (clicks / views) * 100 : 0
+            views: Number(views) || 0,
+            clicks: Number(clicks) || 0,
+            navigations: Number(navigations) || 0,
+            conversionRate: views > 0 ? (Number(clicks) / Number(views)) * 100 : 0
         }))
     }, [groupedMetrics])
 
-    const sortedProductMetrics = useMemo(() => {
-        return [...productMetrics].sort((a, b) => {
-            if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1
-            if (a[sortColumn] > b[sortColumn]) return sortDirection === 'asc' ? 1 : -1
-            return 0
+    const filteredAndSortedProductMetrics = useMemo(() => {
+        let filtered = [...productMetrics]
+        if (hideDeleted) {
+            filtered = filtered.filter(({ product }) => product.status !== 'DELETED')
+        }
+        
+        return filtered.sort((a, b) => {
+            if (sortColumn === 'product') {
+                return sortDirection === 'asc' 
+                    ? a.product.name.localeCompare(b.product.name)
+                    : b.product.name.localeCompare(a.product.name);
+            }
+            
+            const aValue = a[sortColumn];
+            const bValue = b[sortColumn];
+            
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+            }
+            
+            return 0;
         })
-    }, [productMetrics, sortColumn, sortDirection])
+    }, [productMetrics, sortColumn, sortDirection, hideDeleted])
 
     const handleSort = (column: keyof ProductMetrics) => {
         if (column === sortColumn) {
@@ -98,7 +117,17 @@ export default function ProductsMetricsTable({ metrics }: ProductsMetricsTablePr
     return (
         <Card className="w-full overflow-auto">
             <CardHeader>
-                <CardTitle>Métricas de Productos</CardTitle>
+                <div className="flex justify-between items-center">
+                    <CardTitle>Métricas de Productos</CardTitle>
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id="hide-deleted"
+                            checked={hideDeleted}
+                            onCheckedChange={setHideDeleted}
+                        />
+                        <Label htmlFor="hide-deleted">Ocultar productos eliminados</Label>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
                 <div>
@@ -134,7 +163,7 @@ export default function ProductsMetricsTable({ metrics }: ProductsMetricsTablePr
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {sortedProductMetrics.map(({ product, views, clicks, navigations, conversionRate }) => (
+                            {filteredAndSortedProductMetrics.map(({ product, views, clicks, navigations, conversionRate }) => (
                                 <TableRow key={product.id}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center space-x-3">
@@ -183,10 +212,10 @@ export default function ProductsMetricsTable({ metrics }: ProductsMetricsTablePr
                                             }
                                         })()}
                                     </TableCell>
-                                    <TableCell className="text-center">{views}</TableCell>
-                                    <TableCell className="text-center">{clicks}</TableCell>
-                                    <TableCell className="text-center">{navigations}</TableCell>
-                                    <TableCell className="text-center">{conversionRate.toFixed(2)}%</TableCell>
+                                    <TableCell className="text-center">{Number(views).toString()}</TableCell>
+                                    <TableCell className="text-center">{Number(clicks).toString()}</TableCell>
+                                    <TableCell className="text-center">{Number(navigations).toString()}</TableCell>
+                                    <TableCell className="text-center">{Number(conversionRate).toFixed(2)}%</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

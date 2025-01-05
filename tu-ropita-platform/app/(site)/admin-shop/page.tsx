@@ -134,9 +134,9 @@ export default function ShopAdminPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-gray-700">
-              {metrics
+              {Number(metrics
                   .filter((m) => m.interaction === ProductInteractionEnum.CLICK)
-                  .reduce((sum, m) => sum + m.count, 0)
+                  .reduce((sum, m) => sum + m.count, 0))
                   .toString()}
             </p>
 
