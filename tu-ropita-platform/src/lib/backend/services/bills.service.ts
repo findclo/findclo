@@ -3,7 +3,9 @@ import {format} from "date-fns";
 
 class BillsService {
     async generateBill() {
-        return billsRepository.generateBill();
+        const startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+        const endDate = new Date(new Date().getFullYear(), new Date().getMonth(), 0);
+        return billsRepository.generateBill(startDate, endDate);
     }
 
     async listBillsWithDetails(period?: string) {

@@ -100,9 +100,7 @@ class BillsRepository {
     }
 
 
-    public async generateBill() {
-        const startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
-        const endDate = new Date(new Date().getFullYear(), new Date().getMonth(), 0);
+    public async generateBill(startDate: Date, endDate: Date) {
         try {
             const brands = await brandRepository.listBrands();
             for (const brand of brands) {

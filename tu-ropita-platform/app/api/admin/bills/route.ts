@@ -19,7 +19,7 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
     }
 });
 
-export const POST = withAdminPermissionNoParams(async (req: Request) => {
+export const POST = (async (req: Request) => {
     try {
         await billsService.generateBill();
         return new Response(JSON.stringify(null), {
