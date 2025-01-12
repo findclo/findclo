@@ -9,7 +9,7 @@ import {es} from "date-fns/locale"
 import {BrandsBillList} from "./BrandBillsList";
 import {privateBrandsApiWrapper} from "@/api-wrappers/brands";
 import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
-import {Button} from "@/components/ui/button";
+import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 
 function generateLastTwelveMonths() {
     const months = []
@@ -48,6 +48,21 @@ export default function BillingDashboard() {
         },
         [])
 
+    const itemNamesMap = {
+        [ProductInteractionEnum.VIEW_IN_LISTING_RELATED]: {
+            label: 'Vistas en listado relacionado',
+        },
+        [ProductInteractionEnum.VIEW_IN_LISTING_PROMOTED]: {
+            label: 'Vistas en listado promocionado',
+        },
+        [ProductInteractionEnum.CLICK]: {
+            label: 'Clics',
+        },
+        [ProductInteractionEnum.NAVIGATE_TO_BRAND_SITE]: {
+            label: 'Navegaciones al sitio de la marca',
+        }
+    };
+
     useEffect(() => {
         async function loadData() {
             const brandData = await fetchBrandDetails();
@@ -77,7 +92,7 @@ export default function BillingDashboard() {
                             <div className="space-y-2">
                                 {currentBill?.billableItems.map((item, index) => (
                                     <div key={index} className="p-3 rounded">
-                                        {item.item_name}: {item.quantity}
+                                        {itemNamesMap[item.item_name as keyof typeof itemNamesMap]?.label}: {item.quantity}
                                     </div>
                                 ))}
                             </div>
