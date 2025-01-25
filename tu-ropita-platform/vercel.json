@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/bills",
       "schedule": "0 8 1 * *"
+    },
+    {
+        "path": "/api/admin/metrics/daily",
+        "schedule": "*/10 * * * *"
     }
   ]
 }
