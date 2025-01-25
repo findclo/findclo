@@ -1,4 +1,4 @@
-import {BillableItem} from "@/lib/backend/models/interfaces/BillableItem";
+import {IBillItem} from "@/lib/backend/models/interfaces/IBillItem";
 
 export interface IBill {
     billId: number;
@@ -9,5 +9,5 @@ export interface IBill {
         startDate: string;
         endDate: string;
     };
-    billableItems: BillableItem[];
+    billableItems: IBillItem[];
 }

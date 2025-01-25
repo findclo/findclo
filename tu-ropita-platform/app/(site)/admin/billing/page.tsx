@@ -1,25 +1,29 @@
-'use client'
+"use client"
 
 import { privateBillsApiWrapper } from "@/api-wrappers/bills"
 import { BillsList } from "@/components/BillsList"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
-import { IBill } from "@/lib/backend/models/interfaces/IBill"
-import { format, subMonths } from 'date-fns'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import type { IBill } from "@/lib/backend/models/interfaces/IBill"
+import { format, subMonths } from "date-fns"
 import { es } from "date-fns/locale"
 import Cookies from "js-cookie"
-import { Loader2, Search } from 'lucide-react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Loader2, Search, Settings } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
+import {ConfigurationModal} from "./PricingConfigurationModal";
+import {IBillableItem} from "@/lib/backend/models/interfaces/billableItem.interface";
 
 function generateLastTwelveMonths() {
     const months = []
     for (let i = 0; i < 12; i++) {
         const date = subMonths(new Date(), i)
-        const value = format(date, 'yyyy-MM')
-        const label = format(date, 'MMMM yyyy', {locale: es})
-        months.push({value, label})
+        const value = format(date, "yyyy-MM")
+        const label = format(date, "MMMM yyyy", { locale: es })
+        months.push({ value, label })
     }
     return months
 }
@@ -29,19 +33,20 @@ export default function BillingDashboard() {
     const [billsData, setBillsData] = useState<IBill[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
     const token = Cookies.get("Authorization")
     const searchParams = useSearchParams()
     const router = useRouter()
-    
+
     // Get period from URL or default to current month
-    const defaultPeriod = format(new Date(), 'yyyy-MM')
-    const selectedPeriod = searchParams.get('period') || defaultPeriod
+    const defaultPeriod = format(new Date(), "yyyy-MM")
+    const selectedPeriod = searchParams.get("period") || defaultPeriod
     const months = generateLastTwelveMonths()
 
     // Replace setSelectedPeriod with this function
     const handlePeriodChange = (newPeriod: string) => {
         const params = new URLSearchParams(searchParams.toString())
-        params.set('period', newPeriod)
+        params.set("period", newPeriod)
         router.push(`?${params.toString()}`)
     }
 
@@ -49,7 +54,7 @@ export default function BillingDashboard() {
         const fetchBills = async () => {
             setLoading(true)
             setError(null)
-            
+
             if (!token) {
                 setError("No se encontró token de autorización")
                 setLoading(false)
@@ -66,28 +71,25 @@ export default function BillingDashboard() {
                 setLoading(false)
             }
         }
-
         fetchBills()
     }, [token, selectedPeriod])
 
-    const filteredBills = billsData.filter(bill =>
-        bill.brandName.toLowerCase().includes(search.toLowerCase())
-    )
+    const filteredBills = billsData.filter((bill) => bill.brandName.toLowerCase().includes(search.toLowerCase()))
 
-    const unpaidBills = filteredBills.filter(bill => !bill.isPaid)
-    const paidBills = filteredBills.filter(bill => bill.isPaid)
+    const unpaidBills = filteredBills.filter((bill) => !bill.isPaid)
+    const paidBills = filteredBills.filter((bill) => bill.isPaid)
 
     const togglePaidStatus = async (billId: number) => {
         const bill = billsData.find((b) => b.billId === billId)
         if (!bill) return
 
-        if (!confirm(`¿Estás seguro de ${bill.isPaid ? 'marcar como pendiente' : 'marcar como paga'} esta factura?`)) {
+        if (!confirm(`¿Estás seguro de ${bill.isPaid ? "marcar como pendiente" : "marcar como paga"} esta factura?`)) {
             return
         }
 
         setLoading(true)
         setError(null)
-        
+
         try {
             await privateBillsApiWrapper.changeBillStatus(token!, billId)
             const updatedBills = await privateBillsApiWrapper.getBills(token!, selectedPeriod)
@@ -104,22 +106,24 @@ export default function BillingDashboard() {
         <div className="container mx-auto py-6">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold">Facturación del período</h2>
-                <Select 
-                    value={selectedPeriod} 
-                    onValueChange={handlePeriodChange}
-                    disabled={loading}
-                >
-                    <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Seleccionar mes y año"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        {months.map((month) => (
-                            <SelectItem key={month.value} value={month.value}>
-                                {month.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <div className="flex items-center space-x-2">
+                    <Select value={selectedPeriod} onValueChange={handlePeriodChange} disabled={loading}>
+                        <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Seleccionar mes y año" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {months.map((month) => (
+                                <SelectItem key={month.value} value={month.value}>
+                                    {month.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button onClick={() => setIsConfigModalOpen(true)} disabled={loading}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Configurar precios
+                    </Button>
+                </div>
             </div>
 
             {error && (
@@ -130,7 +134,7 @@ export default function BillingDashboard() {
 
             <div className="space-y-4">
                 <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"/>
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Buscar marca..."
                         value={search}
@@ -142,25 +146,21 @@ export default function BillingDashboard() {
 
                 {loading ? (
                     <div className="flex justify-center items-center py-8">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 ) : (
                     <>
-                        <BillsList 
-                            bills={unpaidBills} 
-                            isPaid={false} 
-                            onTogglePaidStatus={togglePaidStatus}
-                            isLoading={loading}
-                        />
-                        <BillsList 
-                            bills={paidBills} 
-                            isPaid={true} 
-                            onTogglePaidStatus={togglePaidStatus}
-                            isLoading={loading}
-                        />
+                        <BillsList bills={unpaidBills} isPaid={false} onTogglePaidStatus={togglePaidStatus} isLoading={loading} />
+                        <BillsList bills={paidBills} isPaid={true} onTogglePaidStatus={togglePaidStatus} isLoading={loading} />
                     </>
                 )}
             </div>
+
+            <ConfigurationModal
+                isOpen={isConfigModalOpen}
+                onClose={() => setIsConfigModalOpen(false)}
+                token={token}
+            />
         </div>
     )
 }
