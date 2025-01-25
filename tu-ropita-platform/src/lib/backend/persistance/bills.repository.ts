@@ -71,7 +71,7 @@ class BillsRepository {
                        json_build_object(
                                'item_name', bi.name,
                                'quantity', bi_items.quantity,
-                               'unit_price', bi.price,
+                               'unit_price', bi.billable_item_price,
                                'total_price', bi_items.total
                        )
                )        AS billable_items
@@ -125,12 +125,13 @@ class BillsRepository {
             WITH date_range AS (SELECT $1::DATE AS start_date,
                                        $2::DATE AS end_date)
             INSERT
-            INTO bill_items (bill_id, billable_item_id, brand_id, quantity, total)
+            INTO bill_items (bill_id, billable_item_id, brand_id, quantity, total, billable_item_price)
             SELECT NULL,
                    bi.id                   AS billable_item_id,
                    p.brand_id              AS brand_id,
                    COUNT(pi.id)            AS quantity,
-                   COUNT(pi.id) * bi.price AS total
+                   COUNT(pi.id) * bi.price AS total,
+                   bi.price                AS billable_item_price
             FROM productinteractions pi
                      JOIN billable_items bi
                           ON pi.interaction::text = bi.name
