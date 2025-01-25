@@ -11,6 +11,7 @@ import { tagsService } from "@/lib/backend/services/tags.service";
 import { ConflictException } from "../exceptions/ConflictException";
 import {productsInteractionsService} from "@/lib/backend/services/productsInteractions.service";
 import {productTagsService} from "@/lib/backend/services/productsTags.service";
+import {promotionService} from "@/lib/backend/services/promotion.service";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
@@ -55,6 +56,19 @@ class ProductService implements IProductService{
                 products: [product],
                 totalPages: 1
             }
+        }
+
+        if (params.search && params.featured) {
+            const keywords = params.search.split(' ');
+            const products = await promotionService.getProductsFromKeywords(keywords);
+            return {
+                appliedTags: tags,
+                availableTags: [],
+                pageNum: 1,
+                pageSize: products.length,
+                products: products,
+                totalPages: 1
+            };
         }
 
         if(params.tags){

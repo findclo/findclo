@@ -1,6 +1,8 @@
 import { Pool } from "pg";
 import pool from "../conf/db.connections";
 import { IPromotion, IPromotionAdmin } from "../models/interfaces/IPromotion";
+import {IProduct} from "@/lib/backend/models/interfaces/product.interface";
+import {BrandStatus} from "@/lib/backend/models/interfaces/brand.interface";
 
 class PromotionRepository {
 
@@ -82,6 +84,40 @@ class PromotionRepository {
         if(query_result.rowCount === 0){
             throw new Error('Failed to spend products promotion credits');
         }
+    }
+
+    async getProductsByKeywords(keywords: string[]): Promise<IProduct[]> {
+        const query_result = await this.db.query(
+            `SELECT DISTINCT prod.*
+             FROM promotions prom
+                      JOIN products prod ON prom.product_id = prod.id
+             WHERE EXISTS (SELECT 1
+                           FROM unnest(prom.keywords) AS keyword
+                           WHERE keyword = ANY ($1))
+               AND prod.status = 'ACTIVE'`,
+            [keywords]
+        );
+
+        if (query_result.rowCount === 0) {
+            return [];
+        }
+        return query_result.rows.map(row => ({
+            id: row.id,
+            name: row.name,
+            price: parseFloat(row.price),
+            description: row.description,
+            images: row.images && row.images.length > 0 ? row.images : [],
+            status: row.status,
+            url: row.url,
+            brand: {
+                id: row.brand_id,
+                name: '',
+                image: '',
+                websiteUrl: '',
+                status: BrandStatus.ACTIVE, // this is to avoid tslint checks
+                description: ''
+            }
+        }));
     }
 
 }

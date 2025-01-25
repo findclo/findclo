@@ -37,8 +37,8 @@ class PublicProductsApiWrapper {
         return products as IListProductResponseDto;
     }
 
-    async getFeaturedProducts(isLandingPage: boolean = false): Promise<IListProductResponseDto | null> {
-        return this.getFilteredProducts("", { featured: true, isLandingPage });
+    async getFeaturedProducts(isLandingPage: boolean = false, query:string= ""): Promise<IListProductResponseDto | null> {
+        return this.getFilteredProducts(query, { featured: true, isLandingPage });
     }
 }
 

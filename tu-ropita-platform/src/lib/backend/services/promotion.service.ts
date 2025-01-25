@@ -64,6 +64,10 @@ class PromotionService {
         return promotionRepository.spendProductPromotionsCredits(product_ids);
     }
 
+    async getProductsFromKeywords(keywords: string[]): Promise<IProduct[]> {
+        return await promotionRepository.getProductsByKeywords(keywords);
+    }
+
 }
 
 export const promotionService = new PromotionService();

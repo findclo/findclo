@@ -37,7 +37,7 @@ interface ProductTableProps {
   onProductsUpdate: (updatedProducts: IProduct[]) => void;
   onProductUpdate: (updatedProduct: IProduct) => void;
   onProductDelete: (deletedProductId: string) => void;
-  onProductPromotion: (productId: number, credits_allocated: number, show_on_landing: boolean) => void;
+  onProductPromotion: (productId: number, credits_allocated: number, show_on_landing: boolean, keywords?: string[]) => void;
 }
 
 const ProductTable: React.FC<ProductTableProps> = ({
@@ -440,8 +440,8 @@ const openPromotionDetails = (promotionId: number) => {
           setIsOpen={setIsPromotionDialogOpen}
           product={selectedProduct}
           brandCredits={brandCredits}
-          handleProductPromotion={async (productId, credits, showOnLanding) => {
-            await onProductPromotion(productId, credits, showOnLanding);
+          handleProductPromotion={async (productId, credits, showOnLanding, keywords) => {
+            await onProductPromotion(productId, credits, showOnLanding, keywords);
             // Re-fetch brand credits after promotion
             const updatedCredits = await privateBrandsApiWrapper.getBrandCredits(
               authToken,
