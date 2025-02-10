@@ -28,7 +28,7 @@ import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface"
 import { addDays, format } from 'date-fns'
 import Cookies from "js-cookie"
-import { ArrowLeft, ArrowUpDown, FileDown } from 'lucide-react'
+import { ArrowLeft, ArrowUpDown, FileDown, Search } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
@@ -58,6 +58,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     const [creditsToAdd, setCreditsToAdd] = useState<string>('')
     const [isRemoveCreditsOpen, setIsRemoveCreditsOpen] = useState(false)
     const [creditsToRemove, setCreditsToRemove] = useState<string>('')
+    const [searchTerm, setSearchTerm] = useState('');
 
     const groupedMetrics: GroupedMetrics = useMemo(() => {
         return productsMetrics.reduce((acc, metric) => {
@@ -119,7 +120,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
 
     useEffect(() => {
         async function fetchMetrics() {
-            const fromDate = addDays(new Date(), -30); // Last 30 days
+            const fromDate = addDays(new Date(), -30);
             const toDate = new Date();
             
             const metricsData = await privateMetricsApiWrapper.getMetrics(
@@ -187,7 +188,11 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     };
 
     const sortedProducts = useMemo(() => {
-        return [...products].sort((a, b) => {
+        const filteredProducts = products.filter(product => 
+            product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        return [...filteredProducts].sort((a, b) => {
             const aMetrics = groupedMetrics[a.id.toString()];
             const bMetrics = groupedMetrics[b.id.toString()];
             
@@ -215,7 +220,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
             if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
             return 0;
         });
-    }, [products, groupedMetrics, sortColumn, sortDirection]);
+    }, [products, groupedMetrics, sortColumn, sortDirection, searchTerm]);
 
     const handleAddCredits = () => {
         setIsAddCreditsOpen(true)
@@ -461,11 +466,22 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
 
             <Card>
                 <CardHeader className="flex flex-col pb-2 space-y-0">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                        <CardTitle className="text-xl font-bold mb-2 sm:mb-0">Productos</CardTitle>
-                        <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
-                            <FileDown className="mr-2 h-4 w-4" /> Exportar
-                        </Button>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <CardTitle className="text-xl font-bold">Productos</CardTitle>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                            <div className="relative flex-1 sm:w-64">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Buscar por nombre..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-8 w-full"
+                                />
+                            </div>
+                            <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto whitespace-nowrap">
+                                <FileDown className="mr-2 h-4 w-4" /> Exportar
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
