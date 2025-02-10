@@ -13,7 +13,8 @@ export async function GET(req: Request) {
         tags: queryParams.has('tags') ? queryParams.get('tags')!.split(',') : undefined,
         productId: queryParams.has('productId') ? Number(queryParams.get('productId')) : undefined,
         featured: queryParams.has('featured') ? true : false,
-        isLandingPage: queryParams.has('isLandingPage') ? queryParams.get('isLandingPage') === 'true' : false
+        isLandingPage: queryParams.has('isLandingPage') ? queryParams.get('isLandingPage') === 'true' : false,
+        skipAI: queryParams.has('skipAI') ? queryParams.get('skipAI') === 'true' : false
     };
 
     try {

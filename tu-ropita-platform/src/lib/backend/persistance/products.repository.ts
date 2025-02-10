@@ -16,6 +16,7 @@ export interface IListProductsParams {
     excludeBrandPaused?: boolean;
     featured?: boolean;
     isLandingPage?: boolean;
+    skipAI?: boolean;
 }
 
 // TODO ADD (brand, tags, etc.)

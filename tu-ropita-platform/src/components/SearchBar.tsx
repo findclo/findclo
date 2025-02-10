@@ -60,7 +60,31 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
       ? appliedTags.filter(t => t.id !== tag.id)
       : [...appliedTags, tag];
     
-    newTags.forEach(t => queryParams.append('tags', t.name.toString()));
+    if (searchQuery.trim()) {
+      queryParams.append('search', searchQuery.trim());
+    }
+    
+    const tagNames = newTags.map(t => t.name);
+    if (tagNames.length > 0) {
+      queryParams.append('tags', tagNames.join(','));
+    }
+    queryParams.append('skipAI', 'true');
+    router.push(`/search?${queryParams.toString()}`);
+  };
+
+  const handleRemoveTag = (tagToRemove: Tag) => {
+    const queryParams = new URLSearchParams();
+    const newTags = appliedTags.filter(tag => tag.id !== tagToRemove.id);
+    
+    if (searchQuery.trim()) {
+      queryParams.append('search', searchQuery.trim());
+    }
+    
+    const tagNames = newTags.map(t => t.name);
+    if (tagNames.length > 0) {
+      queryParams.append('tags', tagNames.join(','));
+    }
+    queryParams.append('skipAI', 'true');
     router.push(`/search?${queryParams.toString()}`);
   };
 
@@ -97,7 +121,7 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
             className="h-10 w-10 p-0 rounded-full border-2 border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             aria-label={isFilterOpen ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-            disabled={isHomePage}  // Disable the button on the home page
+            disabled={isHomePage}
           >
             <Filter className="h-4 w-4" />
           </Button>
@@ -112,8 +136,23 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
                 <h3 className="text-lg font-semibold mb-2">Tags Aplicados</h3>
                 <div className="flex flex-wrap gap-2">
                   {appliedTags.map((tag) => (
-                    <Badge key={tag.id} variant="secondary">
+                    <Badge 
+                      key={tag.id} 
+                      variant="secondary"
+                      className="flex items-center gap-1 cursor-pointer hover:bg-secondary/80"
+                      onClick={() => handleRemoveTag(tag)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleRemoveTag(tag);
+                        }
+                      }}
+                      aria-label={`Eliminar tag ${tag.name}`}
+                    >
                       {tag.name}
+                      <span className="ml-1 text-xs">×</span>
                     </Badge>
                   ))}
                 </div>
@@ -125,8 +164,21 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
                 <h3 className="text-lg font-semibold mb-2">Tags Disponibles</h3>
                 <div className="flex flex-wrap gap-2">
                   {availableTags.map((tag) => (
-                    <Badge key={tag.id} variant="outline" className="cursor-pointer hover:bg-secondary"
-                           onClick={() => handleTagClick(tag)}>
+                    <Badge 
+                      key={tag.id} 
+                      variant="outline" 
+                      className="cursor-pointer hover:bg-secondary"
+                      onClick={() => handleTagClick(tag)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleTagClick(tag);
+                        }
+                      }}
+                      aria-label={`Agregar tag ${tag.name}`}
+                    >
                       {tag.name}
                     </Badge>
                   ))}

@@ -75,12 +75,13 @@ class ProductService implements IProductService{
             tags = await tagsService.getTagsByName(params.tags);
         }
 
-        if (params.search) {
+        // Only call AI if we're not skipping it and have a search term
+        if (params.search && !params.skipAI) {
             const aiResponse: IAITagsResponse = await openAIService.runAssistant(params.search);
             const tagNames = Object.values(aiResponse).flat();
             if (tagNames.length > 0) {
                 if(tags){
-                    tags = tags.concat( await tagsService.getTagsByName(tagNames))
+                    tags = tags.concat(await tagsService.getTagsByName(tagNames))
                 }else{
                     tags = await tagsService.getTagsByName(tagNames);
                 }
