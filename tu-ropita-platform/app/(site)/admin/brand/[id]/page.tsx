@@ -56,6 +56,8 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [isAddCreditsOpen, setIsAddCreditsOpen] = useState(false)
     const [creditsToAdd, setCreditsToAdd] = useState<string>('')
+    const [isRemoveCreditsOpen, setIsRemoveCreditsOpen] = useState(false)
+    const [creditsToRemove, setCreditsToRemove] = useState<string>('')
 
     const groupedMetrics: GroupedMetrics = useMemo(() => {
         return productsMetrics.reduce((acc, metric) => {
@@ -230,6 +232,10 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
             return
         }
 
+        if (!confirm(`¿Estás seguro de querer agregar ${credits} créditos a ${brand?.name}?`)) {
+            return;
+        }
+
         const result = await privateBrandsApiWrapper.addBrandCredits(token, id, credits)
         if (result) {
             setBrandCredits(result)
@@ -243,6 +249,42 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
             toast({
                 type: 'error',
                 message: 'Error al agregar créditos'
+            })
+        }
+    }
+
+    const handleRemoveCredits = () => {
+        setIsRemoveCreditsOpen(true)
+    }
+
+    const handleConfirmRemoveCredits = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const credits = parseInt(creditsToRemove)
+        if (isNaN(credits) || credits <= 0) {
+            toast({
+                type: 'error',
+                message: 'Por favor ingrese un número válido de créditos'
+            })
+            return
+        }
+
+        if (!confirm(`¿Estás seguro de querer remover ${credits} créditos de ${brand?.name}?`)) {
+            return;
+        }
+
+        const result = await privateBrandsApiWrapper.removeBrandCredits(token, id, credits)
+        if (result) {
+            setBrandCredits(result)
+            toast({
+                type: 'success',
+                message: `Se removieron ${credits} créditos exitosamente`
+            })
+            setCreditsToRemove('')
+            setIsRemoveCreditsOpen(false)
+        } else {
+            toast({
+                type: 'error',
+                message: 'Error al remover créditos'
             })
         }
     }
@@ -311,6 +353,9 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                 <Button variant="outline" onClick={handleAddCredits}>
                                     <span className="hidden sm:inline">Agregar créditos</span>
                                 </Button>
+                                <Button variant="outline" onClick={handleRemoveCredits} className="bg-red-50 hover:bg-red-100">
+                                    <span className="hidden sm:inline">Remover créditos</span>
+                                </Button>
                                 <Dialog open={isAddCreditsOpen} onOpenChange={setIsAddCreditsOpen}>
                                     <DialogContent className="sm:max-w-[425px]">
                                         <DialogHeader>
@@ -341,6 +386,40 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                                                     Cancelar
                                                 </Button>
                                                 <Button type="submit">Agregar</Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                                <Dialog open={isRemoveCreditsOpen} onOpenChange={setIsRemoveCreditsOpen}>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                        <DialogHeader>
+                                            <DialogTitle>Remover créditos</DialogTitle>
+                                            <DialogDescription>
+                                                Remover créditos de {brand.name}
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form onSubmit={handleConfirmRemoveCredits}>
+                                            <div className="grid gap-4 py-4">
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="credits-remove" className="text-right">
+                                                        Créditos
+                                                    </Label>
+                                                    <Input
+                                                        id="credits-remove"
+                                                        type="number"
+                                                        className="col-span-3"
+                                                        value={creditsToRemove}
+                                                        onChange={(e) => setCreditsToRemove(e.target.value)}
+                                                        min="1"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button type="button" variant="outline" onClick={() => setIsRemoveCreditsOpen(false)}>
+                                                    Cancelar
+                                                </Button>
+                                                <Button type="submit" variant="destructive">Remover</Button>
                                             </DialogFooter>
                                         </form>
                                     </DialogContent>

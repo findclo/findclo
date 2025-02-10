@@ -46,6 +46,29 @@ class BrandCreditsRepository {
         return query_result.rows[0] as IBrandCredits;
     }
 
+    async removeBrandCredits(brandId: number, credits: number): Promise<IBrandCredits> {
+        const brandCredits = await this.getBrandCredits(brandId);
+        
+        if (!brandCredits) {
+            throw new Error('Brand credits not found');
+        }
+
+        const availableCredits = brandCredits.credits_available - brandCredits.credits_spent;
+        if (availableCredits < credits) {
+            throw new Error(`Insufficient credits. Available: ${availableCredits}, Requested: ${credits}`);
+        }
+
+        const query_result = await this.db.query(
+            'UPDATE brand_credits SET credits_available = credits_available - $1 WHERE brand_id = $2 RETURNING *', 
+            [credits, brandId]
+        );
+        
+        if (query_result.rowCount === 0) {
+            throw new Error('Failed to update brand credits');
+        }
+        return query_result.rows[0] as IBrandCredits;
+    }
+    
 }
 
 export const brandCreditsRepository = new BrandCreditsRepository(pool);

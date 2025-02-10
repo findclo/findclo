@@ -20,6 +20,9 @@ class BrandCreditsService {
         return brandCreditsRepository.spendBrandCredits(brandId, credits);
     }
 
+    async removeBrandCredits(brandId: number, credits: number): Promise<IBrandCredits> {
+        return brandCreditsRepository.removeBrandCredits(brandId, credits);
+    }
 }
 
 export const brandCreditsService = new BrandCreditsService();

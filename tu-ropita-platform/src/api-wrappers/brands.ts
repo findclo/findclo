@@ -159,6 +159,21 @@ class PrivateBrandsApiWrapper {
         return credits_response as IBrandCredits;
     }
 
+    async removeBrandCredits(auth_token: string, brandId: string, credits: number): Promise<IBrandCredits | null> {
+        const [error, credits_response] = await fetcher(`${CREDITS_PATH(brandId)}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+            body: JSON.stringify({ remove_credits: credits }),
+        });
+        if (error) {
+            console.error(`Error removing credits for brand ${brandId}: ${error}`);
+            return null;
+        }
+        return credits_response as IBrandCredits;
+    }
+
     async getBrandPromotions(auth_token: string, brandId: string): Promise<IPromotion[] | null> {
         const [error, promotions] = await fetcher(`${BRANDS_PATH}/${brandId}/promotions`, {
             method: 'GET',
