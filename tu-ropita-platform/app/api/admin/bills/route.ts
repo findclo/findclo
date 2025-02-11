@@ -21,8 +21,8 @@ export const GET = withAdminPermissionNoParams(async (req: Request) => {
 
 export const POST = (async (req: Request) => {
     try {
-        await billsService.generateBill();
-        return new Response(JSON.stringify(null), {
+        
+        return new Response(JSON.stringify(await billsService.generateBill()), {
             status: 200,
             headers: {
                 'Content-Type': 'application/json'

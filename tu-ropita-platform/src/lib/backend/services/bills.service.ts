@@ -5,7 +5,13 @@ class BillsService {
     async generateBill() {
         const startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
         const endDate = new Date(new Date().getFullYear(), new Date().getMonth(), 0);
-        return billsRepository.generateBill(startDate, endDate);
+        const result = await billsRepository.generateBill(startDate, endDate);
+        
+        if (result.failed === result.total) {
+            throw new Error('No se pudo generar ninguna factura');
+        }
+        
+        return result;
     }
 
     async listBillsWithDetails(period?: string) {

@@ -10,12 +10,13 @@ import type { IBill } from "@/lib/backend/models/interfaces/IBill"
 import { format, subMonths } from "date-fns"
 import { es } from "date-fns/locale"
 import Cookies from "js-cookie"
-import { Loader2, Search, Settings } from "lucide-react"
+import { Loader2, Search, Settings, FilePlus } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 import {ConfigurationModal} from "./PricingConfigurationModal";
 import {IBillableItem} from "@/lib/backend/models/interfaces/billableItem.interface";
+import ToastMessage from "@/components/toast"
 
 function generateLastTwelveMonths() {
     const months = []
@@ -102,6 +103,55 @@ export default function BillingDashboard() {
         }
     }
 
+    const handleGenerateBill = async () => {
+        // Get last month in yyyy-MM format
+        const lastMonth = format(subMonths(new Date(), 1), "yyyy-MM");
+        
+        if (!confirm(`¿Estás seguro de generar las facturas para el período ${lastMonth}?`)) {
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const result = await privateBillsApiWrapper.generateBill(token!);
+            // After generation, switch to the last month period and refresh bills
+            handlePeriodChange(lastMonth);
+            const updatedBills = await privateBillsApiWrapper.getBills(token!, lastMonth);
+            setBillsData(updatedBills);
+            
+            if (result.failed > 0) {
+                ToastMessage({
+                    type: "warning",
+                    message: `Se generaron ${result.succeeded} facturas correctamente y ${result.failed} fallaron.`,
+                });
+                
+                // Log details for failed generations
+                result.details
+                    .filter(d => d.status === 'failed')
+                    .forEach(d => {
+                        console.error(`Error generando factura para ${d.brandName}: ${d.error}`);
+                    });
+            } else {
+                ToastMessage({
+                    type: "success",
+                    message: `Se generaron ${result.succeeded} facturas correctamente.`,
+                });
+            }
+        } catch (error) {
+            console.error("Error generating bills:", error);
+            setError("Error al generar las facturas. Por favor, intente nuevamente.");
+            
+            ToastMessage({
+                type: "error",
+                message: "Hubo un error al generar las facturas. Por favor, intente nuevamente.",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="container mx-auto py-6">
             <div className="flex justify-between items-center mb-4">
@@ -119,6 +169,14 @@ export default function BillingDashboard() {
                             ))}
                         </SelectContent>
                     </Select>
+                    <Button 
+                        onClick={handleGenerateBill} 
+                        disabled={loading}
+                        variant="secondary"
+                    >
+                        <FilePlus className="mr-2 h-4 w-4" />
+                        Generar Facturas
+                    </Button>
                     <Button onClick={() => setIsConfigModalOpen(true)} disabled={loading}>
                         <Settings className="mr-2 h-4 w-4" />
                         Configurar precios

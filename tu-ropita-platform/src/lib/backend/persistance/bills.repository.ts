@@ -101,23 +101,51 @@ class BillsRepository {
 
 
     public async generateBill(startDate: Date, endDate: Date) {
-        try {
-            const brands = await brandRepository.listBrands();
-            for (const brand of brands) {
+        const result = {
+            total: 0,
+            succeeded: 0,
+            failed: 0,
+            details: [] as { brandId: number, brandName: string, status: 'success' | 'failed', error?: string }[]
+        };
+
+        const brands = await brandRepository.listBrands();
+        result.total = brands.length;
+
+        for (const brand of brands) {
+            try {
                 if (await this.billAlreadyExistsInPeriod(startDate, endDate, brand.id)) {
-                    console.log(`Bill already exists for brand ${brand.id} in period ${startDate} - ${endDate}.`);
+                    result.details.push({
+                        brandId: brand.id,
+                        brandName: brand.name,
+                        status: 'failed',
+                        error: `Ya existe una factura para este período`
+                    });
+                    result.failed++;
                     continue;
                 }
+
                 const billItems = await this.insertBillItems(startDate, endDate, brand.id);
-                console.log(`Bill items inserted: ${billItems.length}`);
                 const billId = await this.createBill(brand.id, startDate, endDate);
-                console.log(`Bill created with ID: ${billId}`);
                 await this.updateBillItems(billId);
-                console.log('Bill items updated with bill ID.');
+                
+                result.succeeded++;
+                result.details.push({
+                    brandId: brand.id,
+                    brandName: brand.name,
+                    status: 'success'
+                });
+            } catch (error) {
+                result.failed++;
+                result.details.push({
+                    brandId: brand.id,
+                    brandName: brand.name,
+                    status: 'failed',
+                    error: error instanceof Error ? error.message : 'Error desconocido'
+                });
             }
-        } catch (error) {
-            console.error('Error generating bill:', error);
         }
+
+        return result;
     }
 
     private async insertBillItems(startDate: Date, endDate: Date, brandId: number) {

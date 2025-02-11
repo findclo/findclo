@@ -71,6 +71,33 @@ class PrivateBillsApiWrapper {
             throw error;
         }
     }
+
+    async generateBill(auth_token: string): Promise<{
+        total: number;
+        succeeded: number;
+        failed: number;
+        details: Array<{
+            brandId: number;
+            brandName: string;
+            status: 'success' | 'failed';
+            error?: string;
+        }>;
+    }> {
+        const [error, result] = await fetcher(`${ADMIN_BILLS_PATH}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (error) {
+            console.error(`Error generating bills: ${error}`);
+            throw error;
+        }
+
+        return result;
+    }
 }
 
 class PrivateBrandsBillsApiWrapper {
