@@ -1,7 +1,7 @@
-import {withAdminPermissionNoParams} from "@/lib/routes_middlewares";
-import {billableItemService} from "@/lib/backend/services/billableItem.service";
+import { billableItemService } from "@/lib/backend/services/billableItem.service";
+import { withAdminPermissionNoParams, withJwtAuth } from "@/lib/routes_middlewares";
 
-export const GET = withAdminPermissionNoParams(async (req: Request) => {
+export const GET = withJwtAuth(async (req: Request) => {
     try {
         const items = await billableItemService.findAll();
         return new Response(JSON.stringify(items), {

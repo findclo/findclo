@@ -1,15 +1,16 @@
 'use client'
 
-import {useCallback, useEffect, useState} from "react"
-import {IBill} from "@/lib/backend/models/interfaces/IBill"
-import {privateBrandsBillsApiWrapper} from "@/api-wrappers/bills"
+import { privateBillsApiWrapper, privateBrandsBillsApiWrapper } from "@/api-wrappers/bills"
+import { privateBrandsApiWrapper } from "@/api-wrappers/brands"
+import { IBillableItem } from "@/lib/backend/models/interfaces/billableItem.interface"
+import { IBrand } from "@/lib/backend/models/interfaces/brand.interface"
+import { IBill } from "@/lib/backend/models/interfaces/IBill"
+import { ProductInteractionEnum } from "@/lib/backend/models/interfaces/metrics/productInteraction.interface"
+import { format, subMonths } from 'date-fns'
+import { es } from "date-fns/locale"
 import Cookies from "js-cookie"
-import {format, subMonths} from 'date-fns'
-import {es} from "date-fns/locale"
-import {BrandsBillList} from "./BrandBillsList";
-import {privateBrandsApiWrapper} from "@/api-wrappers/brands";
-import {IBrand} from "@/lib/backend/models/interfaces/brand.interface";
-import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
+import { useCallback, useEffect, useState } from "react"
+import { BrandsBillList } from "./BrandBillsList"
 
 function generateLastTwelveMonths() {
     const months = []
@@ -27,6 +28,7 @@ export default function BillingDashboard() {
     const [search, setSearch] = useState("")
     const [billsData, setBillsData] = useState<IBill[]>([])
     const [loading, setLoading] = useState(true)
+    const [billableItems, setBillableItems] = useState<IBillableItem[]>([])
     const token = Cookies.get("Authorization")!;
     const months = generateLastTwelveMonths()
     const fetchBrandDetails = useCallback(async () => {
@@ -48,6 +50,15 @@ export default function BillingDashboard() {
         },
         [])
 
+    const fetchBillableItems = useCallback(async () => {
+        try {
+            const items = await privateBillsApiWrapper.getBillableItems(token);
+            setBillableItems(items);
+        } catch (error) {
+            console.error("Error fetching billable items:", error);
+        }
+    }, [token]);
+
     const itemNamesMap = {
         [ProductInteractionEnum.VIEW_IN_LISTING_RELATED]: {
             label: 'Vistas en listado relacionado',
@@ -68,11 +79,12 @@ export default function BillingDashboard() {
             const brandData = await fetchBrandDetails();
             if (brandData) {
                 await fetchBills(brandData.id.toString());
+                await fetchBillableItems();
             }
         }
 
         loadData();
-    }, [fetchBrandDetails, fetchBills]);
+    }, [fetchBrandDetails, fetchBills, fetchBillableItems]);
 
 
     const currentBill = billsData[0];
@@ -119,6 +131,31 @@ export default function BillingDashboard() {
                 </div>
 
                 <BrandsBillList bills={billsData}/>
+                
+                <div className="mt-8">
+                    <h2 className="text-2xl font-bold mb-4">Listado de precios</h2>
+                    <div className="border border-gray-700 rounded-lg p-4">
+                        <div className="grid gap-4">
+                            {billableItems.length > 0 ? (
+                                billableItems.map((item) => (
+                                    <div key={item.name} className="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                                        <span className="font-medium">
+                                            {itemNamesMap[item.name as keyof typeof itemNamesMap]?.label || item.name}
+                                        </span>
+                                        <span className="font-semibold">${item.price} ARS</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-4">
+                                    <p className="text-gray-500">Cargando información de precios...</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                        Estos son los precios actuales para cada tipo de interacción. Para más información, contacte con soporte.
+                    </p>
+                </div>
             </div>
         </div>
     )
