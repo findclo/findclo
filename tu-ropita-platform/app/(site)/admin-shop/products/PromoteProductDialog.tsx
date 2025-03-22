@@ -32,11 +32,18 @@ const PromoteProductDialog: React.FC<PromoteProductDialogProps> = ({
     const handlePromotion = () => {
         if(promotedProduct){
             handleProductPromotion(promotedProduct.id, credits_allocated, show_on_landing, keywords);
-            setIsOpen(false);
+            handleClose();
         }
     }
+    
+    const handleClose = () => {
+        setIsOpen(false);
+        setCreditsAllocated(10);
+        setShowOnLanding(true);
+        setKeywords([]);
+    }
 
-  return <Dialog open={isOpen} onOpenChange={setIsOpen}>
+  return <Dialog open={isOpen} onOpenChange={handleClose}>
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
         <DialogTitle className="text-xl font-bold">Promoción de producto</DialogTitle>
@@ -107,9 +114,8 @@ const PromoteProductDialog: React.FC<PromoteProductDialogProps> = ({
           onClick={handlePromotion}
           disabled={
             !brandCredits || 
-            credits_allocated > brandCredits.credits_available - brandCredits.credits_spent ||
-            credits_allocated === 0 ||
-            !(credits_allocated > 0)
+            credits_allocated > brandCredits.credits_available ||
+            credits_allocated === 0
           }
           className="w-full rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
