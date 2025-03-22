@@ -16,7 +16,10 @@ class PromotionRepository {
         if(!promotion.keywords){
             promotion.keywords = [];
         }
-        const query_result = await this.db.query('INSERT INTO promotions (product_id, keywords, credits_allocated, show_on_landing) VALUES ($1, $2, $3, $4) RETURNING *', [promotion.product_id, promotion.keywords, promotion.credits_allocated, promotion.show_on_landing]);
+        let sanitized_keywords = promotion.keywords.map(keyword => keyword.trim().toLowerCase());
+        const query_result = await this.db.query(
+            'INSERT INTO promotions (product_id, keywords, credits_allocated, show_on_landing) VALUES ($1, $2, $3, $4) RETURNING *',
+             [promotion.product_id, sanitized_keywords, promotion.credits_allocated, promotion.show_on_landing]);
         if (query_result.rowCount === 0) {
             throw new Error('Failed to create promotion');
         }
@@ -87,20 +90,25 @@ class PromotionRepository {
     }
 
     async getProductsByKeywords(keywords: string[]): Promise<IProduct[]> {
-        const query_result = await this.db.query(
-            `SELECT DISTINCT prod.*
+        const sanitized_keywords = keywords.map(keyword => keyword.trim().toLowerCase());
+        const query = `SELECT DISTINCT prod.*
              FROM promotions prom
                       JOIN products prod ON prom.product_id = prod.id
              WHERE EXISTS (SELECT 1
                            FROM unnest(prom.keywords) AS keyword
                            WHERE keyword = ANY ($1))
-               AND prod.status = 'ACTIVE'`,
-            [keywords]
+               AND prod.status = 'ACTIVE'`
+        console.log("[FEATURED] Query: ", query, sanitized_keywords)
+        const query_result = await this.db.query(
+            query,
+            [sanitized_keywords]
         );
 
         if (query_result.rowCount === 0) {
+            console.log("[FEATURED] No products found")
             return [];
         }
+        console.log("[FEATURED] Products founds: ", query_result.rows.length)
         return query_result.rows.map(row => ({
             id: row.id,
             name: row.name,

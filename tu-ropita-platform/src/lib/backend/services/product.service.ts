@@ -59,6 +59,7 @@ class ProductService implements IProductService{
         }
 
         if (params.search && params.featured) {
+            console.log("[FEATURED] Searching for featured products with search: ", params.search)
             const keywords = params.search.split(' ');
             const products = await promotionService.getProductsFromKeywords(keywords);
             return {

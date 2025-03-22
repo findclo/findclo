@@ -69,7 +69,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             <div className="flex flex-col md:flex-row gap-8">
                 <div className="w-full">
-                    {noProductsFound ? (
+                    {noProductsFound && recommendedProducts.length === 0 ? (
                         <div className="text-center py-8">
                             <p className="text-xl text-gray-600">No se encontraron productos para la búsqueda especificada</p>
                         </div>

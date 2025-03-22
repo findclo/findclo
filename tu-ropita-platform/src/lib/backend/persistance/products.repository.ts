@@ -73,7 +73,10 @@ class ProductsRepository implements IProductRepository {
     }
 
     public async listProducts(params: IListProductsParams, tags?: ITag[]): Promise<IProduct[]> {
-        const {query, values} = this.constructListQuery(params, tags);
+        const uniqueTags = tags?.filter((tag, index, self) =>
+            index === self.findIndex((t) => t.name === tag.name)
+        );
+        const {query, values} = this.constructListQuery(params, uniqueTags);
         try {
             const res = await this.db.query(query, values);
             return this.mapProductRows(res.rows);
@@ -285,18 +288,27 @@ class ProductsRepository implements IProductRepository {
             const tagNames = tags.map(tag => tag.name);
             const tagPlaceholders = tagNames.map((_, idx) => `$${values.length + idx + 1}`);
             conditions.push(`t.name IN (${tagPlaceholders.join(', ')})`);
-            // TODO FIX: make it to be exclusive. Example: If we have pants and we add color red, no to add every red cloth
             values.push(...tagNames);
         }
 
-        if (params.search && params.search.trim().length > 0) {
+        if (params.search && params.search.trim().length > 0 && tags && tags.length > 0) {
             searchByTsQuery = `UNION SELECT p.* FROM products p where tsv @@ plainto_tsquery('spanish', $${values.length + 1})`
             const sanitizedSearch = params.search
                 .trim()
                 .replace(/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚüÜ]/g, '')
                 .split(/\s+/)  // Separar por palabras
                 .map(word => word.toLowerCase())
-                .join(' | ');
+                .join(' & ');
+
+            values.push(sanitizedSearch);
+        }else if (params.search && params.search.trim().length > 0) {
+            conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`)
+            const sanitizedSearch = params.search
+                .trim()
+                .replace(/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚüÜ]/g, '')
+                .split(/\s+/)  // Separar por palabras
+                .map(word => word.toLowerCase())
+                .join(' & ');
 
             values.push(sanitizedSearch);
         }
@@ -321,7 +333,7 @@ class ProductsRepository implements IProductRepository {
         }
 
         if (tags && tags.length > 0) {
-            query += ` GROUP BY p.id HAVING COUNT(DISTINCT t.name) >= ${(this.TAGS_MINIMUM_COUNT)} `;
+            query += ` GROUP BY p.id HAVING COUNT(DISTINCT t.name) = ${tags.length} `;
         } else {
             query += ` GROUP BY p.id `;
         }
