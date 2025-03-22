@@ -90,10 +90,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     )}
                                 </>
                             )}
-
-                            <div className="mt-8">
-                                <SearchResults products={products} />
-                            </div>
+                            {!noProductsFound && (
+                                <div className="mt-8">
+                                    <SearchResults products={products} />
+                                </div>
+                            )}
                         </>
                     )}
                 </div>

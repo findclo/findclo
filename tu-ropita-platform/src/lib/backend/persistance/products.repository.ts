@@ -325,7 +325,7 @@ class ProductsRepository implements IProductRepository {
 
         // Add condition to exclude PAUSED products when userQuery is true
         if (params.userQuery) {
-            conditions.push(`p.status != 'PAUSED'`);
+            conditions.push(`p.status NOT IN ('PAUSED', 'DELETED')`);
         }
 
         if (conditions.length > 0) {
