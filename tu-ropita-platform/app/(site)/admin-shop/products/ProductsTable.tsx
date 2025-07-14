@@ -276,7 +276,7 @@ const openPromotionDetails = (promotionId: number) => {
                   <TableCell className="font-medium">
                     {product.name}
                   </TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>${product.price?.toFixed(2) || "0.00"}</TableCell>
                   <TableCell className="max-w-xs truncate">
                     {product.description}
                   </TableCell>

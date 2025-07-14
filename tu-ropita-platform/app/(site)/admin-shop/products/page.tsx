@@ -155,7 +155,7 @@ export default function ShopAdminProductsPage() {
     const csvRows = products
       .map(
         (product) =>
-          `"${product.name}",${product.price},"${product.description}","${product.images.join(
+          `"${product.name}",${product.price || 0},"${product.description}","${product.images.join(
             ";"
           )}","${product.url || ""}"`
       )
