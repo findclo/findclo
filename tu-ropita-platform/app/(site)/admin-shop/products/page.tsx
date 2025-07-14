@@ -20,7 +20,7 @@ import {
   Loader2,
   Upload
 } from "lucide-react";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import AddProductDialog from "./AddProductDialog";
 import ProductTable from "./ProductsTable";
 import DownloadProductsTagsButton from "./DownloadProductsTagsButton";
@@ -37,16 +37,19 @@ export default function ShopAdminProductsPage() {
   });
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const authToken = Cookies.get("Authorization")!;
+  // Estabilizar authToken para prevenir re-renders innecesarios
+  const authToken = useMemo(() => Cookies.get("Authorization"), []);
 
   const fetchBrandDetails = useCallback(async () => {
+    if (!authToken) return null;
     const brandData = await privateBrandsApiWrapper.getMyBrand(authToken);
     setBrand(brandData);
     return brandData;
-  }, []);
+  }, [authToken]);
 
   const fetchProducts = useCallback(
     async (brandId: string) => {
+      if (!authToken) return;
       const productsData =
         await privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(
           authToken,
@@ -56,15 +59,16 @@ export default function ShopAdminProductsPage() {
         setProducts(productsData.products);
       }
     },
-    []
+    [authToken]
   );
 
   const fetchPromotions = useCallback(async (brandId: string) => {
+    if (!authToken) return;
     const promotions = await privateBrandsApiWrapper.getBrandPromotions(authToken, brandId);
     if(promotions){
       setPromotions(promotions);
     }
-  }, []);
+  }, [authToken]);
 
   useEffect(() => {
     async function loadData() {
@@ -90,6 +94,14 @@ export default function ShopAdminProductsPage() {
       toast({
         type: "error",
         message: "No se encontró la información de la marca.",
+      });
+      return;
+    }
+
+    if (!authToken) {
+      toast({
+        type: "error",
+        message: "No se encontró token de autenticación.",
       });
       return;
     }
@@ -177,11 +189,10 @@ export default function ShopAdminProductsPage() {
       return;
     }
 
-    const authToken = Cookies.get("Authorization");
     if (!authToken) {
       toast({
         type: "error",
-        message: "No se encontró el token de autorización.",
+        message: "No se encontró token de autenticación.",
       });
       return;
     }
@@ -234,6 +245,14 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
   };
 
   const handleProductPromotion = async (productId: number, credits_allocated: number, show_on_landing: boolean, keywords?: string[]) => {
+    if (!authToken) {
+      toast({
+        type: "error",
+        message: "No se encontró token de autenticación.",
+      });
+      return;
+    }
+    
     try{
       const promotion = await privatePromotionsApiWrapper.createPromotion(authToken, {
         product_id: productId,
@@ -294,7 +313,7 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
           <ProductTable
             products={products}
             promotions={promotions}
-            brandId={brand?.id.toString() || ""}
+            brandId={brand?.id.toString() ?? ""}
             onProductsUpdate={setProducts}
             onProductUpdate={handleProductUpdate}
             onProductDelete={handleProductDelete}
@@ -306,7 +325,7 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
         <Button variant="outline" onClick={handleExport}>
           <FileDown className="mr-2 h-4 w-4" /> Exportar
         </Button>
-        <DownloadProductsTagsButton authToken={authToken} brandId={brand.id} />
+        {authToken && <DownloadProductsTagsButton authToken={authToken} brandId={brand.id} />}
       </div>
     </div>
   );

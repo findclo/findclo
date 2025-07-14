@@ -1,6 +1,7 @@
 import { privateUsersApiWrapper } from "@/api-wrappers/users";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header"; // Regular import
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { IUser } from "@/lib/backend/models/interfaces/user.interface";
 import ClientUserProvider from "@/providers/ClientUserProvider";
 import ToastProvider from "@/providers/ToastProvider";
@@ -36,7 +37,9 @@ export default async function RootLayout({
           <ClientUserProvider initialUser={initialUser}>
             <Header />
             <main className="container mx-auto mt-4 flex-grow px-4">
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
             </main>
           
             {/* Spacer div to prevent content from being hidden under the mobile header */}

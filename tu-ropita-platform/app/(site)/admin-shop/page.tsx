@@ -12,41 +12,46 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { addDays } from "date-fns";
 import Cookies from "js-cookie";
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 
 export default function ShopAdminPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
   const [products, setProducts] = useState<IProduct[]>([]);
   const [metrics, setMetrics] = useState<IMetrics[]>([]);
   const [promotions, setPromotions] = useState<IPromotion[] | null>(null);
-  const authToken = Cookies.get('Authorization')!;
+  
+  const authToken = useMemo(() => Cookies.get('Authorization'), []);
 
   const fetchBrandDetails = useCallback(async () => {
+    if (!authToken) return null;
     const brandData = await privateBrandsApiWrapper.getMyBrand(authToken);
     setBrand(brandData);
     return brandData;
-  }, []);
+  }, [authToken]);
 
   const fetchProducts = useCallback(async (brandId: string) => {
+    if (!authToken) return;
     const productsData = await privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(authToken, brandId);
     if (productsData) {
       setProducts(productsData.products);
     }
-  }, []);
+  }, [authToken]);
 
   const fetchBrandMetrics = useCallback(async (brandId: string) => {
+    if (!authToken) return;
     const from = addDays(new Date(), -30);
     const to = new Date();
-    privateMetricsApiWrapper.getBrandMetrics(authToken!, from, to, brandId)
+    privateMetricsApiWrapper.getBrandMetrics(authToken, from, to, brandId)
         .then(d => setMetrics(d));
-  }, []);
+  }, [authToken]);
 
   const fetchBrandPromotions = useCallback(async (brandId: string) => {
-    const promotions = await privateBrandsApiWrapper.getBrandPromotions(authToken!, brandId);
+    if (!authToken) return;
+    const promotions = await privateBrandsApiWrapper.getBrandPromotions(authToken, brandId);
     if (promotions) {
       setPromotions(promotions);
     }
-  }, []);
+  }, [authToken]);
 
   useEffect(() => {
     async function loadData() {
@@ -70,7 +75,8 @@ export default function ShopAdminPage() {
 
   const handleRefresh = async () => {
     try {
-      await privateMetricsApiWrapper.syncMetricsAggDaily(authToken!);
+      if (!authToken) return;
+      await privateMetricsApiWrapper.syncMetricsAggDaily(authToken);
       toast({ type: 'success', message: "Metricas sincronizadas correctamente." });
       window.location.reload();
     } catch (error) {
