@@ -23,6 +23,9 @@ interface GlobalSettings {
         SMTP_USER: string;
         SMTP_PASS: string;
         SMTP_FROM: string;
+    },
+    BLOB_STORAGE:{
+        READ_WRITE_TOKEN: string;
     }
 }
 
@@ -52,7 +55,11 @@ const globalSettings: GlobalSettings = {
     },
     BASE_URL: process.env.NODE_ENV === 'production'
         ? `${process.env.NEXT_PUBLIC_API_URL}`
-        : 'http://localhost:3000'
+        : 'http://localhost:3000',
+    BLOB_STORAGE:{
+        READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN ?? '<NO_TOKEN_SET>',
+    }
 };
 
+export const settings = globalSettings;
 export default globalSettings;

@@ -7,11 +7,13 @@ import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/p
 import { IListProductsParams, productRepository } from "@/lib/backend/persistance/products.repository";
 import { brandService } from "@/lib/backend/services/brand.service";
 import { openAIService } from "@/lib/backend/services/openAI.service";
+import { IAITagsResponse } from "@/lib/backend/dtos/aiTags.response.interface";
 import { tagsService } from "@/lib/backend/services/tags.service";
 import { ConflictException } from "../exceptions/ConflictException";
 import {productsInteractionsService} from "@/lib/backend/services/productsInteractions.service";
 import {productTagsService} from "@/lib/backend/services/productsTags.service";
 import {promotionService} from "@/lib/backend/services/promotion.service";
+import {imageProcessorService} from "@/lib/backend/services/simpleImageProcessor.service";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
@@ -113,16 +115,20 @@ class ProductService implements IProductService{
         const products : IProductDTO[] = await this.parser.parse(file);
 
         const dbRes = await productRepository.bulkProductInsert(products,brandId);
-        productTagsService.tagPendingProductsByBrand(parseInt(brandId)).then(r => {});
+        
+        if (dbRes > 0) {
+            productTagsService.tagPendingProductsByBrand(parseInt(brandId)).then(r => {});
+        }
 
         console.log(`db insert result ${dbRes}`);
         return dbRes > 0;
     }
 
     public async createProduct(product: IProductDTO, brandId: string): Promise<IProduct> {
-        const prod=  await productRepository.createProduct(product, brandId);
+        const createdProduct = await productRepository.createProduct(product, brandId);
+        
         productTagsService.tagPendingProductsByBrand(parseInt(brandId)).then(r => {});
-        return prod;
+        return createdProduct;
     }
 
     public async deleteProduct(id: number): Promise<boolean> {
@@ -130,7 +136,9 @@ class ProductService implements IProductService{
     }
 
     public async updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>{
-        return productRepository.updateProduct(productId, updateProduct);
+        const updatedProduct = await productRepository.updateProduct(productId, updateProduct);
+        await imageProcessorService.resetProductImageFlag(productId);
+        return updatedProduct;
     }
 
     async updateProductStatus(id: number, status: string): Promise<IProduct> {

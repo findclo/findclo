@@ -1,4 +1,4 @@
-interface IAITagsResponse {
+export interface IAITagsResponse {
     color?: string[];
     style?: string[];
     product_type?: string[];

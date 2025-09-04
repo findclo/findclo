@@ -1,5 +1,6 @@
 import settings from "@/lib/settings";
 import OpenAI from "openai";
+import { IAITagsResponse } from "../dtos/aiTags.response.interface";
 
 export interface IAIService {
     runAssistant(prompt: string): Promise<IAITagsResponse>;

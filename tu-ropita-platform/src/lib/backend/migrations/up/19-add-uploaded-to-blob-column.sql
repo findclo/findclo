@@ -1,0 +1,1 @@
+ALTER TABLE products ADD COLUMN uploaded_to_blob BOOLEAN DEFAULT FALSE;

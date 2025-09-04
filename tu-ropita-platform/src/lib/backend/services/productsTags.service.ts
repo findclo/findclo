@@ -97,7 +97,7 @@ class ProductsTagsService implements IProductsTagsService {
                         console.log(`GPT respose ${JSON.stringify(aiResponse)}`)
 
                         for (const [categoryName, tags] of Object.entries(aiResponse)) {
-                            if (tags && tags.length > 0) {
+                            if (tags && Array.isArray(tags) && tags.length > 0) {
                                 this.tagProductByCategoryName(tags, categoryName, prod.id);
                             }
                         }

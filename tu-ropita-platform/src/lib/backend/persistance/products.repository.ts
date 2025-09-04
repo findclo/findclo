@@ -37,6 +37,14 @@ export interface IProductRepository {
     markProductAsUntagged(productId: number): Promise<void>;
 
     updateProductStatus(id: number, status: string): Promise<IProduct>;
+
+    updateProductImages(productId: number, images: string[]): Promise<void>;
+
+    getUnuploadedProducts(limit: number): Promise<IProduct[]>;
+
+    markAsUploadedToBlob(productId: number): Promise<void>;
+
+    resetUploadedToBlobFlag(productId: number): Promise<void>;
 };
 
 
@@ -166,18 +174,6 @@ class ProductsRepository implements IProductRepository {
         }
     }
 
-    // async deleteProduct(id: number): Promise<boolean> {
-    //     const query = `DELETE FROM Products WHERE id = $1`;
-    //     const values = [id];
-
-    //     try {
-    //         const res = await this.db.query(query, values);
-    //         return res.rowCount!= null? res.rowCount > 0: false;
-    //     } catch (error: any) {
-    //         console.log(error); // No need to raise error.
-    //         return false;
-    //     }
-    // }
     async deleteProduct(id: number): Promise<boolean> {
         const query = `UPDATE Products
                        SET status = $1
@@ -203,6 +199,7 @@ class ProductsRepository implements IProductRepository {
                 images = $4,
                 url = $5,
                 has_tags_generated = false,
+                uploaded_to_blob = false,
                 tsv = to_tsvector('spanish', coalesce($1, '') || ' ' || coalesce($3, ''))
             WHERE id = $6
                 RETURNING *
@@ -222,6 +219,86 @@ class ProductsRepository implements IProductRepository {
 
         const values = [status, id];
         return this.executeUpdate(query, values);
+    }
+
+    async updateProductImages(productId: number, images: string[]): Promise<void> {
+        const query = `
+            UPDATE Products
+            SET images = $1
+            WHERE id = $2
+        `;
+
+        const values = [images, productId];
+        
+        try {
+            const res = await this.db.query(query, values);
+            if (res.rowCount === 0) {
+                throw new ProductNotFoundException(productId);
+            }
+            console.log(`Successfully updated images for product ${productId}`);
+        } catch (error) {
+            console.error(`Error updating product images for ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    async getUnuploadedProducts(limit: number): Promise<IProduct[]> {
+        const query = `
+            SELECT p.*, b.status as brand_status
+            FROM Products p
+            JOIN Brands b ON p.brand_id = b.id
+            WHERE p.uploaded_to_blob = false 
+            AND p.status NOT IN ('DELETED', 'PAUSED')
+            AND b.status != 'PAUSED'
+            ORDER BY p.id ASC
+            LIMIT $1
+        `;
+        
+        try {
+            const res = await this.db.query(query, [limit]);
+            return this.mapProductRows(res.rows);
+        } catch (error) {
+            console.error('Error getting unuploaded products:', error);
+            throw error;
+        }
+    }
+
+    async markAsUploadedToBlob(productId: number): Promise<void> {
+        const query = `
+            UPDATE Products
+            SET uploaded_to_blob = true
+            WHERE id = $1
+        `;
+        
+        try {
+            const res = await this.db.query(query, [productId]);
+            if (res.rowCount === 0) {
+                throw new ProductNotFoundException(productId);
+            }
+            console.log(`Marked product ${productId} as uploaded to blob`);
+        } catch (error) {
+            console.error(`Error marking product ${productId} as uploaded:`, error);
+            throw error;
+        }
+    }
+
+    async resetUploadedToBlobFlag(productId: number): Promise<void> {
+        const query = `
+            UPDATE Products
+            SET uploaded_to_blob = false
+            WHERE id = $1
+        `;
+        
+        try {
+            const res = await this.db.query(query, [productId]);
+            if (res.rowCount === 0) {
+                throw new ProductNotFoundException(productId);
+            }
+            console.log(`Reset uploaded_to_blob flag for product ${productId}`);
+        } catch (error) {
+            console.error(`Error resetting flag for product ${productId}:`, error);
+            throw error;
+        }
     }
 
     private async executeUpdate(query: string, values: any[]): Promise<IProduct> {
