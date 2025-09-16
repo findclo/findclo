@@ -7,13 +7,11 @@ import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/p
 import { IListProductsParams, productRepository } from "@/lib/backend/persistance/products.repository";
 import { brandService } from "@/lib/backend/services/brand.service";
 import { openAIService } from "@/lib/backend/services/openAI.service";
-import { IAITagsResponse } from "@/lib/backend/dtos/aiTags.response.interface";
-import { tagsService } from "@/lib/backend/services/tags.service";
 import { ConflictException } from "../exceptions/ConflictException";
 import {productsInteractionsService} from "@/lib/backend/services/productsInteractions.service";
-import {productTagsService} from "@/lib/backend/services/productsTags.service";
 import {promotionService} from "@/lib/backend/services/promotion.service";
 import {imageProcessorService} from "@/lib/backend/services/simpleImageProcessor.service";
+import { embeddingProcessorService } from "@/lib/backend/services/embeddingProcessor.service";
 
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
@@ -75,34 +73,29 @@ class ProductService implements IProductService{
         }
 
         if(params.tags){
+            // Keep existing tag functionality for manual tag filtering
+            const { tagsService } = await import("@/lib/backend/services/tags.service");
             tags = await tagsService.getTagsByName(params.tags);
         }
 
-        // Only call AI if we're not skipping it and have a search term
+        // Vector search using embeddings for semantic search
+        let searchEmbedding: number[] = [];
         if (params.search && !params.skipAI) {
-            const aiResponse: IAITagsResponse = await openAIService.runAssistant(params.search);
-            const tagNames = Object.values(aiResponse).flat();
-            if (tagNames.length > 0) {
-                if(tags){
-                    tags = tags.concat(await tagsService.getTagsByName(tagNames))
-                }else{
-                    tags = await tagsService.getTagsByName(tagNames);
-                }
-            }
-            console.log("AIResponse: ", tags)
+            searchEmbedding = await openAIService.createEmbedding(params.search);
+            console.log("Generated embedding for search query:", params.search);
         }
 
         if(params.excludeBrandPaused == undefined){
             params.excludeBrandPaused = true;
         }
 
-        const products : IProduct[] = await productRepository.listProducts(params,tags);
+        const products : IProduct[] = await productRepository.listProducts(params, tags, searchEmbedding);
         // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
         productsInteractionsService.addListOfProductViewInListingRelatedInteraction(products.map(p => p.id.toString())).then(r  =>{});
 
         return {
             appliedTags: tags,
-            availableTags: await tagsService.getAvailableTagsForProducts(products.map(p=>p.id.toString()),tags),
+            availableTags: [], // Simplified - no longer using tag-based filtering
             pageNum: 1,
             pageSize: products.length,
             products: products,
@@ -114,20 +107,25 @@ class ProductService implements IProductService{
     public async uploadProductsFromCSV(file : File,brandId: string): Promise<boolean>{
         const products : IProductDTO[] = await this.parser.parse(file);
 
-        const dbRes = await productRepository.bulkProductInsert(products,brandId);
+        const productsInserted = await productRepository.bulkProductInsert(products,brandId);
         
-        if (dbRes > 0) {
-            productTagsService.tagPendingProductsByBrand(parseInt(brandId)).then(r => {});
+        // Generate embeddings for newly inserted products in the background
+        if (productsInserted.length > 0) {
+            productsInserted.forEach(product => {
+                embeddingProcessorService.generateEmbeddingForProduct(product.id);
+            });
+            console.log(`${productsInserted.length} products inserted, embeddings will be processed in background`);
         }
 
-        console.log(`db insert result ${dbRes}`);
-        return dbRes > 0;
+        console.log(`db insert result ${productsInserted.length}`);
+        return productsInserted.length > 0;
     }
 
     public async createProduct(product: IProductDTO, brandId: string): Promise<IProduct> {
         const createdProduct = await productRepository.createProduct(product, brandId);
         
-        productTagsService.tagPendingProductsByBrand(parseInt(brandId)).then(r => {});
+        embeddingProcessorService.generateEmbeddingForProduct(createdProduct.id);
+        
         return createdProduct;
     }
 
@@ -138,6 +136,9 @@ class ProductService implements IProductService{
     public async updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>{
         const updatedProduct = await productRepository.updateProduct(productId, updateProduct);
         await imageProcessorService.resetProductImageFlag(productId);
+        
+        embeddingProcessorService.generateEmbeddingForProduct(productId);
+        
         return updatedProduct;
     }
 

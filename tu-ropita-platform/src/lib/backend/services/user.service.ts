@@ -105,7 +105,8 @@ class UserService {
             globalSettings.AUTH.JWT_SECRET,
             { expiresIn: '1h' }
         );
-        await mailingService.sendPasswordResetEmail(user.email, resetToken);
+        console.log(`Reset token: ${resetToken}`);
+        // await mailingService.sendPasswordResetEmail(user.email, resetToken);
         return resetToken;
     }
 

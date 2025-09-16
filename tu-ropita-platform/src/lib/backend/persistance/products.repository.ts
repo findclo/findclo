@@ -19,37 +19,8 @@ export interface IListProductsParams {
     skipAI?: boolean;
 }
 
-// TODO ADD (brand, tags, etc.)
 
-export interface IProductRepository {
-    getProductById(productId: number, excludeBrandPaused: boolean): Promise<IProduct | null>;
-
-    listProducts(params: IListProductsParams, tags?: ITag[]): Promise<IProduct[]>;
-
-    bulkProductInsert(products: IProductDTO[], brandId: string): Promise<number>;
-
-    markProductAsTagged(productId: number): Promise<void>;
-
-    deleteProduct(productId: number): Promise<boolean>;
-
-    updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
-
-    markProductAsUntagged(productId: number): Promise<void>;
-
-    updateProductStatus(id: number, status: string): Promise<IProduct>;
-
-    updateProductImages(productId: number, images: string[]): Promise<void>;
-
-    getUnuploadedProducts(limit: number): Promise<IProduct[]>;
-
-    markAsUploadedToBlob(productId: number): Promise<void>;
-
-    resetUploadedToBlobFlag(productId: number): Promise<void>;
-};
-
-
-class ProductsRepository implements IProductRepository {
-    private readonly TAGS_MINIMUM_COUNT = 2;
+class ProductsRepository {
     private db: Pool;
 
     constructor(db: Pool) {
@@ -57,7 +28,7 @@ class ProductsRepository implements IProductRepository {
     }
 
     public async getProductById(productId: number, excludeBrandPaused: boolean): Promise<IProduct | null> {
-        let query = `SELECT p.*, b.status as brand_status
+        let query = `SELECT p.*, b.status as brand_status, b.name as brand_name
                      FROM Products p
                               JOIN Brands b ON p.brand_id = b.id
                      WHERE p.id = $1`;
@@ -80,11 +51,11 @@ class ProductsRepository implements IProductRepository {
         }
     }
 
-    public async listProducts(params: IListProductsParams, tags?: ITag[]): Promise<IProduct[]> {
+    public async listProducts(params: IListProductsParams, tags?: ITag[], searchEmbedding?: number[]): Promise<IProduct[]> {
         const uniqueTags = tags?.filter((tag, index, self) =>
             index === self.findIndex((t) => t.name === tag.name)
         );
-        const {query, values} = this.constructListQuery(params, uniqueTags);
+        const {query, values} = this.constructListQuery(params, uniqueTags, searchEmbedding);
         try {
             const res = await this.db.query(query, values);
             return this.mapProductRows(res.rows);
@@ -94,8 +65,7 @@ class ProductsRepository implements IProductRepository {
         }
     }
 
-    public async bulkProductInsert(products: IProductDTO[], brandId: string): Promise<number> {
-        console.log("INSERTING")
+    public async bulkProductInsert(products: IProductDTO[], brandId: string): Promise<IProduct[]> {
         const valuePlaceholders = products.map((_, index) => {
             const offset = index * 8;
             return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, 
@@ -123,10 +93,10 @@ class ProductsRepository implements IProductRepository {
         try {
             const res = await pool.query(query, values);
             console.log('Products inserted successfully');
-            return res.rowCount == null ? 0 : res.rowCount;
+            return this.mapProductRows(res.rows);
         } catch (error) {
             console.error('Error inserting products:', error);
-            return -1;
+            return [];
         }
     }
 
@@ -248,8 +218,7 @@ class ProductsRepository implements IProductRepository {
             FROM Products p
             JOIN Brands b ON p.brand_id = b.id
             WHERE p.uploaded_to_blob = false 
-            AND p.status NOT IN ('DELETED', 'PAUSED')
-            AND b.status != 'PAUSED'
+            AND p.status NOT IN ('DELETED')
             ORDER BY p.id ASC
             LIMIT $1
         `;
@@ -301,6 +270,46 @@ class ProductsRepository implements IProductRepository {
         }
     }
 
+    async updateProductEmbedding(productId: number, embedding: number[]): Promise<void> {
+        const query = `
+            UPDATE Products
+            SET embedding = $1
+            WHERE id = $2
+        `;
+        
+        try {
+            const res = await this.db.query(query, [`[${embedding.join(',')}]`, productId]);
+            if (res.rowCount === 0) {
+                throw new ProductNotFoundException(productId);
+            }
+            console.log(`Updated embedding for product ${productId}`);
+        } catch (error) {
+            console.error(`Error updating embedding for product ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    async getProductsWithoutEmbedding(limit: number): Promise<IProduct[]> {
+        const query = `
+            SELECT p.*, b.status as brand_status
+            FROM Products p
+            JOIN Brands b ON p.brand_id = b.id
+            WHERE p.embedding IS NULL 
+            AND p.status NOT IN ('DELETED')
+            AND (p.name IS NOT NULL AND p.name != '')
+            ORDER BY p.id ASC
+            LIMIT $1
+        `;
+        
+        try {
+            const res = await this.db.query(query, [limit]);
+            return this.mapProductRows(res.rows);
+        } catch (error) {
+            console.error('Error getting products without embedding:', error);
+            throw error;
+        }
+    }
+
     private async executeUpdate(query: string, values: any[]): Promise<IProduct> {
         try {
             const res: QueryResult = await this.db.query(query, values);
@@ -329,7 +338,7 @@ class ProductsRepository implements IProductRepository {
             url: row.url,
             brand: {
                 id: row.brand_id,
-                name: '',
+                name: row.brand_name,
                 image: '',
                 websiteUrl: '',
                 status: BrandStatus.ACTIVE, // this is to avoid tslint checks
@@ -338,11 +347,23 @@ class ProductsRepository implements IProductRepository {
         }));
     }
 
-    private constructListQuery(params: IListProductsParams, tags?: ITag[]): { query: string, values: any[] } {
-        let query = `SELECT DISTINCT p.* FROM products p`;
+    private constructListQuery(params: IListProductsParams, tags?: ITag[], searchEmbedding?: number[]): { query: string, values: any[] } {
+        let query = `SELECT DISTINCT p.*`;
+        
+        // Add similarity score if we have embedding
+        if (searchEmbedding && searchEmbedding.length > 0) {
+            query += `, (1 - (p.embedding <=> $${1}::vector)) AS similarity`;
+        }
+        
+        query += ` FROM products p`;
         let searchByTsQuery : string = '';
         const conditions: string[] = [];
         const values: any[] = [];
+        
+        // Add embedding as first parameter if provided
+        if (searchEmbedding && searchEmbedding.length > 0) {
+            values.push(`[${searchEmbedding.join(',')}]`);
+        }
 
         if (params.featured) {
             query += ` JOIN promotions prom ON prom.product_id = p.id`;
@@ -368,26 +389,29 @@ class ProductsRepository implements IProductRepository {
             values.push(...tagNames);
         }
 
-        if (params.search && params.search.trim().length > 0 && tags && tags.length > 0) {
-            searchByTsQuery = `UNION SELECT p.* FROM products p where tsv @@ plainto_tsquery('spanish', $${values.length + 1})`
-            const sanitizedSearch = params.search
-                .trim()
-                .replace(/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚüÜ]/g, '')
-                .split(/\s+/)  // Separar por palabras
-                .map(word => word.toLowerCase())
-                .join(' & ');
+        // Handle search: prioritize vector search if we have embedding, fallback to text search
+        if (params.search && params.search.trim().length > 0) {
+            if (searchEmbedding && searchEmbedding.length > 0) {
+                // Vector search: filter by similarity threshold
+                conditions.push(`p.embedding IS NOT NULL`);
+                conditions.push(`(1 - (p.embedding <=> $1)) > 0.5`); // Similarity threshold
+            } else {
+                // Fallback to text search if no embedding
+                if (tags && tags.length > 0) {
+                    searchByTsQuery = `UNION SELECT p.* FROM products p where tsv @@ plainto_tsquery('spanish', $${values.length + 1})`
+                } else {
+                    conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
+                }
+                
+                const sanitizedSearch = params.search
+                    .trim()
+                    .replace(/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚüÜ]/g, '')
+                    .split(/\s+/)
+                    .map(word => word.toLowerCase())
+                    .join(' & ');
 
-            values.push(sanitizedSearch);
-        }else if (params.search && params.search.trim().length > 0) {
-            conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`)
-            const sanitizedSearch = params.search
-                .trim()
-                .replace(/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚüÜ]/g, '')
-                .split(/\s+/)  // Separar por palabras
-                .map(word => word.toLowerCase())
-                .join(' & ');
-
-            values.push(sanitizedSearch);
+                values.push(sanitizedSearch);
+            }
         }
 
         if (params.brandId) {
@@ -418,6 +442,16 @@ class ProductsRepository implements IProductRepository {
         if (searchByTsQuery != '') {
             query += searchByTsQuery;
         }
+
+        // Add ordering: prioritize vector similarity if available, then by ID
+        if (searchEmbedding && searchEmbedding.length > 0) {
+            query += ` ORDER BY similarity DESC, p.id DESC`;
+        } else {
+            query += ` ORDER BY p.id DESC`;
+        }
+
+        // Add limit for performance
+        query += ` LIMIT 100`;
 
         console.log(query, values);
         return {query, values};
