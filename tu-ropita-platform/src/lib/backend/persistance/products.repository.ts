@@ -394,7 +394,7 @@ class ProductsRepository {
             if (searchEmbedding && searchEmbedding.length > 0) {
                 // Vector search: filter by similarity threshold
                 conditions.push(`p.embedding IS NOT NULL`);
-                conditions.push(`(1 - (p.embedding <=> $1)) > 0.5`); // Similarity threshold
+                conditions.push(`(1 - (p.embedding <=> $1)) >= 0.4`); // Similarity threshold
             } else {
                 // Fallback to text search if no embedding
                 if (tags && tags.length > 0) {
