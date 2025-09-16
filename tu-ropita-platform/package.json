@@ -26,6 +26,7 @@
     "@types/json2csv": "^5.0.7",
     "@types/nodemailer": "^6.4.17",
     "@vercel/blob": "^1.1.1",
+    "@vercel/speed-insights": "^1.2.0",
     "bluebird": "^3.7.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
