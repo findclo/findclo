@@ -1,29 +1,19 @@
 'use client'
 
 import { publicProductsApiWrapper } from "@/api-wrappers/products";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Filter, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-interface Tag {
-  id: number;
-  name: string;
-  category_id: number;
-}
-
 export interface SearchBarProps {
   initialQuery: string;
-  appliedTags: Tag[];
-  availableTags: Tag[];
   isHomePage?: boolean;
 }
 
-export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage = false }: SearchBarProps) {
+export function SearchBar({ initialQuery, isHomePage = false }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,52 +31,15 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
         setIsLoading(true);
         const queryParams = new URLSearchParams();
         queryParams.append('search', searchQuery.trim());
-        const result = await publicProductsApiWrapper.getFilteredProducts(searchQuery.trim(), {});
-        if (result && result.appliedTags) {
-          const newTagsName = result.appliedTags.map(tag => tag.name);
-          newTagsName.forEach(name => queryParams.append('tags', name.toString()));
-        }
         router.push(`/search?${queryParams.toString()}`);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching filtered products:', error);
+        console.error('Error during search:', error);
+        setIsLoading(false);
       }
     }
   }, [searchQuery, router]);
 
-  const handleTagClick = (tag: Tag) => {
-    const queryParams = new URLSearchParams();
-    const newTags = appliedTags.some(t => t.id === tag.id)
-      ? appliedTags.filter(t => t.id !== tag.id)
-      : [...appliedTags, tag];
-    
-    if (searchQuery.trim()) {
-      queryParams.append('search', searchQuery.trim());
-    }
-    
-    const tagNames = newTags.map(t => t.name);
-    if (tagNames.length > 0) {
-      queryParams.append('tags', tagNames.join(','));
-    }
-    queryParams.append('skipAI', 'true');
-    router.push(`/search?${queryParams.toString()}`);
-  };
-
-  const handleRemoveTag = (tagToRemove: Tag) => {
-    const queryParams = new URLSearchParams();
-    const newTags = appliedTags.filter(tag => tag.id !== tagToRemove.id);
-    
-    if (searchQuery.trim()) {
-      queryParams.append('search', searchQuery.trim());
-    }
-    
-    const tagNames = newTags.map(t => t.name);
-    if (tagNames.length > 0) {
-      queryParams.append('tags', tagNames.join(','));
-    }
-    queryParams.append('skipAI', 'true');
-    router.push(`/search?${queryParams.toString()}`);
-  };
 
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -114,80 +67,9 @@ export function SearchBar({ initialQuery, appliedTags, availableTags, isHomePage
             )}
             <span className="sr-only">Buscar</span>
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-10 w-10 p-0 rounded-full border-2 border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            aria-label={isFilterOpen ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-            disabled={isHomePage}
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
         </form>
       </div>
 
-      {isFilterOpen && (
-        <div className="w-full mx-auto mt-4">
-          <div className="flex space-x-6">
-            {appliedTags.length > 0 && (
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">Tags Aplicados</h3>
-                <div className="flex flex-wrap gap-2">
-                  {appliedTags.map((tag) => (
-                    <Badge 
-                      key={tag.id} 
-                      variant="secondary"
-                      className="flex items-center gap-1 cursor-pointer hover:bg-secondary/80"
-                      onClick={() => handleRemoveTag(tag)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleRemoveTag(tag);
-                        }
-                      }}
-                      aria-label={`Eliminar tag ${tag.name}`}
-                    >
-                      {tag.name}
-                      <span className="ml-1 text-xs">×</span>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {availableTags.length > 0 && (
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">Tags Disponibles</h3>
-                <div className="flex flex-wrap gap-2">
-                  {availableTags.map((tag) => (
-                    <Badge 
-                      key={tag.id} 
-                      variant="outline" 
-                      className="cursor-pointer hover:bg-secondary"
-                      onClick={() => handleTagClick(tag)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleTagClick(tag);
-                        }
-                      }}
-                      aria-label={`Agregar tag ${tag.name}`}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       
     </div>
   );

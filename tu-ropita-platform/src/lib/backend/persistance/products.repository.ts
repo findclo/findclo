@@ -3,14 +3,12 @@ import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
 import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
 import { Pool, QueryResult } from "pg";
 
 export interface IListProductsParams {
     search?: string;
     brandId?: number;
     tagged?: boolean;
-    tags?: string[];
     productId?: number;
     userQuery?: boolean;
     excludeBrandPaused?: boolean;
@@ -51,11 +49,8 @@ class ProductsRepository {
         }
     }
 
-    public async listProducts(params: IListProductsParams, tags?: ITag[], searchEmbedding?: number[]): Promise<IProduct[]> {
-        const uniqueTags = tags?.filter((tag, index, self) =>
-            index === self.findIndex((t) => t.name === tag.name)
-        );
-        const {query, values} = this.constructListQuery(params, uniqueTags, searchEmbedding);
+    public async listProducts(params: IListProductsParams, searchEmbedding?: number[]): Promise<IProduct[]> {
+        const {query, values} = this.constructListQuery(params, searchEmbedding);
         try {
             const res = await this.db.query(query, values);
             return this.mapProductRows(res.rows);
@@ -111,35 +106,6 @@ class ProductsRepository {
             return this.mapProductRows(res.rows)[0];
         } catch (error) {
             console.error('Error inserting product:', error);
-            throw error;
-        }
-    }
-
-    async markProductAsTagged(productId: number): Promise<void> {
-        this.markProductIsTagged(productId, true);
-    }
-
-    async markProductAsUntagged(productId: number): Promise<void> {
-        this.markProductIsTagged(productId, false);
-    }
-
-
-    private async markProductIsTagged(productId: number, isTagged: boolean): Promise<void> {
-        const query: string = `UPDATE Products
-                               SET has_tags_generated = $1
-                               WHERE id = $2;`;
-
-        try {
-            const result = await pool.query(query, [isTagged, productId]);
-
-            if (result.rowCount === 0) {
-                // TODO HANDLE THIS
-                throw new ProductNotFoundException(productId);
-            }
-
-            console.log(`Product with ID ${productId} has been marked as tagged.`);
-        } catch (error) {
-            console.error(`Error marking product as tagged: ${(error as any).message}`);
             throw error;
         }
     }
@@ -347,7 +313,7 @@ class ProductsRepository {
         }));
     }
 
-    private constructListQuery(params: IListProductsParams, tags?: ITag[], searchEmbedding?: number[]): { query: string, values: any[] } {
+    private constructListQuery(params: IListProductsParams, searchEmbedding?: number[]): { query: string, values: any[] } {
         let query = `SELECT DISTINCT p.*`;
         
         // Add similarity score if we have embedding
@@ -380,14 +346,6 @@ class ProductsRepository {
             values.push(BrandStatus.PAUSED);
         }
 
-        if (tags && tags.length > 0) {
-            query += ` JOIN Product_Tags pt ON p.id = pt.product_id
-                       JOIN Tags t ON pt.tag_id = t.id`;
-            const tagNames = tags.map(tag => tag.name);
-            const tagPlaceholders = tagNames.map((_, idx) => `$${values.length + idx + 1}`);
-            conditions.push(`t.name IN (${tagPlaceholders.join(', ')})`);
-            values.push(...tagNames);
-        }
 
         // Handle search: prioritize vector search if we have embedding, fallback to text search
         if (params.search && params.search.trim().length > 0) {
@@ -397,11 +355,7 @@ class ProductsRepository {
                 conditions.push(`(1 - (p.embedding <=> $1)) >= 0.4`); // Similarity threshold
             } else {
                 // Fallback to text search if no embedding
-                if (tags && tags.length > 0) {
-                    searchByTsQuery = `UNION SELECT p.* FROM products p where tsv @@ plainto_tsquery('spanish', $${values.length + 1})`
-                } else {
-                    conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
-                }
+                conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
                 
                 const sanitizedSearch = params.search
                     .trim()
@@ -419,11 +373,6 @@ class ProductsRepository {
             values.push(params.brandId);
         }
 
-        if (params.tagged != undefined && !params.tagged) {
-            conditions.push(`p.has_tags_generated = $${values.length + 1}`);
-            values.push(params.tagged);
-        }
-
         // Add condition to exclude PAUSED products when userQuery is true
         if (params.userQuery) {
             conditions.push(`p.status NOT IN ('PAUSED', 'DELETED')`);
@@ -433,11 +382,7 @@ class ProductsRepository {
             query += ` WHERE ` + conditions.join(' AND ');
         }
 
-        if (tags && tags.length > 0) {
-            query += ` GROUP BY p.id HAVING COUNT(DISTINCT t.name) = ${tags.length} `;
-        } else {
-            query += ` GROUP BY p.id `;
-        }
+        query += ` GROUP BY p.id `;
 
         if (searchByTsQuery != '') {
             query += searchByTsQuery;

@@ -7,26 +7,18 @@ import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 interface SearchPageProps {
     searchParams: {
         search?: string;
-        tags?: string | string[];
         skipAI?: boolean;
     };
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const query = searchParams.search || '';
-    const tags = Array.isArray(searchParams.tags)
-        ? searchParams.tags
-        : searchParams.tags
-            ? [searchParams.tags]
-            : undefined;
 
     let products: IProduct[] = [];
     let noProductsFound = false;
-    let tags_applied: any[] = [];
-    let tags_available: any[] = [];
 
     try {
-        const result = await publicProductsApiWrapper.getFilteredProducts(query, { tags:tags, skipAI: searchParams.skipAI });
+        const result = await publicProductsApiWrapper.getFilteredProducts(query, { skipAI: searchParams.skipAI });
         if (result && result.products.length > 0) {
             result.products = result.products.filter(p => p.status !== 'DELETED' && p.status !== 'PAUSED' && p.status !== 'PAUSED_BY_ADMIN');
         }
@@ -35,8 +27,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             noProductsFound = true;
         } else {
             products = result.products;
-            tags_applied = result.appliedTags || [];
-            tags_available = result.availableTags || [];
         }
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -60,10 +50,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     return (
         <>
             <div className="mb-8">
-                <SearchBar 
-                    initialQuery={query} 
-                    appliedTags={tags_applied} 
-                    availableTags={tags_available}
+                <SearchBar
+                    initialQuery={query}
                 />
             </div>
 

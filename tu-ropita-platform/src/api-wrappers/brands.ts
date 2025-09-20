@@ -215,20 +215,6 @@ class PrivateBrandsApiWrapper {
         }
         return {success: true};
     }
-
-    async getBrandProductsTagsCsvAsPrivilegedUser(auth_token: string, brandId: number): Promise<Blob | null> {
-        const [error, products] = await baseFetcher(`${BRANDS_PATH}/${brandId}/products/tags`,{
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${auth_token}`,
-            },
-        });
-        if (error) {
-            console.error(`Error fetching products by brand id ${brandId}: ${error}`);
-            return null;
-        }
-        return await products.blob();
-    }
 }
 
 export const publicBrandsApiWrapper = new PublicBrandsApiWrapper();
