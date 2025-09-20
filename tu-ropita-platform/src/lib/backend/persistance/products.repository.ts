@@ -8,6 +8,7 @@ import { Pool, QueryResult } from "pg";
 export interface IListProductsParams {
     search?: string;
     brandId?: number;
+    brandIds?: number[];
     tagged?: boolean;
     productId?: number;
     userQuery?: boolean;
@@ -15,6 +16,11 @@ export interface IListProductsParams {
     featured?: boolean;
     isLandingPage?: boolean;
     skipAI?: boolean;
+    categoryId?: number;
+    categoryIds?: number[];
+    page?: number;
+    limit?: number;
+    sort?: 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 }
 
 
@@ -260,13 +266,13 @@ class ProductsRepository {
             SELECT p.*, b.status as brand_status
             FROM Products p
             JOIN Brands b ON p.brand_id = b.id
-            WHERE p.embedding IS NULL 
+            WHERE p.embedding IS NULL
             AND p.status NOT IN ('DELETED')
             AND (p.name IS NOT NULL AND p.name != '')
             ORDER BY p.id ASC
             LIMIT $1
         `;
-        
+
         try {
             const res = await this.db.query(query, [limit]);
             return this.mapProductRows(res.rows);
@@ -346,6 +352,17 @@ class ProductsRepository {
             values.push(BrandStatus.PAUSED);
         }
 
+        // Handle category filtering
+        if (params.categoryIds && params.categoryIds.length > 0) {
+            query += ' JOIN product_categories pc ON p.id = pc.product_id ';
+            conditions.push(`pc.category_id IN ($${values.length + 1})`);
+            values.push(params.categoryIds);
+        } else if (params.categoryId) {
+            query += ' JOIN product_categories pc ON p.id = pc.product_id ';
+            conditions.push(`pc.category_id = $${values.length + 1}`);
+            values.push(params.categoryId);
+        }
+
 
         // Handle search: prioritize vector search if we have embedding, fallback to text search
         if (params.search && params.search.trim().length > 0) {
@@ -388,15 +405,40 @@ class ProductsRepository {
             query += searchByTsQuery;
         }
 
-        // Add ordering: prioritize vector similarity if available, then by ID
         if (searchEmbedding && searchEmbedding.length > 0) {
-            query += ` ORDER BY similarity DESC, p.id DESC`;
+            query += ` ORDER BY similarity DESC`;
+        } else if (params.sort) {
+            switch (params.sort) {
+                case 'price_asc':
+                    query += ` ORDER BY p.price ASC`;
+                    break;
+                case 'price_desc':
+                    query += ` ORDER BY p.price DESC`;
+                    break;
+                case 'name_asc':
+                    query += ` ORDER BY p.name ASC`;
+                    break;
+                case 'name_desc':
+                    query += ` ORDER BY p.name DESC`;
+                    break;
+                default:
+                    query += ` ORDER BY p.id DESC`;
+            }
         } else {
             query += ` ORDER BY p.id DESC`;
         }
 
-        // Add limit for performance
-        query += ` LIMIT 100`;
+        // Add pagination
+        const limit = params.limit || 100;
+        const offset = params.page && params.page > 1 ? (params.page - 1) * limit : 0;
+
+        query += ` LIMIT $${values.length + 1}`;
+        values.push(limit);
+
+        if (offset > 0) {
+            query += ` OFFSET $${values.length + 1}`;
+            values.push(offset);
+        }
 
         console.log(query, values);
         return {query, values};

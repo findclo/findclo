@@ -11,13 +11,15 @@ import {productsInteractionsService} from "@/lib/backend/services/productsIntera
 import {promotionService} from "@/lib/backend/services/promotion.service";
 import {imageProcessorService} from "@/lib/backend/services/simpleImageProcessor.service";
 import { embeddingProcessorService } from "@/lib/backend/services/embeddingProcessor.service";
-
+import { categoryService } from "@/lib/backend/services/category.service";
 export interface IProductService {
     listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
     deleteProduct(id: number): Promise<boolean>;
     uploadProductsFromCSV(file : File,brandId: string): Promise<boolean>;
     updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
-    updateProductStatus(id: number, status: string): Promise<IProduct>
+    updateProductStatus(id: number, status: string): Promise<IProduct>;
+    assignProductToCategories(productId: number, categoryIds: number[]): Promise<void>;
+    removeProductFromCategories(productId: number, categoryIds?: number[]): Promise<void>;
 }
 
 
@@ -64,7 +66,12 @@ class ProductService implements IProductService{
                 totalPages: 1
             };
         }
+        let categoryIds: number[] | undefined;
 
+        if (params.categoryId) {
+            categoryIds = await categoryService.getDescendantIds(params.categoryId);
+        }
+        params.categoryIds = categoryIds;
         // Vector search using embeddings for semantic search
         let searchEmbedding: number[] = [];
         if (params.search && !params.skipAI) {
@@ -129,6 +136,14 @@ class ProductService implements IProductService{
 
     async updateProductStatus(id: number, status: string): Promise<IProduct> {
         return productRepository.updateProductStatus(id,status);
+    }
+
+    async assignProductToCategories(productId: number, categoryIds: number[]): Promise<void> {
+        await categoryService.assignProductToCategories(productId, categoryIds);
+    }
+
+    async removeProductFromCategories(productId: number, categoryIds?: number[]): Promise<void> {
+        await categoryService.removeProductFromCategories(productId, categoryIds);
     }
 }
 

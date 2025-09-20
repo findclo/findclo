@@ -1,0 +1,12 @@
+DROP INDEX IF EXISTS idx_category_parent_id;
+DROP INDEX IF EXISTS idx_category_parent_sort;
+DROP INDEX IF EXISTS idx_category_level;
+DROP INDEX IF EXISTS idx_category_slug;
+ALTER TABLE Category DROP CONSTRAINT IF EXISTS unique_category_slug;
+ALTER TABLE Category DROP COLUMN IF EXISTS slug;
+ALTER TABLE Category DROP COLUMN IF EXISTS parent_id;
+ALTER TABLE Category DROP COLUMN IF EXISTS sort_order;
+ALTER TABLE Category DROP COLUMN IF EXISTS level;
+ALTER TABLE Category DROP COLUMN IF EXISTS description;
+ALTER TABLE Category DROP COLUMN IF EXISTS created_at;
+ALTER TABLE Category DROP COLUMN IF EXISTS updated_at;
