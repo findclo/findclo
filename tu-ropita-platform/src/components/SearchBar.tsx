@@ -6,15 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CategorySelector } from "./CategorySelector";
 
 export interface SearchBarProps {
   initialQuery: string;
   isHomePage?: boolean;
+  categoryId?: number | null;
 }
 
-export function SearchBar({ initialQuery, isHomePage = false }: SearchBarProps) {
+export function SearchBar({
+  initialQuery,
+  isHomePage = false,
+  categoryId = null,
+}: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(categoryId);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -24,28 +31,49 @@ export function SearchBar({ initialQuery, isHomePage = false }: SearchBarProps) 
     }
   }, []);
 
+  useEffect(() => {
+    setSelectedCategoryId(categoryId);
+  }, [categoryId]);
+
   const handleSearch = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      try {
-        setIsLoading(true);
-        const queryParams = new URLSearchParams();
-        queryParams.append('search', searchQuery.trim());
-        router.push(`/search?${queryParams.toString()}`);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error during search:', error);
-        setIsLoading(false);
+    try {
+      const queryParams = new URLSearchParams();
+      setIsLoading(true);
+      if (searchQuery.trim()) {
+        queryParams.append('search', searchQuery.trim()+'&');
       }
+      if (selectedCategoryId) {
+        queryParams.append('categoryId', selectedCategoryId.toString()+'&');
+      }
+      router.push(`/search?${queryParams.toString()}`);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error during search:', error);
+      setIsLoading(false);
     }
-  }, [searchQuery, router]);
+  }, [searchQuery, selectedCategoryId, router]);
+
+  const handleCategoryChange = useCallback((categoryId: number | null) => {
+    setSelectedCategoryId(categoryId);
+  }, [categoryId]);
 
 
   return (
     <div className="w-full max-w-3xl mx-auto">
+      {/* Category Selector */}
+      <div className="mb-4">
+        <CategorySelector
+          selectedCategoryId={selectedCategoryId}
+          onCategoryChange={handleCategoryChange}
+          className="w-full"
+        />
+      </div>
+
+      {/* Search Form */}
       <div className="flex justify-center w-full mb-4">
-        <form 
-          onSubmit={handleSearch} 
+        <form
+          onSubmit={handleSearch}
           className="flex w-full items-center space-x-2 bg-white shadow-lg rounded-full p-2 focus-within:ring-2 focus-within:ring-details focus-within:ring-offset-2 transition-shadow"
         >
           <Input
@@ -69,8 +97,6 @@ export function SearchBar({ initialQuery, isHomePage = false }: SearchBarProps) 
           </Button>
         </form>
       </div>
-
-      
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { ICategory, ICategoryTree } from "@/lib/backend/models/interfaces/category.interface";
+import { ICategory, ICategoryBreadcrumb, ICategoryTree } from "@/lib/backend/models/interfaces/category.interface";
 import { ICategoryCreateDTO, ICategoryUpdateDTO, ICategoryTreeResponseDTO } from "@/lib/backend/dtos/category.dto.interface";
 import { categoryRepository } from "@/lib/backend/persistance/category.repository";
 
@@ -15,6 +15,10 @@ export class CategoryService {
             categories: tree,
             total_count: this.countCategoriesInTree(tree)
         };
+    }
+
+    async getCategoryBreadcrumb(categoryId: number): Promise<ICategoryBreadcrumb[]> {
+        return await categoryRepository.getCategoryBreadcrumb(categoryId);
     }
 
     async getDescendantIds(categoryId: number): Promise<number[]> {
