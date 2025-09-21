@@ -106,7 +106,7 @@ class UserService {
             { expiresIn: '1h' }
         );
         console.log(`Reset token: ${resetToken}`);
-        // await mailingService.sendPasswordResetEmail(user.email, resetToken);
+        await mailingService.sendPasswordResetEmail(user.email, resetToken);
         return resetToken;
     }
 

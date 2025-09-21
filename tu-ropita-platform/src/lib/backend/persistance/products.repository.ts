@@ -323,50 +323,49 @@ class ProductsRepository {
             };
 
             if (includeCategories) {
-                // Parse aggregated category data
-                const categories: ICategory[] = [];
-
-                if (row.category_ids) {
-                    const categoryIds = row.category_ids.split(',').filter((id: string) => id && id.trim());
-                    const categoryNames = row.category_names ? row.category_names.split('||').filter((name: string) => name) : [];
-                    const categorySlugs = row.category_slugs ? row.category_slugs.split('||').filter((slug: string) => slug) : [];
-                    const categoryParentIds = row.category_parent_ids ? row.category_parent_ids.split(',').filter((id: string) => id && id.trim()) : [];
-                    const categoryLevels = row.category_levels ? row.category_levels.split(',').filter((level: string) => level && level.trim()) : [];
-                    const categoryDescriptions = row.category_descriptions ? row.category_descriptions.split('||').filter((desc: string) => desc) : [];
-
-                    for (let i = 0; i < categoryIds.length; i++) {
-                        if (categoryIds[i]) {
-                            categories.push({
-                                id: parseInt(categoryIds[i]),
-                                name: categoryNames[i] || '',
-                                slug: categorySlugs[i] || '',
-                                parent_id: categoryParentIds[i] ? parseInt(categoryParentIds[i]) : null,
-                                sort_order: 0,
-                                level: categoryLevels[i] ? parseInt(categoryLevels[i]) : 0,
-                                description: categoryDescriptions[i] || null,
-                                created_at: new Date(),
-                                updated_at: new Date()
-                            });
-                        }
-                    }
-                }
-
-                baseProduct.categories = categories;
+                this.mapCategoriesToProduct(row, baseProduct);
             }
 
             return baseProduct;
         });
     }
 
+    private mapCategoriesToProduct(row: any, baseProduct: IProduct) {
+        const categories: ICategory[] = [];
+
+        if (row.category_ids) {
+            const categoryIds = row.category_ids.split(',').filter((id: string) => id && id.trim());
+            const categoryNames = row.category_names ? row.category_names.split('||').filter((name: string) => name) : [];
+            const categorySlugs = row.category_slugs ? row.category_slugs.split('||').filter((slug: string) => slug) : [];
+            const categoryParentIds = row.category_parent_ids ? row.category_parent_ids.split(',').filter((id: string) => id && id.trim()) : [];
+            const categoryLevels = row.category_levels ? row.category_levels.split(',').filter((level: string) => level && level.trim()) : [];
+            const categoryDescriptions = row.category_descriptions ? row.category_descriptions.split('||').filter((desc: string) => desc) : [];
+
+            for (let i = 0; i < categoryIds.length; i++) {
+                if (categoryIds[i]) {
+                    categories.push({
+                        id: parseInt(categoryIds[i]),
+                        name: categoryNames[i] || '',
+                        slug: categorySlugs[i] || '',
+                        parent_id: categoryParentIds[i] ? parseInt(categoryParentIds[i]) : null,
+                        sort_order: 0,
+                        level: categoryLevels[i] ? parseInt(categoryLevels[i]) : 0,
+                        description: categoryDescriptions[i] || null,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    });
+                }
+            }
+        }
+
+        baseProduct.categories = categories;
+    }
+
     private constructListQuery(params: IListProductsParams, searchEmbedding?: number[]): { query: string, values: any[] } {
         let query = `SELECT p.*`;
-
-        // Add similarity score if we have embedding
         if (searchEmbedding && searchEmbedding.length > 0) {
             query += `, (1 - (p.embedding <=> $${1}::vector)) AS similarity`;
         }
-
-        // Add aggregated category fields if including categories
         if (params.includeCategories) {
             query += `, string_agg(c.id::text, ',') as category_ids,
                         string_agg(c.name, '||') as category_names,

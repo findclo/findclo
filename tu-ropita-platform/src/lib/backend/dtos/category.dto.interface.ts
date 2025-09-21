@@ -1,5 +1,4 @@
-import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { ICategoryBreadcrumb, ICategoryTree, ICategoryWithProducts } from "@/lib/backend/models/interfaces/category.interface";
+import { ICategoryBreadcrumb, ICategoryTree } from "@/lib/backend/models/interfaces/category.interface";
 
 export interface ICategoryCreateDTO {
     name: string;
