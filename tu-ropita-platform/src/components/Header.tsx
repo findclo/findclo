@@ -9,7 +9,7 @@ import { BarChart, CreditCard, Home, LogOut, Menu, Package, ShoppingBag, Store, 
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { CategoryNavigationResponsive } from './CategoryNavigationResponsive';
+// import { CategoryNavigationResponsive } from './CategoryNavigationResponsive';
 
 const Header = () => {
   const { user, signOut } = useUser();
@@ -37,7 +37,7 @@ const Header = () => {
     if (user.user_type === UserTypeEnum.BRAND_OWNER) {
       return [
         { label: 'Productos', href: '/admin-shop/products', icon: Package },
-        { label: 'Categorías', href: '/admin-shop/categorization', icon: Layers },
+        { label: 'Categorías', href: '/admin-shop/categories', icon: Layers },
         { label: 'Perfil', href: '/admin-shop/profile', icon: User },
         { label: 'Estadísticas', href: '/admin-shop/stats', icon: BarChart },
         { label: 'Facturación', href: '/admin-shop/billing', icon: CreditCard },
@@ -172,10 +172,10 @@ const Header = () => {
         {/* Category Navigation for Desktop */}
         <div className="border-t bg-gray-50 dark:bg-gray-900">
           <div className="container py-2">
-            <CategoryNavigationResponsive
+            {/* <CategoryNavigationResponsive
               variant="header"
               showProductCount={true}
-            />
+            /> */}
           </div>
         </div>
       </header>

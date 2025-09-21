@@ -25,3 +25,8 @@ export interface ICategoryTreeResponseDTO {
 export interface ICategoryBreadcrumbResponseDTO {
     breadcrumb: ICategoryBreadcrumb[];
 }
+
+export interface IProductsCategoryAssignmentDTO {
+    productIds: number[];
+    categoryId: number;
+}

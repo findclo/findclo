@@ -44,8 +44,6 @@ class PublicProductsApiWrapper {
 
 class PrivateProductsApiWrapper {
 
-// TODO IMPLEMENT AND TRY
-
     async deleteProduct(auth_token: string, id: string): Promise<void> {
         const [error, _] = await fetcher(`${PRODUCTS_PATH}/${id}`, {
             method: 'DELETE',
@@ -138,8 +136,9 @@ class PrivateProductsApiWrapper {
         return created_product as IProduct;
     }
     
-    async getProductsOfBrand(auth_token: string, brandId: string): Promise<IListProductResponseDto | null> {
-        const [error, products] = await fetcher(`/brands/${brandId}/products`, {
+    async getProductsOfBrand(auth_token: string, brandId: string, includeCategories: boolean = false): Promise<IListProductResponseDto | null> {
+        const queryParams = includeCategories ? '?includeCategories=true' : '';
+        const [error, products] = await fetcher(`/brands/${brandId}/products${queryParams}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${auth_token}`

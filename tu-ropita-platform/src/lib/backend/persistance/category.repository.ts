@@ -236,6 +236,24 @@ class CategoryRepository {
         }
     }
 
+    async assignCategoryToMultipleProducts(productIds: number[], categoryId: number): Promise<void> {
+        if (productIds.length === 0) return;
+
+        const values = productIds.map((_, index) => `($${index + 1}, $${productIds.length + 1})`).join(', ');
+        const query = `
+            INSERT INTO product_categories (product_id, category_id)
+            VALUES ${values}
+            ON CONFLICT (product_id, category_id) DO NOTHING
+        `;
+
+        try {
+            await this.db.query(query, [...productIds, categoryId]);
+        } catch (error) {
+            console.error('Error assigning category to multiple products:', error);
+            throw new Error('Failed to assign category to multiple products.');
+        }
+    }
+
     async removeProductFromCategories(productId: number, categoryIds?: number[]): Promise<void> {
         let query = 'DELETE FROM product_categories WHERE product_id = $1';
         let values: any[] = [productId];

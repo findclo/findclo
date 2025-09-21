@@ -2,6 +2,7 @@ import pool from "@/lib/backend/conf/db.connections";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
 import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
+import { ICategory } from "@/lib/backend/models/interfaces/category.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { Pool, QueryResult } from "pg";
 
@@ -21,6 +22,7 @@ export interface IListProductsParams {
     page?: number;
     limit?: number;
     sort?: 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
+    includeCategories?: boolean;
 }
 
 
@@ -59,7 +61,7 @@ class ProductsRepository {
         const {query, values} = this.constructListQuery(params, searchEmbedding);
         try {
             const res = await this.db.query(query, values);
-            return this.mapProductRows(res.rows);
+            return this.mapProductRows(res.rows, params.includeCategories);
         } catch (err) {
             console.error('Error executing query:', err);
             throw err;
@@ -296,37 +298,84 @@ class ProductsRepository {
     }
 
 
-    private mapProductRows(rows: any[]): IProduct[] {
-        if (rows.length == 0) {
+    private mapProductRows(rows: any[], includeCategories: boolean = false): IProduct[] {
+        if (rows.length === 0) {
             return [];
         }
-        return rows.map(row => ({
-            id: row.id,
-            name: row.name,
-            price: parseFloat(row.price),
-            description: row.description,
-            images: row.images && row.images.length > 0 ? row.images : [],
-            status: row.status,
-            url: row.url,
-            brand: {
-                id: row.brand_id,
-                name: row.brand_name,
-                image: '',
-                websiteUrl: '',
-                status: BrandStatus.ACTIVE, // this is to avoid tslint checks
-                description: ''
+
+        return rows.map(row => {
+            const baseProduct: IProduct = {
+                id: row.id,
+                name: row.name,
+                price: parseFloat(row.price),
+                description: row.description,
+                images: row.images && row.images.length > 0 ? row.images : [],
+                status: row.status,
+                url: row.url,
+                brand: {
+                    id: row.brand_id,
+                    name: row.brand_name,
+                    image: '',
+                    websiteUrl: '',
+                    status: BrandStatus.ACTIVE,
+                    description: ''
+                }
+            };
+
+            if (includeCategories) {
+                // Parse aggregated category data
+                const categories: ICategory[] = [];
+
+                if (row.category_ids) {
+                    const categoryIds = row.category_ids.split(',').filter((id: string) => id && id.trim());
+                    const categoryNames = row.category_names ? row.category_names.split('||').filter((name: string) => name) : [];
+                    const categorySlugs = row.category_slugs ? row.category_slugs.split('||').filter((slug: string) => slug) : [];
+                    const categoryParentIds = row.category_parent_ids ? row.category_parent_ids.split(',').filter((id: string) => id && id.trim()) : [];
+                    const categoryLevels = row.category_levels ? row.category_levels.split(',').filter((level: string) => level && level.trim()) : [];
+                    const categoryDescriptions = row.category_descriptions ? row.category_descriptions.split('||').filter((desc: string) => desc) : [];
+
+                    for (let i = 0; i < categoryIds.length; i++) {
+                        if (categoryIds[i]) {
+                            categories.push({
+                                id: parseInt(categoryIds[i]),
+                                name: categoryNames[i] || '',
+                                slug: categorySlugs[i] || '',
+                                parent_id: categoryParentIds[i] ? parseInt(categoryParentIds[i]) : null,
+                                sort_order: 0,
+                                level: categoryLevels[i] ? parseInt(categoryLevels[i]) : 0,
+                                description: categoryDescriptions[i] || null,
+                                created_at: new Date(),
+                                updated_at: new Date()
+                            });
+                        }
+                    }
+                }
+
+                baseProduct.categories = categories;
             }
-        }));
+
+            return baseProduct;
+        });
     }
 
     private constructListQuery(params: IListProductsParams, searchEmbedding?: number[]): { query: string, values: any[] } {
-        let query = `SELECT DISTINCT p.*`;
-        
+        let query = `SELECT p.*`;
+
         // Add similarity score if we have embedding
         if (searchEmbedding && searchEmbedding.length > 0) {
             query += `, (1 - (p.embedding <=> $${1}::vector)) AS similarity`;
         }
-        
+
+        // Add aggregated category fields if including categories
+        if (params.includeCategories) {
+            query += `, string_agg(c.id::text, ',') as category_ids,
+                        string_agg(c.name, '||') as category_names,
+                        string_agg(c.slug, '||') as category_slugs,
+                        string_agg(c.parent_id::text, ',') as category_parent_ids,
+                        string_agg(c.level::text, ',') as category_levels,
+                        string_agg(c.description, '||') as category_descriptions`;
+        }
+
         query += ` FROM products p`;
         let searchByTsQuery : string = '';
         const conditions: string[] = [];
@@ -352,15 +401,27 @@ class ProductsRepository {
             values.push(BrandStatus.PAUSED);
         }
 
-        // Handle category filtering
-        if (params.categoryIds && params.categoryIds.length > 0) {
-            query += ' JOIN product_categories pc ON p.id = pc.product_id ';
-            conditions.push(`pc.category_id IN ($${values.length + 1})`);
-            values.push(params.categoryIds);
-        } else if (params.categoryId) {
-            query += ' JOIN product_categories pc ON p.id = pc.product_id ';
-            conditions.push(`pc.category_id = $${values.length + 1}`);
-            values.push(params.categoryId);
+        // Handle category filtering and/or inclusion
+        const needsCategoryJoin = (params.categoryIds && params.categoryIds.length > 0) ||
+                                 params.categoryId ||
+                                 params.includeCategories;
+
+        if (needsCategoryJoin) {
+            query += ' LEFT JOIN product_categories pc ON p.id = pc.product_id ';
+
+            // Add category details if including categories
+            if (params.includeCategories) {
+                query += ' LEFT JOIN Category c ON pc.category_id = c.id ';
+            }
+
+            // Add filtering conditions when filtering by category
+            if (params.categoryIds && params.categoryIds.length > 0) {
+                conditions.push(`pc.category_id = ANY($${values.length + 1})`);
+                values.push(params.categoryIds);
+            } else if (params.categoryId) {
+                conditions.push(`pc.category_id = $${values.length + 1}`);
+                values.push(params.categoryId);
+            }
         }
 
 

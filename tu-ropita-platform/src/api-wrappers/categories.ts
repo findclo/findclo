@@ -2,6 +2,7 @@ import {
     ICategoryTreeResponseDTO,
     ICategoryCreateDTO,
     ICategoryUpdateDTO,
+    IProductsCategoryAssignmentDTO,
 } from "@/lib/backend/dtos/category.dto.interface";
 import { ICategory, ICategoryBreadcrumb } from "@/lib/backend/models/interfaces/category.interface";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
@@ -92,6 +93,24 @@ class PrivateCategoriesApiWrapper {
         }
 
         return response as { message: string };
+    }
+
+    async assignCategoryToProducts(auth_token: string, brandId: string, productIds: number[], categoryId: number): Promise<boolean> {
+        const [error] = await fetcher(`/brands/${brandId}/products/categories`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ productIds, categoryId } as IProductsCategoryAssignmentDTO)
+        });
+
+        if (error) {
+            console.error(`Error assigning category to products: ${error}`);
+            return false;
+        }
+
+        return true;
     }
 }
 

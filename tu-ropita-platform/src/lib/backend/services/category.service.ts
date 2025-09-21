@@ -58,14 +58,15 @@ export class CategoryService {
     }
 
     async assignProductToCategories(productId: number, categoryIds: number[]): Promise<void> {
-        for (const categoryId of categoryIds) {
-            await categoryRepository.getCategoryById(categoryId);
-        }
         await categoryRepository.assignProductToCategories(productId, categoryIds);
     }
 
     async removeProductFromCategories(productId: number, categoryIds?: number[]): Promise<void> {
         await categoryRepository.removeProductFromCategories(productId, categoryIds);
+    }
+
+    async assignCategoryToProducts(productIds: number[], categoryId: number): Promise<void> {
+        await categoryRepository.assignCategoryToMultipleProducts(productIds, categoryId);
     }
 
     async updateCategoryHierarchy(categoryId: number, newParentId: number | null): Promise<void> {
