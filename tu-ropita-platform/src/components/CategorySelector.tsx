@@ -56,22 +56,54 @@ export function CategorySelector({
     setIsOpen(false);
   }, [onCategoryChange]);
 
-  const getSelectedCategoryName = useCallback(() => {
+  const getSelectedCategoryPath = useCallback(() => {
     if (!selectedCategoryId) return null;
-    
-    const findCategory = (cats: ICategoryTree[]): ICategoryTree | null => {
+
+    const findCategoryPath = (cats: ICategoryTree[], path: ICategoryTree[] = []): ICategoryTree[] | null => {
       for (const cat of cats) {
-        if (cat.id === selectedCategoryId) return cat;
-        const found = findCategory(cat.children);
-        if (found) return found;
+        const currentPath = [...path, cat];
+        if (cat.id === selectedCategoryId) return currentPath;
+
+        if (cat.children.length > 0) {
+          const found = findCategoryPath(cat.children, currentPath);
+          if (found) return found;
+        }
       }
       return null;
     };
-    
-    return findCategory(categories);
+
+    return findCategoryPath(categories);
   }, [selectedCategoryId, categories]);
 
-  const selectedCategory = getSelectedCategoryName();
+  const selectedCategoryPath = getSelectedCategoryPath();
+  const selectedCategory = selectedCategoryPath ? selectedCategoryPath[selectedCategoryPath.length - 1] : null;
+
+  const renderCategoryLevel = useCallback((categoriesArray: ICategoryTree[], level: number = 0) => {
+    return categoriesArray.map((category) => (
+      <div key={category.id}>
+        <Button
+          variant="ghost"
+          onClick={() => handleCategorySelect(category.id)}
+          className={cn(
+            "w-full justify-start text-left mb-1",
+            level === 0 ? "font-medium" : "text-sm",
+            level > 1 && "text-gray-600",
+            selectedCategoryId === category.id && "bg-primary/10 text-primary font-medium"
+          )}
+          style={{ marginLeft: `${level * 16}px` }}
+        >
+          <span className="ml-2">{category.name}</span>
+        </Button>
+
+        {/* Recursively render children */}
+        {category.children.length > 0 && (
+          <div className="space-y-1">
+            {renderCategoryLevel(category.children, level + 1)}
+          </div>
+        )}
+      </div>
+    ));
+  }, [selectedCategoryId, handleCategorySelect]);
 
   if (isLoading) {
     return (
@@ -98,9 +130,11 @@ export function CategorySelector({
           )}
         >
           <div className="flex items-center space-x-2">
-            {selectedCategory ? (
+            {selectedCategoryPath && selectedCategoryPath.length > 0 ? (
               <>
-                <span className="truncate">{selectedCategory.name}</span>
+                <span className="truncate">
+                  {selectedCategoryPath.map(cat => cat.name).join(' / ')}
+                </span>
               </>
             ) : (
               <>
@@ -127,55 +161,23 @@ export function CategorySelector({
               </Button>
               
               {/* Categories */}
-              {categories.map((category) => (
-                <div key={category.id}>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleCategorySelect(category.id)}
-                    className={cn(
-                      "w-full justify-start text-left font-medium mb-1",
-                      selectedCategoryId === category.id && "bg-primary/10 text-primary"
-                    )}
-                  >
-                    <span className="ml-2">{category.name}</span>
-                  </Button>
-                  
-                  {/* Subcategories */}
-                  {category.children.length > 0 && (
-                    <div className="ml-6 space-y-1">
-                      {category.children.map((subcategory) => (
-                        <Button
-                          key={subcategory.id}
-                          variant="ghost"
-                          onClick={() => handleCategorySelect(subcategory.id)}
-                          className={cn(
-                            "w-full justify-start text-left text-sm text-gray-600",
-                            selectedCategoryId === subcategory.id && "bg-primary/10 text-primary font-medium"
-                          )}
-                        >
-                          <span className="ml-2">{subcategory.name}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+              {renderCategoryLevel(categories)}
             </div>
           </div>
         )}
       </div>
 
       {/* Selected category chip (when selected) */}
-      {selectedCategory && (
+      {selectedCategoryPath && selectedCategoryPath.length > 0 && (
         <div className="mt-2 flex items-center space-x-2">
-          <Badge 
-            variant="secondary" 
+          <Badge
+            variant="secondary"
             className={cn(
               "flex items-center space-x-1 px-3 py-1",
               getCategoryColor(true)
             )}
           >
-            <span>{selectedCategory.name}</span>
+            <span>{selectedCategoryPath.map(cat => cat.name).join(' / ')}</span>
             <Button
               variant="ghost"
               size="sm"

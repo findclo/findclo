@@ -129,7 +129,7 @@ class CategoryRepository {
         }
     }
 
-    async createCategory(categoryData: ICategoryCreateDTO): Promise<ICategory> {
+    async createCategory(categoryData: ICategoryCreateDTO, slug: string): Promise<ICategory> {
         let level = 0;
         if (categoryData.parent_id) {
             const parent = await this.getCategoryById(categoryData.parent_id);
@@ -137,16 +137,15 @@ class CategoryRepository {
         }
 
         const query = `
-            INSERT INTO Category (name, slug, parent_id, sort_order, level, description)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, name, slug, parent_id, sort_order, level, description, created_at, updated_at
+            INSERT INTO Category (name, slug, parent_id, level, description)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, name, slug, parent_id, level, description, created_at, updated_at
         `;
 
         const values = [
             categoryData.name,
-            categoryData.slug,
+            slug,
             categoryData.parent_id || null,
-            categoryData.sort_order || 0,
             level,
             categoryData.description || null,
         ];
@@ -176,10 +175,6 @@ class CategoryRepository {
         if (categoryData.description !== undefined) {
             updateFields.push(`description = $${paramIndex++}`);
             values.push(categoryData.description);
-        }
-        if (categoryData.sort_order !== undefined) {
-            updateFields.push(`sort_order = $${paramIndex++}`);
-            values.push(categoryData.sort_order);
         }
 
         if (updateFields.length === 0) {

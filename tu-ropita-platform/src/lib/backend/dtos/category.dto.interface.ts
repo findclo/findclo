@@ -3,9 +3,7 @@ import { ICategoryBreadcrumb, ICategoryTree, ICategoryWithProducts } from "@/lib
 
 export interface ICategoryCreateDTO {
     name: string;
-    slug?: string;
     parent_id?: number | null;
-    sort_order?: number;
     description?: string;
 }
 
@@ -13,7 +11,6 @@ export interface ICategoryUpdateDTO {
     name?: string;
     slug?: string;
     parent_id?: number | null;
-    sort_order?: number;
     description?: string;
 }
 

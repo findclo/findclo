@@ -1,6 +1,7 @@
 import { ICategory, ICategoryBreadcrumb, ICategoryTree } from "@/lib/backend/models/interfaces/category.interface";
 import { ICategoryCreateDTO, ICategoryUpdateDTO, ICategoryTreeResponseDTO } from "@/lib/backend/dtos/category.dto.interface";
 import { categoryRepository } from "@/lib/backend/persistance/category.repository";
+import { embeddingProcessorService } from "./embeddingProcessor.service";
 
 
 export class CategoryService {
@@ -26,8 +27,6 @@ export class CategoryService {
     }
 
     async createCategory(categoryData: ICategoryCreateDTO): Promise<ICategory> {
-        categoryData.slug = this.generateSlug(categoryData.name);
-
         if (categoryData.parent_id) {
             const isValid = await this.validateCategoryHierarchy(0, categoryData.parent_id);
             if (!isValid) {
@@ -35,7 +34,7 @@ export class CategoryService {
             }
         }
 
-        return await categoryRepository.createCategory(categoryData);
+        return await categoryRepository.createCategory(categoryData, this.generateSlug(categoryData.name));
     }
 
     async updateCategory(categoryId: number, categoryData: ICategoryUpdateDTO): Promise<ICategory> {
@@ -59,14 +58,20 @@ export class CategoryService {
 
     async assignProductToCategories(productId: number, categoryIds: number[]): Promise<void> {
         await categoryRepository.assignProductToCategories(productId, categoryIds);
+        embeddingProcessorService.generateEmbeddingForProduct(productId);
     }
 
     async removeProductFromCategories(productId: number, categoryIds?: number[]): Promise<void> {
         await categoryRepository.removeProductFromCategories(productId, categoryIds);
+        embeddingProcessorService.generateEmbeddingForProduct(productId);
+
     }
 
     async assignCategoryToProducts(productIds: number[], categoryId: number): Promise<void> {
         await categoryRepository.assignCategoryToMultipleProducts(productIds, categoryId);
+        productIds.forEach(productId => {
+            embeddingProcessorService.generateEmbeddingForProduct(productId);
+        });
     }
 
     async updateCategoryHierarchy(categoryId: number, newParentId: number | null): Promise<void> {

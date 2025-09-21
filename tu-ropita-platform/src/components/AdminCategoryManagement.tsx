@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { privateCategoriesApiWrapper, publicCategoriesApiWrapper } from '@/api-wrappers/categories';
-import { ICategoryTree } from '@/lib/backend/models/interfaces/category.interface';
+import { ICategoryTree, ICategory } from '@/lib/backend/models/interfaces/category.interface';
 import Cookies from 'js-cookie';
 import { ICategoryCreateDTO } from '@/lib/backend/dtos/category.dto.interface';
 
@@ -24,6 +24,7 @@ interface AdminCategoryManagementProps {
 
 interface AdminCategoryState {
   categories: ICategoryTree[];
+  allCategories: ICategory[];
   isLoading: boolean;
   error: string | null;
   selectedCategory: ICategoryTree | null;
@@ -38,10 +39,8 @@ interface AdminCategoryState {
 
 const initialFormData: ICategoryCreateDTO = {
   name: '',
-  slug: '',
   description: '',
   parent_id: null,
-  sort_order: 0,
 };
 
 export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = ({
@@ -49,6 +48,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
 }) => {
   const [state, setState] = useState<AdminCategoryState>({
     categories: [],
+    allCategories: [],
     isLoading: true,
     error: null,
     selectedCategory: null,
@@ -65,6 +65,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
   // Load categories on mount
   useEffect(() => {
     loadCategories();
+    loadAllCategories();
   }, []);
 
   const loadCategories = useCallback(async () => {
@@ -80,9 +81,21 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       console.error('Error loading categories:', error);
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to load categories',
+        error: error instanceof Error ? error.message : 'No se pudieron cargar las categorías',
         isLoading: false
       }));
+    }
+  }, []);
+
+  const loadAllCategories = useCallback(async () => {
+    try {
+      const allCategories = await publicCategoriesApiWrapper.getAllCategories();
+      setState(prev => ({
+        ...prev,
+        allCategories: allCategories || []
+      }));
+    } catch (error) {
+      console.error('Error loading all categories:', error);
     }
   }, []);
 
@@ -106,24 +119,24 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
         name: category.name,
         description: category.description || '',
         parent_id: category.parent_id,
-        sort_order: category.sort_order,
       }
     }));
   }, []);
 
   const handleDeleteCategory = useCallback(async (category: ICategoryTree) => {
-    if (!confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar "${category.name}"? Esta acción no se puede deshacer.`)) {
       return;
     }
 
     try {
       await privateCategoriesApiWrapper.deleteCategory(token!, category.id);
       await loadCategories();
+      await loadAllCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
-      alert('Failed to delete category');
+      alert('No se pudo eliminar la categoría');
     }
-  }, [loadCategories]);
+  }, [loadCategories, loadAllCategories]);
 
   const handleSaveCategory = useCallback(async () => {
     try {
@@ -134,6 +147,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       }
 
       await loadCategories();
+      await loadAllCategories();
       setState(prev => ({
         ...prev,
         isCreating: false,
@@ -143,9 +157,9 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       }));
     } catch (error) {
       console.error('Error saving category:', error);
-      alert('Failed to save category');
+      alert('No se pudo guardar la categoría');
     }
-  }, [state.isCreating, state.isEditing, state.selectedCategory, state.formData, loadCategories]);
+  }, [state.isCreating, state.isEditing, state.selectedCategory, state.formData, loadCategories, loadAllCategories]);
 
   const handleCancelEdit = useCallback(() => {
     setState(prev => ({
@@ -198,15 +212,16 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       await privateCategoriesApiWrapper.updateCategory(token!, state.draggedCategory.id, {
         parent_id: targetCategory.parent_id
       });
-      
+
       await loadCategories();
+      await loadAllCategories();
     } catch (error) {
       console.error('Error updating category hierarchy:', error);
-      alert('Failed to update category hierarchy');
+      alert('No se pudo actualizar la jerarquía de categorías');
     } finally {
       setState(prev => ({ ...prev, draggedCategory: null }));
     }
-  }, [state.draggedCategory, loadCategories]);
+  }, [state.draggedCategory, loadCategories, loadAllCategories]);
 
   const filterCategoriesByQuery = (categories: ICategoryTree[], query: string): ICategoryTree[] => {
     return categories.filter(category => {
@@ -308,8 +323,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
               </p>
             )}
             <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-              <span>Level: {category.level}</span>
-              <span>Sort: {category.sort_order}</span>
+              <span>Nivel: {category.level}</span>
             </div>
           </div>
 
@@ -318,14 +332,14 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
             <button
               onClick={() => handleEditCategory(category)}
               className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-              title="Edit category"
+              title="Editar categoría"
             >
               <Edit className="w-4 h-4" />
             </button>
             <button
               onClick={() => handleDeleteCategory(category)}
               className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
-              title="Delete category"
+              title="Eliminar categoría"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -360,7 +374,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {state.isCreating ? 'Create Category' : 'Edit Category'}
+            {state.isCreating ? 'Crear Categoría' : 'Editar Categoría'}
           </h3>
           <button
             onClick={handleCancelEdit}
@@ -373,43 +387,45 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Name *
+              Nombre *
             </label>
             <input
               type="text"
               value={state.formData.name}
               onChange={(e) => handleFormChange('name', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Category name"
+              placeholder="Nombre de la categoría"
             />
           </div>
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description
+              Descripción
             </label>
             <textarea
               value={state.formData.description}
               onChange={(e) => handleFormChange('description', e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Category description"
+              placeholder="Descripción de la categoría"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Parent Category
+              Categoría Padre
             </label>
             <select
               value={state.formData.parent_id || ''}
               onChange={(e) => handleFormChange('parent_id', e.target.value ? parseInt(e.target.value) : null)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">No parent (root category)</option>
-              {state.categories.map(category => (
-                <option key={category.id} value={category.id}>{category.name}</option>
-              ))}
+              <option value="">Sin padre (categoría raíz)</option>
+              {state.allCategories
+                .filter(category => !state.selectedCategory || category.id !== state.selectedCategory.id)
+                .map(category => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
             </select>
           </div>
 
@@ -421,14 +437,14 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
             onClick={handleCancelEdit}
             className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
-            Cancel
+            Cancelar
           </button>
           <button
             onClick={handleSaveCategory}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
             <Save className="w-4 h-4 mr-2" />
-            {state.isCreating ? 'Create' : 'Save'}
+            {state.isCreating ? 'Crear' : 'Guardar'}
           </button>
         </div>
       </div>
@@ -440,7 +456,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading categories...</p>
+          <p className="text-gray-600 dark:text-gray-400">Cargando categorías...</p>
         </div>
       </div>
     );
@@ -455,7 +471,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
           onClick={loadCategories}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          Try again
+          Intentar de nuevo
         </button>
       </div>
     );
@@ -467,10 +483,10 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Category Management
+            Gestión de Categorías
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage your product categories and hierarchy
+            Administra las categorías de productos y su jerarquía
           </p>
         </div>
         <button
@@ -478,7 +494,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Create Category
+          Crear Categoría
         </button>
       </div>
 
@@ -490,14 +506,14 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Categories ({filteredCategories.length})
+            Categorías ({filteredCategories.length})
           </h2>
         </div>
         <div className="p-4">
           {filteredCategories.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400">
-                {state.searchQuery ? 'No categories found matching your search.' : 'No categories found.'}
+                {state.searchQuery ? 'No se encontraron categorías que coincidan con tu búsqueda.' : 'No se encontraron categorías.'}
               </p>
             </div>
           ) : (

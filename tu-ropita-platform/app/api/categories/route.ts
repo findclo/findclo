@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 
 export const POST = withAdminPermission(async (req: Request) => {
     try {
-        const categoryData: ICategoryCreateDTO = await getDtoFromBody(req, ['name']);
+        const categoryData: ICategoryCreateDTO = await getDtoFromBody(req, ['name'], ['description', 'parent_id']);
         const category = await categoryService.createCategory(categoryData);
         return new Response(JSON.stringify(category), {
             status: 201,
