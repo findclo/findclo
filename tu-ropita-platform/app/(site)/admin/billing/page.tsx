@@ -13,9 +13,7 @@ import Cookies from "js-cookie"
 import { Loader2, Search, Settings, FilePlus } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import {ProductInteractionEnum} from "@/lib/backend/models/interfaces/metrics/productInteraction.interface";
 import {ConfigurationModal} from "./PricingConfigurationModal";
-import {IBillableItem} from "@/lib/backend/models/interfaces/billableItem.interface";
 import ToastMessage from "@/components/toast"
 
 function generateLastTwelveMonths() {

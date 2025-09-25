@@ -1,5 +1,6 @@
 import { openAIService } from "./openAI.service";
 import { productRepository } from "../persistance/products.repository";
+import { categoryRepository } from "../persistance/category.repository";
 
 export interface IEmbeddingProcessorService {
     processProductsEmbeddings(batchSize?: number): Promise<number>;
@@ -81,6 +82,7 @@ class EmbeddingProcessorService implements IEmbeddingProcessorService {
     async generateEmbeddingForProduct(productId: number): Promise<boolean> {
         try {
             const product = await productRepository.getProductById(productId, false);
+            const categories = await categoryRepository.getProductCategories(productId);
             
             if (!product || !product.name || product.name.trim().length === 0) {
                 return false;
@@ -93,6 +95,8 @@ class EmbeddingProcessorService implements IEmbeddingProcessorService {
                 product.description || '',
                 'Marca: ',
                 product.brand?.name || '',
+                'Categorías: ',
+                categories.map(category => category.name).join(', '),
             ].filter(text => text && text.trim().length > 0)
              .join(' ');
 

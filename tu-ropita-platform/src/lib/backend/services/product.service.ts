@@ -2,7 +2,6 @@ import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
 import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/parsers/productCSVUpload.parser";
 import { IListProductsParams, productRepository } from "@/lib/backend/persistance/products.repository";
 import { brandService } from "@/lib/backend/services/brand.service";
@@ -12,17 +11,9 @@ import {productsInteractionsService} from "@/lib/backend/services/productsIntera
 import {promotionService} from "@/lib/backend/services/promotion.service";
 import {imageProcessorService} from "@/lib/backend/services/simpleImageProcessor.service";
 import { embeddingProcessorService } from "@/lib/backend/services/embeddingProcessor.service";
+import { categoryService } from "@/lib/backend/services/category.service";
 
-export interface IProductService {
-    listProducts(params: IListProductsParams): Promise<IListProductResponseDto>;
-    deleteProduct(id: number): Promise<boolean>;
-    uploadProductsFromCSV(file : File,brandId: string): Promise<boolean>;
-    updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>;
-    updateProductStatus(id: number, status: string): Promise<IProduct>
-}
-
-
-class ProductService implements IProductService{
+class ProductService {
 
     private parser: IProductCSVUploadParser = new ProductCSVUploadParser();
 
@@ -41,16 +32,12 @@ class ProductService implements IProductService{
     }
 
     public async listProducts(params: IListProductsParams): Promise<IListProductResponseDto>{
-        let tags : ITag[] = [];
-
         if(params.productId){
             const product = await this.getProductById(params.productId,params.excludeBrandPaused? params.excludeBrandPaused : true);
             // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
             productsInteractionsService.addProductClickInteraction(product.id.toString()).then(r  =>{});
 
             return {
-                appliedTags: [],
-                availableTags: [],
                 pageNum: 1,
                 pageSize: 1,
                 products: [product],
@@ -63,21 +50,18 @@ class ProductService implements IProductService{
             const keywords = params.search.split(' ');
             const products = await promotionService.getProductsFromKeywords(keywords);
             return {
-                appliedTags: tags,
-                availableTags: [],
                 pageNum: 1,
                 pageSize: products.length,
                 products: products,
                 totalPages: 1
             };
         }
+        let categoryIds: number[] | undefined;
 
-        if(params.tags){
-            // Keep existing tag functionality for manual tag filtering
-            const { tagsService } = await import("@/lib/backend/services/tags.service");
-            tags = await tagsService.getTagsByName(params.tags);
+        if (params.categoryId) {
+            categoryIds = await categoryService.getDescendantIds(params.categoryId);
         }
-
+        params.categoryIds = categoryIds;
         // Vector search using embeddings for semantic search
         let searchEmbedding: number[] = [];
         if (params.search && !params.skipAI) {
@@ -89,13 +73,11 @@ class ProductService implements IProductService{
             params.excludeBrandPaused = true;
         }
 
-        const products : IProduct[] = await productRepository.listProducts(params, tags, searchEmbedding);
+        const products : IProduct[] = await productRepository.listProducts(params, searchEmbedding);
         // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
         productsInteractionsService.addListOfProductViewInListingRelatedInteraction(products.map(p => p.id.toString())).then(r  =>{});
 
         return {
-            appliedTags: tags,
-            availableTags: [], // Simplified - no longer using tag-based filtering
             pageNum: 1,
             pageSize: products.length,
             products: products,
@@ -145,6 +127,7 @@ class ProductService implements IProductService{
     async updateProductStatus(id: number, status: string): Promise<IProduct> {
         return productRepository.updateProductStatus(id,status);
     }
+
 }
 
 export const productService : ProductService = new ProductService();

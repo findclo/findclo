@@ -33,7 +33,13 @@ export const POST = withBrandPermission(async(req: Request, {params}: {params: {
 
 export const GET = withBrandPermission(async(req: Request, {params}: {params: {id:string}}) => {
     try{
-        const products = await productService.listProducts({brandId: parseInt(params.id)});
+        const url = new URL(req.url);
+        const includeCategories = url.searchParams.get('includeCategories') === 'true';
+
+        const products = await productService.listProducts({
+            brandId: parseInt(params.id),
+            includeCategories
+        });
 
         return new Response(JSON.stringify(products), {
             status: 200,

@@ -25,7 +25,7 @@ export default async function Home() {
 
   return (
     <>
-      <SearchBar initialQuery={""} appliedTags={[]} availableTags={[]} isHomePage={true} />
+      <SearchBar initialQuery={""}  isHomePage={true} />
 
       {carouselItems.length > 0? (
         <>

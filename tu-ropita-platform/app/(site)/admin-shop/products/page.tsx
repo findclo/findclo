@@ -23,7 +23,6 @@ import {
 import { Suspense, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import AddProductDialog from "./AddProductDialog";
 import ProductTable from "./ProductsTable";
-import DownloadProductsTagsButton from "./DownloadProductsTagsButton";
 
 export default function ShopAdminProductsPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
@@ -325,7 +324,6 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
         <Button variant="outline" onClick={handleExport}>
           <FileDown className="mr-2 h-4 w-4" /> Exportar
         </Button>
-        {authToken && <DownloadProductsTagsButton authToken={authToken} brandId={brand.id} />}
       </div>
     </div>
   );

@@ -2,21 +2,27 @@ import pool from "@/lib/backend/conf/db.connections";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
 import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
+import { ICategory } from "@/lib/backend/models/interfaces/category.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { ITag } from "@/lib/backend/models/interfaces/tag.interface";
 import { Pool, QueryResult } from "pg";
 
 export interface IListProductsParams {
     search?: string;
     brandId?: number;
+    brandIds?: number[];
     tagged?: boolean;
-    tags?: string[];
     productId?: number;
     userQuery?: boolean;
     excludeBrandPaused?: boolean;
     featured?: boolean;
     isLandingPage?: boolean;
     skipAI?: boolean;
+    categoryId?: number;
+    categoryIds?: number[];
+    page?: number;
+    limit?: number;
+    sort?: 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
+    includeCategories?: boolean;
 }
 
 
@@ -51,14 +57,11 @@ class ProductsRepository {
         }
     }
 
-    public async listProducts(params: IListProductsParams, tags?: ITag[], searchEmbedding?: number[]): Promise<IProduct[]> {
-        const uniqueTags = tags?.filter((tag, index, self) =>
-            index === self.findIndex((t) => t.name === tag.name)
-        );
-        const {query, values} = this.constructListQuery(params, uniqueTags, searchEmbedding);
+    public async listProducts(params: IListProductsParams, searchEmbedding?: number[]): Promise<IProduct[]> {
+        const {query, values} = this.constructListQuery(params, searchEmbedding);
         try {
             const res = await this.db.query(query, values);
-            return this.mapProductRows(res.rows);
+            return this.mapProductRows(res.rows, params.includeCategories);
         } catch (err) {
             console.error('Error executing query:', err);
             throw err;
@@ -111,35 +114,6 @@ class ProductsRepository {
             return this.mapProductRows(res.rows)[0];
         } catch (error) {
             console.error('Error inserting product:', error);
-            throw error;
-        }
-    }
-
-    async markProductAsTagged(productId: number): Promise<void> {
-        this.markProductIsTagged(productId, true);
-    }
-
-    async markProductAsUntagged(productId: number): Promise<void> {
-        this.markProductIsTagged(productId, false);
-    }
-
-
-    private async markProductIsTagged(productId: number, isTagged: boolean): Promise<void> {
-        const query: string = `UPDATE Products
-                               SET has_tags_generated = $1
-                               WHERE id = $2;`;
-
-        try {
-            const result = await pool.query(query, [isTagged, productId]);
-
-            if (result.rowCount === 0) {
-                // TODO HANDLE THIS
-                throw new ProductNotFoundException(productId);
-            }
-
-            console.log(`Product with ID ${productId} has been marked as tagged.`);
-        } catch (error) {
-            console.error(`Error marking product as tagged: ${(error as any).message}`);
             throw error;
         }
     }
@@ -294,13 +268,13 @@ class ProductsRepository {
             SELECT p.*, b.status as brand_status
             FROM Products p
             JOIN Brands b ON p.brand_id = b.id
-            WHERE p.embedding IS NULL 
+            WHERE p.embedding IS NULL
             AND p.status NOT IN ('DELETED')
             AND (p.name IS NOT NULL AND p.name != '')
             ORDER BY p.id ASC
             LIMIT $1
         `;
-        
+
         try {
             const res = await this.db.query(query, [limit]);
             return this.mapProductRows(res.rows);
@@ -324,37 +298,83 @@ class ProductsRepository {
     }
 
 
-    private mapProductRows(rows: any[]): IProduct[] {
-        if (rows.length == 0) {
+    private mapProductRows(rows: any[], includeCategories: boolean = false): IProduct[] {
+        if (rows.length === 0) {
             return [];
         }
-        return rows.map(row => ({
-            id: row.id,
-            name: row.name,
-            price: parseFloat(row.price),
-            description: row.description,
-            images: row.images && row.images.length > 0 ? row.images : [],
-            status: row.status,
-            url: row.url,
-            brand: {
-                id: row.brand_id,
-                name: row.brand_name,
-                image: '',
-                websiteUrl: '',
-                status: BrandStatus.ACTIVE, // this is to avoid tslint checks
-                description: ''
+
+        return rows.map(row => {
+            const baseProduct: IProduct = {
+                id: row.id,
+                name: row.name,
+                price: parseFloat(row.price),
+                description: row.description,
+                images: row.images && row.images.length > 0 ? row.images : [],
+                status: row.status,
+                url: row.url,
+                brand: {
+                    id: row.brand_id,
+                    name: row.brand_name,
+                    image: '',
+                    websiteUrl: '',
+                    status: BrandStatus.ACTIVE,
+                    description: ''
+                }
+            };
+
+            if (includeCategories) {
+                this.mapCategoriesToProduct(row, baseProduct);
             }
-        }));
+
+            return baseProduct;
+        });
     }
 
-    private constructListQuery(params: IListProductsParams, tags?: ITag[], searchEmbedding?: number[]): { query: string, values: any[] } {
-        let query = `SELECT DISTINCT p.*`;
-        
-        // Add similarity score if we have embedding
+    private mapCategoriesToProduct(row: any, baseProduct: IProduct) {
+        const categories: ICategory[] = [];
+
+        if (row.category_ids) {
+            const categoryIds = row.category_ids.split(',').filter((id: string) => id && id.trim());
+            const categoryNames = row.category_names ? row.category_names.split('||').filter((name: string) => name) : [];
+            const categorySlugs = row.category_slugs ? row.category_slugs.split('||').filter((slug: string) => slug) : [];
+            const categoryParentIds = row.category_parent_ids ? row.category_parent_ids.split(',').filter((id: string) => id && id.trim()) : [];
+            const categoryLevels = row.category_levels ? row.category_levels.split(',').filter((level: string) => level && level.trim()) : [];
+            const categoryDescriptions = row.category_descriptions ? row.category_descriptions.split('||').filter((desc: string) => desc) : [];
+
+            for (let i = 0; i < categoryIds.length; i++) {
+                if (categoryIds[i]) {
+                    categories.push({
+                        id: parseInt(categoryIds[i]),
+                        name: categoryNames[i] || '',
+                        slug: categorySlugs[i] || '',
+                        parent_id: categoryParentIds[i] ? parseInt(categoryParentIds[i]) : null,
+                        sort_order: 0,
+                        level: categoryLevels[i] ? parseInt(categoryLevels[i]) : 0,
+                        description: categoryDescriptions[i] || null,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    });
+                }
+            }
+        }
+
+        baseProduct.categories = categories;
+    }
+
+    private constructListQuery(params: IListProductsParams, searchEmbedding?: number[]): { query: string, values: any[] } {
+        let query = `SELECT p.*`;
         if (searchEmbedding && searchEmbedding.length > 0) {
             query += `, (1 - (p.embedding <=> $${1}::vector)) AS similarity`;
         }
-        
+        if (params.includeCategories) {
+            query += `, string_agg(c.id::text, ',') as category_ids,
+                        string_agg(c.name, '||') as category_names,
+                        string_agg(c.slug, '||') as category_slugs,
+                        string_agg(c.parent_id::text, ',') as category_parent_ids,
+                        string_agg(c.level::text, ',') as category_levels,
+                        string_agg(c.description, '||') as category_descriptions`;
+        }
+
         query += ` FROM products p`;
         let searchByTsQuery : string = '';
         const conditions: string[] = [];
@@ -380,14 +400,29 @@ class ProductsRepository {
             values.push(BrandStatus.PAUSED);
         }
 
-        if (tags && tags.length > 0) {
-            query += ` JOIN Product_Tags pt ON p.id = pt.product_id
-                       JOIN Tags t ON pt.tag_id = t.id`;
-            const tagNames = tags.map(tag => tag.name);
-            const tagPlaceholders = tagNames.map((_, idx) => `$${values.length + idx + 1}`);
-            conditions.push(`t.name IN (${tagPlaceholders.join(', ')})`);
-            values.push(...tagNames);
+        // Handle category filtering and/or inclusion
+        const needsCategoryJoin = (params.categoryIds && params.categoryIds.length > 0) ||
+                                 params.categoryId ||
+                                 params.includeCategories;
+
+        if (needsCategoryJoin) {
+            query += ' LEFT JOIN product_categories pc ON p.id = pc.product_id ';
+
+            // Add category details if including categories
+            if (params.includeCategories) {
+                query += ' LEFT JOIN Category c ON pc.category_id = c.id ';
+            }
+
+            // Add filtering conditions when filtering by category
+            if (params.categoryIds && params.categoryIds.length > 0) {
+                conditions.push(`pc.category_id = ANY($${values.length + 1})`);
+                values.push(params.categoryIds);
+            } else if (params.categoryId) {
+                conditions.push(`pc.category_id = $${values.length + 1}`);
+                values.push(params.categoryId);
+            }
         }
+
 
         // Handle search: prioritize vector search if we have embedding, fallback to text search
         if (params.search && params.search.trim().length > 0) {
@@ -397,11 +432,7 @@ class ProductsRepository {
                 conditions.push(`(1 - (p.embedding <=> $1)) >= 0.4`); // Similarity threshold
             } else {
                 // Fallback to text search if no embedding
-                if (tags && tags.length > 0) {
-                    searchByTsQuery = `UNION SELECT p.* FROM products p where tsv @@ plainto_tsquery('spanish', $${values.length + 1})`
-                } else {
-                    conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
-                }
+                conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
                 
                 const sanitizedSearch = params.search
                     .trim()
@@ -419,11 +450,6 @@ class ProductsRepository {
             values.push(params.brandId);
         }
 
-        if (params.tagged != undefined && !params.tagged) {
-            conditions.push(`p.has_tags_generated = $${values.length + 1}`);
-            values.push(params.tagged);
-        }
-
         // Add condition to exclude PAUSED products when userQuery is true
         if (params.userQuery) {
             conditions.push(`p.status NOT IN ('PAUSED', 'DELETED')`);
@@ -433,25 +459,46 @@ class ProductsRepository {
             query += ` WHERE ` + conditions.join(' AND ');
         }
 
-        if (tags && tags.length > 0) {
-            query += ` GROUP BY p.id HAVING COUNT(DISTINCT t.name) = ${tags.length} `;
-        } else {
-            query += ` GROUP BY p.id `;
-        }
+        query += ` GROUP BY p.id `;
 
         if (searchByTsQuery != '') {
             query += searchByTsQuery;
         }
 
-        // Add ordering: prioritize vector similarity if available, then by ID
         if (searchEmbedding && searchEmbedding.length > 0) {
-            query += ` ORDER BY similarity DESC, p.id DESC`;
+            query += ` ORDER BY similarity DESC`;
+        } else if (params.sort) {
+            switch (params.sort) {
+                case 'price_asc':
+                    query += ` ORDER BY p.price ASC`;
+                    break;
+                case 'price_desc':
+                    query += ` ORDER BY p.price DESC`;
+                    break;
+                case 'name_asc':
+                    query += ` ORDER BY p.name ASC`;
+                    break;
+                case 'name_desc':
+                    query += ` ORDER BY p.name DESC`;
+                    break;
+                default:
+                    query += ` ORDER BY p.id DESC`;
+            }
         } else {
             query += ` ORDER BY p.id DESC`;
         }
 
-        // Add limit for performance
-        query += ` LIMIT 100`;
+        // Add pagination
+        const limit = params.limit || 100;
+        const offset = params.page && params.page > 1 ? (params.page - 1) * limit : 0;
+
+        query += ` LIMIT $${values.length + 1}`;
+        values.push(limit);
+
+        if (offset > 0) {
+            query += ` OFFSET $${values.length + 1}`;
+            values.push(offset);
+        }
 
         console.log(query, values);
         return {query, values};

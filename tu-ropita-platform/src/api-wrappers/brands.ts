@@ -116,8 +116,9 @@ class PrivateBrandsApiWrapper {
         return updatedBrand as IBrand;
     }
 
-    async getBrandProductsAsPrivilegedUser(auth_token: string, brandId: string): Promise<IListProductResponseDto | null> {
-        const [error, products] = await fetcher(`${ADMIN_BRANDS_PATH}/${brandId}/products`,{
+    async getBrandProductsAsPrivilegedUser(auth_token: string, brandId: string, includeCategories: boolean = false): Promise<IListProductResponseDto | null> {
+        const queryParams = includeCategories ? '?includeCategories=true' : '';
+        const [error, products] = await fetcher(`${ADMIN_BRANDS_PATH}/${brandId}/products${queryParams}`,{
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -214,20 +215,6 @@ class PrivateBrandsApiWrapper {
             return null;
         }
         return {success: true};
-    }
-
-    async getBrandProductsTagsCsvAsPrivilegedUser(auth_token: string, brandId: number): Promise<Blob | null> {
-        const [error, products] = await baseFetcher(`${BRANDS_PATH}/${brandId}/products/tags`,{
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${auth_token}`,
-            },
-        });
-        if (error) {
-            console.error(`Error fetching products by brand id ${brandId}: ${error}`);
-            return null;
-        }
-        return await products.blob();
     }
 }
 

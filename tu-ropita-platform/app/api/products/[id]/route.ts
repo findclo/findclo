@@ -13,7 +13,7 @@ export async function GET(req: Request, {params}: {params: {id:string}}) {
         }
         const url = new URL(req.url);
         const queryParams = new URLSearchParams(url.search);
-        // example of url : BASEURL/api/products?search=xxx&brandId=xxx&tag=summer&tag=..
+        // example of url : BASEURL/api/products?search=xxx&brandId=xxx
         const product: IProduct = await productService.getProductById(parseInt(params.id),true);
         return new Response(JSON.stringify(product), { status: 200 ,
             headers: {
