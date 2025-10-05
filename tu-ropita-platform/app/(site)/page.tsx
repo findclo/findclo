@@ -1,5 +1,6 @@
 import { publicProductsApiWrapper } from "@/api-wrappers/products";
 import { Carousel } from "@/components/Carousel";
+import { CategoryMegaMenu } from "@/components/CategoryMegaMenu";
 import { SearchBar } from "@/components/SearchBar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
@@ -25,7 +26,10 @@ export default async function Home() {
 
   return (
     <>
-      <SearchBar initialQuery={""}  isHomePage={true} />
+      <CategoryMegaMenu />
+      <div className="mt-4">
+        <SearchBar initialQuery={""}  isHomePage={true} />
+      </div>
 
       {carouselItems.length > 0? (
         <>

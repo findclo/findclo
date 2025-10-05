@@ -1,4 +1,5 @@
 import { publicProductsApiWrapper } from "@/api-wrappers/products";
+import { CategoryMegaMenu } from "@/components/CategoryMegaMenu";
 import RelatedProducts from "@/components/RelatedProducts";
 import { SearchBar } from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
@@ -56,7 +57,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     return (
         <>
-            <div className="mb-8">
+            <CategoryMegaMenu activeCategoryId={categoryId} currentSearchQuery={query} />
+
+            <div className="mt-4 mb-8">
                 <SearchBar
                     initialQuery={query}
                     categoryId={categoryId}

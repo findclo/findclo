@@ -9,7 +9,6 @@ import { BarChart, CreditCard, Home, LogOut, Menu, Package, ShoppingBag, Store, 
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-// import { CategoryNavigationResponsive } from './CategoryNavigationResponsive';
 
 const Header = () => {
   const { user, signOut } = useUser();
@@ -167,16 +166,6 @@ const Header = () => {
               </Button>
             )}
           </nav>
-        </div>
-        
-        {/* Category Navigation for Desktop */}
-        <div className="border-t bg-gray-50 dark:bg-gray-900">
-          <div className="container py-2">
-            {/* <CategoryNavigationResponsive
-              variant="header"
-              showProductCount={true}
-            /> */}
-          </div>
         </div>
       </header>
 
