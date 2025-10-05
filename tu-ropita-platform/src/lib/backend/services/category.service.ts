@@ -33,13 +33,15 @@ export class CategoryService {
                 throw new Error('Invalid parent category for hierarchy');
             }
         }
-
-        return await categoryRepository.createCategory(categoryData, this.generateSlug(categoryData.name));
+        const hierarchicalSlug = await this.generateHierarchicalSlug(categoryData.name, categoryData.parent_id || null);
+        return await categoryRepository.createCategory(categoryData, hierarchicalSlug);
     }
 
     async updateCategory(categoryId: number, categoryData: ICategoryUpdateDTO): Promise<ICategory> {
-        if (categoryData.name ) {
-            categoryData.slug = this.generateSlug(categoryData.name);
+        if (categoryData.name) {
+            const currentCategory = await categoryRepository.getCategoryById(categoryId);
+            const parentId = categoryData.parent_id !== undefined ? categoryData.parent_id : currentCategory.parent_id;
+            categoryData.slug = await this.generateHierarchicalSlug(categoryData.name, parentId);
         }
 
         if (categoryData.parent_id !== undefined) {
@@ -81,6 +83,9 @@ export class CategoryService {
         }
 
         await categoryRepository.updateCategoryHierarchy(categoryId, newParentId);
+        
+        // Regenerate slug for the moved category and all its descendants
+        await this.regenerateSlugsForCategoryAndDescendants(categoryId);
     }
 
     async validateCategoryHierarchy(categoryId: number, newParentId: number | null): Promise<boolean> {
@@ -101,6 +106,36 @@ export class CategoryService {
             .replace(/\s+/g, '-')
             .replace(/-+/g, '-')
             .trim();
+    }
+
+    private async generateHierarchicalSlug(name: string, parentId: number | null): Promise<string> {
+        const baseSlug = this.generateSlug(name);
+        
+        if (!parentId) {
+            return baseSlug;
+        }
+
+        const breadcrumb = await this.getCategoryBreadcrumb(parentId);
+        const parentSlugs = breadcrumb.map(category => category.slug);
+        const hierarchicalSlug = [...parentSlugs, baseSlug].join('-');
+        
+        return  hierarchicalSlug.substring(hierarchicalSlug.length - 250);
+    }
+
+    private async regenerateSlugsForCategoryAndDescendants(categoryId: number): Promise<void> {
+        const category = await categoryRepository.getCategoryById(categoryId);
+        const newSlug = await this.generateHierarchicalSlug(category.name, category.parent_id);
+        
+        // Update the category's slug
+        await categoryRepository.updateCategory(categoryId, { slug: newSlug });
+        
+        // Get all descendants and regenerate their slugs
+        const descendants = await this.getDescendantIds(categoryId);
+        for (const descendantId of descendants) {
+            const descendant = await categoryRepository.getCategoryById(descendantId);
+            const descendantNewSlug = await this.generateHierarchicalSlug(descendant.name, descendant.parent_id);
+            await categoryRepository.updateCategory(descendantId, { slug: descendantNewSlug });
+        }
     }
 
     private countCategoriesInTree(tree: ICategoryTree[]): number {
