@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CategorySelector } from "./CategorySelector";
 
 export interface SearchBarProps {
   initialQuery: string;
@@ -16,7 +15,6 @@ export interface SearchBarProps {
 
 export function SearchBar({
   initialQuery,
-  isHomePage = false,
   categoryId = null,
 }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -41,10 +39,10 @@ export function SearchBar({
       const queryParams = new URLSearchParams();
       setIsLoading(true);
       if (searchQuery.trim()) {
-        queryParams.append('search', searchQuery.trim()+'&');
+        queryParams.append('search', searchQuery.trim());
       }
       if (selectedCategoryId) {
-        queryParams.append('categoryId', selectedCategoryId.toString()+'&');
+        queryParams.append('categoryId', selectedCategoryId.toString());
       }
       router.push(`/search?${queryParams.toString()}`);
       setIsLoading(false);
@@ -54,22 +52,8 @@ export function SearchBar({
     }
   }, [searchQuery, selectedCategoryId, router]);
 
-  const handleCategoryChange = useCallback((categoryId: number | null) => {
-    setSelectedCategoryId(categoryId);
-  }, [categoryId]);
-
-
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      {/* Category Selector */}
-      <div className="mb-4">
-        <CategorySelector
-          selectedCategoryId={selectedCategoryId}
-          onCategoryChange={handleCategoryChange}
-          className="w-full"
-        />
-      </div>
-
+    <div className="relative z-10 w-full max-w-3xl mx-auto">
       {/* Search Form */}
       <div className="flex justify-center w-full mb-4">
         <form
