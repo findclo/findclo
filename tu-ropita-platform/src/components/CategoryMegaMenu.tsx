@@ -113,11 +113,11 @@ export const CategoryMegaMenu = ({ activeCategoryId = null, currentSearchQuery =
                 Categorías
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80">
+            <SheetContent side="left" className="w-80 flex flex-col">
               <SheetHeader>
                 <SheetTitle>Categorías</SheetTitle>
               </SheetHeader>
-              <div className="mt-6">
+              <div className="mt-6 overflow-y-auto max-h-[calc(100vh-8rem)] pr-2">
                 <Accordion type="single" collapsible className="w-full">
                   {mainCategories.map((mainCategory) => (
                     <AccordionItem key={mainCategory.id} value={`cat-${mainCategory.id}`}>
