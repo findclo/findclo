@@ -105,9 +105,14 @@ class ProductService {
 
     public async createProduct(product: IProductDTO, brandId: string): Promise<IProduct> {
         const createdProduct = await productRepository.createProduct(product, brandId);
-        
+
+        // Assign categories if provided
+        if (product.category_ids && product.category_ids.length > 0) {
+            await categoryService.assignProductToCategories(createdProduct.id, product.category_ids);
+        }
+
         embeddingProcessorService.generateEmbeddingForProduct(createdProduct.id);
-        
+
         return createdProduct;
     }
 

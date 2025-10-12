@@ -88,7 +88,7 @@ export default function ShopAdminProductsPage() {
     );
   }
 
-  const handleAddProduct = async (productData: Partial<IProduct>) => {
+  const handleAddProduct = async (productData: Partial<IProduct> & { category_ids?: number[] }) => {
     if (!brand) {
       toast({
         type: "error",
@@ -115,12 +115,21 @@ export default function ShopAdminProductsPage() {
           description: productData.description || "",
           images: productData.images || [],
           url: productData.url || "",
+          category_ids: productData.category_ids || []
         }
       );
 
       if (createdProduct) {
+        const categoryMessage = productData.category_ids && productData.category_ids.length > 0
+          ? ` con ${productData.category_ids.length} categoría(s)`
+          : "";
+
+        toast({
+          type: "success",
+          message: `Producto añadido correctamente${categoryMessage}.`
+        });
+
         setProducts(prevProducts => [...prevProducts, createdProduct]);
-        toast({ type: "success", message: "Producto añadido correctamente." });
         setNewProduct({ name: "", price: 0, images: [], description: "" });
         setIsAddProductOpen(false);
       } else {
@@ -130,6 +139,7 @@ export default function ShopAdminProductsPage() {
         });
       }
     } catch (error) {
+      console.error("Error adding product:", error);
       toast({
         type: "error",
         message: "Ocurrió un error al añadir el producto.",
