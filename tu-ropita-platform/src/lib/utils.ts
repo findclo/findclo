@@ -143,3 +143,10 @@ export function parseErrorResponse(error:any): Response {
     headers: { 'Content-Type': 'application/json' }
   });
 }
+
+export function parseSuccessResponse(data: any): Response {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}

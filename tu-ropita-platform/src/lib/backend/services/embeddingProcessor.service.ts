@@ -87,7 +87,7 @@ class EmbeddingProcessorService implements IEmbeddingProcessorService {
             if (!product || !product.name || product.name.trim().length === 0) {
                 return false;
             }
-
+            // TODO: Add attributes to the embedding
             const textForEmbedding = [
                 'Nombre producto: ',
                 product.name,

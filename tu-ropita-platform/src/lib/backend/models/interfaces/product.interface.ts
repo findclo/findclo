@@ -1,5 +1,6 @@
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { ICategory } from "@/lib/backend/models/interfaces/category.interface";
+import { IProductAttribute } from "./attribute.interface";
 
 export interface IProduct {
     id: number;
