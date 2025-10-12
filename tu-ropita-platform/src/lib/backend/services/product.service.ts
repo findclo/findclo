@@ -1,4 +1,4 @@
-import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
+import { IAttributeFilterMap, IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
@@ -73,15 +73,22 @@ class ProductService {
             params.excludeBrandPaused = true;
         }
 
+        // Enable attribute inclusion for filter aggregation
+        params.includeAttributes = true;
+
         const products : IProduct[] = await productRepository.listProducts(params, searchEmbedding);
         // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
         productsInteractionsService.addListOfProductViewInListingRelatedInteraction(products.map(p => p.id.toString())).then(r  =>{});
+
+        // Aggregate attributes from products for filtering
+        const attributes = this.aggregateAttributesFromProducts(products);
 
         return {
             pageNum: 1,
             pageSize: products.length,
             products: products,
-            totalPages: 1
+            totalPages: 1,
+            attributes
         };
 
     }
@@ -133,6 +140,54 @@ class ProductService {
         return productRepository.updateProductStatus(id,status);
     }
 
+    private aggregateAttributesFromProducts(products: IProduct[]): IAttributeFilterMap[] {
+        const attributeMap = new Map<number, {
+            attribute_id: number;
+            attribute_name: string;
+            attribute_slug: string;
+            values: Map<number, { value_id: number; value: string; value_slug: string; count: number }>;
+        }>();
+
+        // Aggregate all attributes and values from products
+        products.forEach(product => {
+            if (product.attributes && product.attributes.length > 0) {
+                product.attributes.forEach(attr => {
+                    // Get or create attribute entry
+                    if (!attributeMap.has(attr.attribute_id)) {
+                        attributeMap.set(attr.attribute_id, {
+                            attribute_id: attr.attribute_id,
+                            attribute_name: attr.attribute_name,
+                            attribute_slug: attr.attribute_slug,
+                            values: new Map()
+                        });
+                    }
+
+                    const attrEntry = attributeMap.get(attr.attribute_id)!;
+
+                    // Get or create value entry
+                    if (!attrEntry.values.has(attr.value_id)) {
+                        attrEntry.values.set(attr.value_id, {
+                            value_id: attr.value_id,
+                            value: attr.value,
+                            value_slug: attr.value_slug,
+                            count: 0
+                        });
+                    }
+
+                    // Increment count
+                    attrEntry.values.get(attr.value_id)!.count++;
+                });
+            }
+        });
+
+        // Convert maps to arrays
+        return Array.from(attributeMap.values()).map(attr => ({
+            attribute_id: attr.attribute_id,
+            attribute_name: attr.attribute_name,
+            attribute_slug: attr.attribute_slug,
+            values: Array.from(attr.values.values()).sort((a, b) => a.value.localeCompare(b.value))
+        })).sort((a, b) => a.attribute_name.localeCompare(b.attribute_name));
+    }
 }
 
 export const productService : ProductService = new ProductService();

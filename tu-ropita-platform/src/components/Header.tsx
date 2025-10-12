@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { IUser, UserTypeEnum } from '@/lib/backend/models/interfaces/user.interface';
 import { cn } from "@/lib/utils"; // Make sure you have this utility function
 import { useUser } from '@/providers/ClientUserProvider';
-import { BarChart, CreditCard, Home, LogOut, Menu, Package, ShoppingBag, Store, User, Layers } from 'lucide-react';
+import { BarChart, CreditCard, Home, LogOut, Menu, Package, ShoppingBag, Store, User, Layers, Tags } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -47,6 +47,7 @@ const Header = () => {
       return [
         { label: 'Comercios', href: '/admin', icon: Store },
         { label: 'Categorías', href: '/admin/categories', icon: Layers },
+        { label: 'Atributos', href: '/admin/attributes', icon: Tags },
         { label: 'Estadísticas', href: '/admin/stats', icon: BarChart },
         { label: 'Facturación', href: '/admin/billing', icon: CreditCard },
       ];

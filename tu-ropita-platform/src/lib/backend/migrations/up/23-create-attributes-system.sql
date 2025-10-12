@@ -5,10 +5,6 @@ CREATE TABLE attributes (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     slug VARCHAR(100) NOT NULL UNIQUE,
-    type VARCHAR(50) NOT NULL CHECK (type IN ('select', 'multiselect', 'text', 'number', 'boolean')),
-    filterable BOOLEAN DEFAULT TRUE,
-    visible_in_ui BOOLEAN DEFAULT TRUE,
-    sort_order INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -19,7 +15,6 @@ CREATE TABLE attribute_values (
     attribute_id INT NOT NULL REFERENCES attributes(id) ON DELETE CASCADE,
     value VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
-    sort_order INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(attribute_id, slug)
@@ -36,8 +31,6 @@ CREATE TABLE product_attributes (
 );
 
 CREATE INDEX idx_attributes_slug ON attributes(slug);
-CREATE INDEX idx_attributes_type ON attributes(type);
-CREATE INDEX idx_attributes_filterable ON attributes(filterable);
 
 CREATE INDEX idx_attribute_values_attribute ON attribute_values(attribute_id);
 CREATE INDEX idx_attribute_values_slug ON attribute_values(attribute_id, slug);

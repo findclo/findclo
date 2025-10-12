@@ -10,12 +10,17 @@ import { Plus, ChevronRight, ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { CategorySelector } from "./CategorySelector";
 import { StepIndicator } from "./StepIndicator";
+import { AttributeSelector } from "./AttributeSelector";
 import toast from "@/components/toast";
+import { IProductAttributeAssignment } from "@/lib/backend/dtos/attribute.dto.interface";
 
 interface AddProductDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  handleAddProduct: (product: Partial<IProduct> & { category_ids?: number[] }) => void;
+  handleAddProduct: (product: Omit<Partial<IProduct>, 'attributes'> & {
+    category_ids?: number[];
+    attributes?: IProductAttributeAssignment[];
+  }) => void;
 }
 
 const AddProductDialog: React.FC<AddProductDialogProps> = ({
@@ -32,6 +37,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
     url: "",
   });
   const [selectedCategories, setSelectedCategories] = useState<Set<number>>(new Set());
+  const [selectedAttributes, setSelectedAttributes] = useState<Map<number, Set<number>>>(new Map());
 
   // Reset step when dialog opens/closes
   useEffect(() => {
@@ -69,26 +75,40 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
   };
 
   const handleNext = () => {
-    if (validateStep1()) {
+    if (currentStep === 1 && validateStep1()) {
       setCurrentStep(2);
+    } else if (currentStep === 2) {
+      setCurrentStep(3);
     }
   };
 
   const handleBack = () => {
-    setCurrentStep(1);
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const onAddProduct = async () => {
+    // Convert selectedAttributes Map to IProductAttributeAssignment[]
+    const attributes: IProductAttributeAssignment[] = Array.from(selectedAttributes.entries()).map(
+      ([attribute_id, value_ids]) => ({
+        attribute_id,
+        value_ids: Array.from(value_ids)
+      })
+    );
+
     const filteredProduct = {
       ...newProduct,
       images: (newProduct.images || []).filter(url => url.trim() !== ""),
-      category_ids: Array.from(selectedCategories)
+      category_ids: Array.from(selectedCategories),
+      attributes: attributes.length > 0 ? attributes : undefined
     };
     await handleAddProduct(filteredProduct);
 
     // Reset form
     setNewProduct({ name: "", price: 0, images: [""], description: "", url: "" });
     setSelectedCategories(new Set());
+    setSelectedAttributes(new Map());
     setCurrentStep(1);
     setIsOpen(false);
   };
@@ -198,6 +218,18 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
     </div>
   );
 
+  const renderStep3 = () => (
+    <div className="space-y-4">
+      <div className="text-sm text-gray-600 dark:text-gray-400">
+        Selecciona los atributos para tu producto (opcional). Los atributos ayudan a los clientes a filtrar productos.
+      </div>
+      <AttributeSelector
+        selectedAttributes={selectedAttributes}
+        onAttributesChange={setSelectedAttributes}
+      />
+    </div>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -211,12 +243,13 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
         </DialogHeader>
 
         {/* Step Indicator */}
-        <StepIndicator currentStep={currentStep} totalSteps={2} />
+        <StepIndicator currentStep={currentStep} totalSteps={3} />
 
         {/* Step Content */}
         <div className="py-4">
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
+          {currentStep === 3 && renderStep3()}
         </div>
 
         {/* Navigation Buttons */}
@@ -230,7 +263,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
             </Button>
           )}
 
-          {currentStep === 1 ? (
+          {currentStep < 3 ? (
             <Button onClick={handleNext}>
               Siguiente
               <ChevronRight className="w-4 h-4 ml-1" />

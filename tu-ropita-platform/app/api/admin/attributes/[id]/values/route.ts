@@ -16,8 +16,7 @@ export const POST = withAdminPermission(async (req: Request, { params }: { param
 
         const valueData: IAttributeValueCreateDTO = await getDtoFromBody(
             req,
-            ['value'],
-            ['sort_order']
+            ['value']
         );
 
         const attributeValue = await attributeService.createAttributeValue(attributeId, valueData);

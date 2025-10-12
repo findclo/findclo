@@ -7,9 +7,8 @@ export const GET = withAdminPermission(async (req: Request) => {
     try {
         const url = new URL(req.url);
         const includeValues = url.searchParams.get('include_values') === 'true';
-        const filterableOnly = url.searchParams.get('filterable_only') === 'true';
 
-        const attributes = await attributeService.listAttributes(includeValues, filterableOnly);
+        const attributes = await attributeService.listAttributes(includeValues);
 
         return parseSuccessResponse(attributes);
     } catch (error: any) {
@@ -22,8 +21,7 @@ export const POST = withAdminPermission(async (req: Request) => {
     try {
         const attributeData: IAttributeCreateDTO = await getDtoFromBody(
             req,
-            ['name', 'type'],
-            ['filterable', 'visible_in_ui', 'sort_order']
+            ['name']
         );
 
         const attribute = await attributeService.createAttribute(attributeData);

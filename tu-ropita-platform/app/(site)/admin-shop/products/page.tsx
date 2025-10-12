@@ -3,7 +3,9 @@
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { privateProductsApiWrapper } from "@/api-wrappers/products";
 import { privatePromotionsApiWrapper } from "@/api-wrappers/promotions";
+import { privateAttributesApiWrapper } from "@/api-wrappers/attributes";
 import toast from "@/components/toast";
+import { IProductAttributeAssignment } from "@/lib/backend/dtos/attribute.dto.interface";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -88,7 +90,10 @@ export default function ShopAdminProductsPage() {
     );
   }
 
-  const handleAddProduct = async (productData: Partial<IProduct> & { category_ids?: number[] }) => {
+  const handleAddProduct = async (productData: Omit<Partial<IProduct>, 'attributes'> & {
+    category_ids?: number[];
+    attributes?: IProductAttributeAssignment[];
+  }): Promise<void> => {
     if (!brand) {
       toast({
         type: "error",
@@ -120,13 +125,33 @@ export default function ShopAdminProductsPage() {
       );
 
       if (createdProduct) {
+        // Assign attributes if provided
+        if (productData.attributes && productData.attributes.length > 0) {
+          try {
+            await privateAttributesApiWrapper.assignProductAttributes(
+              authToken,
+              createdProduct.id,
+              { attributes: productData.attributes }
+            );
+          } catch (attrError) {
+            console.error("Error assigning attributes:", attrError);
+            toast({
+              type: "warning",
+              message: "Producto creado, pero hubo un error al asignar los atributos.",
+            });
+          }
+        }
+
         const categoryMessage = productData.category_ids && productData.category_ids.length > 0
           ? ` con ${productData.category_ids.length} categoría(s)`
+          : "";
+        const attributesMessage = productData.attributes && productData.attributes.length > 0
+          ? ` y ${productData.attributes.length} atributo(s)`
           : "";
 
         toast({
           type: "success",
-          message: `Producto añadido correctamente${categoryMessage}.`
+          message: `Producto añadido correctamente${categoryMessage}${attributesMessage}.`
         });
 
         setProducts(prevProducts => [...prevProducts, createdProduct]);

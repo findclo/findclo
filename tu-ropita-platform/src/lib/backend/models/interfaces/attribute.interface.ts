@@ -1,13 +1,7 @@
-export type AttributeType = 'select' | 'multiselect' | 'text' | 'number' | 'boolean';
-
 export interface IAttribute {
     id: number;
     name: string;
     slug: string;
-    type: AttributeType;
-    filterable: boolean;
-    visible_in_ui: boolean;
-    sort_order: number;
     created_at: Date;
     updated_at: Date;
 }
@@ -17,7 +11,6 @@ export interface IAttributeValue {
     attribute_id: number;
     value: string;
     slug: string;
-    sort_order: number;
     created_at: Date;
     updated_at: Date;
 }
@@ -38,6 +31,8 @@ export interface IProductAttribute {
 export interface IProductAttributeDetail {
     attribute_id: number;
     attribute_name: string;
+    attribute_slug: string;
     value_id: number;
     value: string;
+    value_slug: string;
 }

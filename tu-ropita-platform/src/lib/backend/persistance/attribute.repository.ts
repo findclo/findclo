@@ -24,18 +24,14 @@ class AttributeRepository {
 
     async createAttribute(data: IAttributeCreateDTO, slug: string): Promise<IAttribute> {
         const query = `
-            INSERT INTO attributes (name, slug, type, filterable, visible_in_ui, sort_order)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, name, slug, type, filterable, visible_in_ui, sort_order, created_at, updated_at
+            INSERT INTO attributes (name, slug)
+            VALUES ($1, $2)
+            RETURNING id, name, slug, created_at, updated_at
         `;
 
         const values = [
             data.name,
-            slug,
-            data.type,
-            data.filterable ?? true,
-            data.visible_in_ui ?? true,
-            data.sort_order ?? 0
+            slug
         ];
 
         try {
@@ -60,7 +56,7 @@ class AttributeRepository {
 
     async getAttributeById(id: number): Promise<IAttribute> {
         const query = `
-            SELECT id, name, slug, type, filterable, visible_in_ui, sort_order, created_at, updated_at
+            SELECT id, name, slug, created_at, updated_at
             FROM attributes WHERE id = $1
         `;
         const result = await this.db.query(query, [id]);
@@ -72,7 +68,7 @@ class AttributeRepository {
 
     async getAttributeBySlug(slug: string): Promise<IAttribute> {
         const query = `
-            SELECT id, name, slug, type, filterable, visible_in_ui, sort_order, created_at, updated_at
+            SELECT id, name, slug, created_at, updated_at
             FROM attributes WHERE slug = $1
         `;
         const result = await this.db.query(query, [slug]);
@@ -82,17 +78,12 @@ class AttributeRepository {
         return this.mapAttributeRow(result.rows[0]);
     }
 
-    async listAttributes(filterableOnly?: boolean): Promise<IAttribute[]> {
-        let query = `
-            SELECT id, name, slug, type, filterable, visible_in_ui, sort_order, created_at, updated_at
+    async listAttributes(): Promise<IAttribute[]> {
+        const query = `
+            SELECT id, name, slug, created_at, updated_at
             FROM attributes
+            ORDER BY name
         `;
-
-        if (filterableOnly) {
-            query += ' WHERE filterable = true';
-        }
-
-        query += ' ORDER BY sort_order, name';
 
         try {
             const result = await this.db.query(query);
@@ -113,8 +104,8 @@ class AttributeRepository {
         };
     }
 
-    async listAttributesWithValues(filterableOnly?: boolean): Promise<IAttributeWithValues[]> {
-        const attributes = await this.listAttributes(filterableOnly);
+    async listAttributesWithValues(): Promise<IAttributeWithValues[]> {
+        const attributes = await this.listAttributes();
 
         const attributesWithValues = await Promise.all(
             attributes.map(async (attribute) => {
@@ -133,16 +124,15 @@ class AttributeRepository {
 
     async createAttributeValue(attributeId: number, data: IAttributeValueCreateDTO, slug: string): Promise<IAttributeValue> {
         const query = `
-            INSERT INTO attribute_values (attribute_id, value, slug, sort_order)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id, attribute_id, value, slug, sort_order, created_at, updated_at
+            INSERT INTO attribute_values (attribute_id, value, slug)
+            VALUES ($1, $2, $3)
+            RETURNING id, attribute_id, value, slug, created_at, updated_at
         `;
 
         const values = [
             attributeId,
             data.value,
-            slug,
-            data.sort_order ?? 0
+            slug
         ];
 
         try {
@@ -167,10 +157,10 @@ class AttributeRepository {
 
     async listAttributeValues(attributeId: number): Promise<IAttributeValue[]> {
         const query = `
-            SELECT id, attribute_id, value, slug, sort_order, created_at, updated_at
+            SELECT id, attribute_id, value, slug, created_at, updated_at
             FROM attribute_values
             WHERE attribute_id = $1
-            ORDER BY sort_order, value
+            ORDER BY value
         `;
 
         try {
@@ -184,7 +174,7 @@ class AttributeRepository {
 
     async getAttributeValueBySlug(attributeId: number, slug: string): Promise<IAttributeValue> {
         const query = `
-            SELECT id, attribute_id, value, slug, sort_order, created_at, updated_at
+            SELECT id, attribute_id, value, slug, created_at, updated_at
             FROM attribute_values
             WHERE attribute_id = $1 AND slug = $2
         `;
@@ -247,7 +237,6 @@ class AttributeRepository {
                 a.id as attribute_id,
                 a.name as attribute_name,
                 a.slug as attribute_slug,
-                a.type as attribute_type,
                 av.id as value_id,
                 av.value as value,
                 av.slug as value_slug
@@ -255,7 +244,7 @@ class AttributeRepository {
             JOIN attributes a ON pa.attribute_id = a.id
             JOIN attribute_values av ON pa.attribute_value_id = av.id
             WHERE pa.product_id = $1
-            ORDER BY a.sort_order, a.name, av.sort_order, av.value
+            ORDER BY a.name, av.value
         `;
 
         try {
@@ -293,10 +282,6 @@ class AttributeRepository {
             id: row.id,
             name: row.name,
             slug: row.slug,
-            type: row.type,
-            filterable: row.filterable,
-            visible_in_ui: row.visible_in_ui,
-            sort_order: row.sort_order,
             created_at: new Date(row.created_at),
             updated_at: new Date(row.updated_at)
         };
@@ -308,7 +293,6 @@ class AttributeRepository {
             attribute_id: row.attribute_id,
             value: row.value,
             slug: row.slug,
-            sort_order: row.sort_order,
             created_at: new Date(row.created_at),
             updated_at: new Date(row.updated_at)
         };
@@ -318,8 +302,10 @@ class AttributeRepository {
         return {
             attribute_id: row.attribute_id,
             attribute_name: row.attribute_name,
+            attribute_slug: row.attribute_slug || '',
             value_id: row.value_id,
             value: row.value,
+            value_slug: row.value_slug || '',
         };
     }
 }

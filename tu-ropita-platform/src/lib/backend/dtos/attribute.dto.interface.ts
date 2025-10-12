@@ -1,20 +1,13 @@
-import { AttributeType } from "@/lib/backend/models/interfaces/attribute.interface";
-
 // ========== ATTRIBUTE DTOs ==========
 
 export interface IAttributeCreateDTO {
     name: string;
-    type: AttributeType;
-    filterable?: boolean;
-    visible_in_ui?: boolean;
-    sort_order?: number;
 }
 
 // ========== ATTRIBUTE VALUE DTOs ==========
 
 export interface IAttributeValueCreateDTO {
     value: string;
-    sort_order?: number;
 }
 
 // ========== PRODUCT ATTRIBUTES DTOs ==========

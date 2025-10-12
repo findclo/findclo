@@ -1,6 +1,4 @@
 DROP INDEX IF EXISTS idx_attributes_slug;
-DROP INDEX IF EXISTS idx_attributes_type;
-DROP INDEX IF EXISTS idx_attributes_filterable;
 DROP INDEX IF EXISTS idx_attribute_values_attribute;
 DROP INDEX IF EXISTS idx_attribute_values_slug;
 DROP INDEX IF EXISTS idx_product_attributes_product;

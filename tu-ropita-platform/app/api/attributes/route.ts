@@ -3,8 +3,8 @@ import { attributeService } from "@/lib/backend/services/attribute.service";
 // GET /api/attributes - Public endpoint for filtering UI
 export async function GET(req: Request) {
     try {
-        // Always return filterable attributes with their values for public filtering UI
-        const attributes = await attributeService.listAttributes(true, true);
+        // Return all attributes with their values for public filtering UI
+        const attributes = await attributeService.listAttributes(true);
 
         return new Response(JSON.stringify(attributes), {
             status: 200,

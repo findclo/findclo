@@ -45,11 +45,11 @@ class AttributeService {
         return await attributeRepository.getAttributeBySlug(slug);
     }
 
-    async listAttributes(includeValues?: boolean, filterableOnly?: boolean): Promise<IAttribute[] | IAttributeWithValues[]> {
+    async listAttributes(includeValues?: boolean): Promise<IAttribute[] | IAttributeWithValues[]> {
         if (includeValues) {
-            return await attributeRepository.listAttributesWithValues(filterableOnly);
+            return await attributeRepository.listAttributesWithValues();
         }
-        return await attributeRepository.listAttributes(filterableOnly);
+        return await attributeRepository.listAttributes();
     }
 
     async getAttributeWithValues(attributeId: number): Promise<IAttributeWithValues> {

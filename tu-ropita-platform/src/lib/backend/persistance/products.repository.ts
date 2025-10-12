@@ -1,7 +1,7 @@
 import pool from "@/lib/backend/conf/db.connections";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
-import { AttributeType, IProductAttributeDetail } from "@/lib/backend/models/interfaces/attribute.interface";
+import { IProductAttributeDetail } from "@/lib/backend/models/interfaces/attribute.interface";
 import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
 import { ICategory } from "@/lib/backend/models/interfaces/category.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
@@ -385,9 +385,10 @@ class ProductsRepository {
         if (params.includeAttributes) {
             query += `, string_agg(DISTINCT a.id::text, ',') as attribute_ids,
             string_agg(a.name, '||') as attribute_names,
-            string_agg(a.type, '||') as attribute_types,
+            string_agg(a.slug, '||') as attribute_slugs,
             string_agg(av.id::text, ',') as value_ids,
-            string_agg(av.value, '||') as values`;
+            string_agg(av.value, '||') as values,
+            string_agg(av.slug, '||') as value_slugs`;
         }
 
         query += ` FROM products p`;
@@ -449,6 +450,12 @@ class ProductsRepository {
             if (params.includeAttributes) {
                 query += ' LEFT JOIN attributes a ON pa.attribute_id = a.id ';
                 query += ' LEFT JOIN attribute_values av ON pa.attribute_value_id = av.id ';
+            }
+
+            // Add filtering condition when filtering by attribute values
+            if (params.attributeValueIds && params.attributeValueIds.length > 0) {
+                conditions.push(`pa.attribute_value_id = ANY($${values.length + 1})`);
+                values.push(params.attributeValueIds);
             }
         }
 
@@ -537,16 +544,20 @@ class ProductsRepository {
         if (row.attribute_ids) {
             const attributeIds = row.attribute_ids.split(',').filter((id: string) => id && id.trim());
             const attributeNames = row.attribute_names ? row.attribute_names.split('||').filter((name: string) => name) : [];
+            const attributeSlugs = row.attribute_slugs ? row.attribute_slugs.split('||').filter((slug: string) => slug) : [];
             const valueIds = row.value_ids ? row.value_ids.split(',').filter((id: string) => id && id.trim()) : [];
             const values = row.values ? row.values.split('||').filter((val: string) => val) : [];
+            const valueSlugs = row.value_slugs ? row.value_slugs.split('||').filter((slug: string) => slug) : [];
 
             for (let i = 0; i < attributeIds.length; i++) {
                 if (attributeIds[i]) {
                     attributes.push({
                         attribute_id: parseInt(attributeIds[i]),
                         attribute_name: attributeNames[i] || '',
+                        attribute_slug: attributeSlugs[i] || '',
                         value_id: valueIds[i] ? parseInt(valueIds[i]) : 0,
                         value: values[i] || '',
+                        value_slug: valueSlugs[i] || '',
                     });
                 }
             }
