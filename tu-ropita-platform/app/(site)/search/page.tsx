@@ -3,6 +3,7 @@ import { CategoryMegaMenu } from "@/components/CategoryMegaMenu";
 import RelatedProducts from "@/components/RelatedProducts";
 import { SearchBar } from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
+import { ProductFilters } from "@/components/ProductFilters";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 
 interface SearchPageProps {
@@ -10,6 +11,7 @@ interface SearchPageProps {
         search?: string;
         categoryId?: string;
         skipAI?: boolean;
+        [key: string]: string | boolean | undefined; // Allow any additional params for attribute filters
     };
 }
 
@@ -19,12 +21,21 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     let products: IProduct[] = [];
     let noProductsFound = false;
+    let attributes: any[] = [];
 
     try {
+        // Build filters object including all params (for attribute filters)
         const filters: any = { skipAI: searchParams.skipAI };
         if (categoryId) {
             filters.categoryId = categoryId;
         }
+
+        // Add all other params (attribute filters)
+        Object.entries(searchParams).forEach(([key, value]) => {
+            if (key !== 'search' && key !== 'categoryId' && key !== 'skipAI' && value !== undefined) {
+                filters[key] = value;
+            }
+        });
 
         const result = await publicProductsApiWrapper.getFilteredProducts(query, filters);
         if (result && result.products.length > 0) {
@@ -35,6 +46,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             noProductsFound = true;
         } else {
             products = result.products;
+            attributes = result.attributes || [];
         }
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -66,8 +78,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 />
             </div>
 
-            <div className="flex flex-col md:flex-row gap-8">
-                <div className="w-full">
+            <div className="flex gap-6">
+                {/* Filtros - Desktop sidebar */}
+                {attributes.length > 0 && (
+                    <ProductFilters attributes={attributes} />
+                )}
+
+                {/* Contenido principal */}
+                <div className="flex-1">
                     {noProductsFound && recommendedProducts.length === 0 ? (
                         <div className="text-center py-8">
                             <p className="text-xl text-gray-600">No se encontraron productos para la búsqueda especificada</p>
@@ -81,9 +99,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     </div>
                                     {recommendedProducts.length > 0 && (
                                         <div className="mt-4">
-                                            <RelatedProducts 
-                                                brandName={""} 
-                                                products={recommendedProducts} 
+                                            <RelatedProducts
+                                                brandName={""}
+                                                products={recommendedProducts}
                                             />
                                         </div>
                                     )}

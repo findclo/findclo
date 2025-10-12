@@ -3,7 +3,9 @@
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { privateProductsApiWrapper } from "@/api-wrappers/products";
 import { privatePromotionsApiWrapper } from "@/api-wrappers/promotions";
+import { privateAttributesApiWrapper } from "@/api-wrappers/attributes";
 import toast from "@/components/toast";
+import { IProductAttributeAssignment } from "@/lib/backend/dtos/attribute.dto.interface";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +23,7 @@ import {
   Upload
 } from "lucide-react";
 import { Suspense, useCallback, useEffect, useRef, useState, useMemo } from "react";
-import AddProductDialog from "./AddProductDialog";
+import UpsertProductStepper from "./UpsertProductStepper";
 import ProductTable from "./ProductsTable";
 
 export default function ShopAdminProductsPage() {
@@ -88,7 +90,11 @@ export default function ShopAdminProductsPage() {
     );
   }
 
-  const handleAddProduct = async (productData: Partial<IProduct>) => {
+  const handleAddProduct = async (
+    productData: Omit<Partial<IProduct>, 'attributes'>,
+    category_ids?: number[],
+    attributes?: IProductAttributeAssignment[]
+  ): Promise<void> => {
     if (!brand) {
       toast({
         type: "error",
@@ -115,12 +121,41 @@ export default function ShopAdminProductsPage() {
           description: productData.description || "",
           images: productData.images || [],
           url: productData.url || "",
+          category_ids: category_ids || []
         }
       );
 
       if (createdProduct) {
+        // Assign attributes if provided
+        if (attributes && attributes.length > 0) {
+          try {
+            await privateAttributesApiWrapper.assignProductAttributes(
+              authToken,
+              createdProduct.id,
+              { attributes: attributes }
+            );
+          } catch (attrError) {
+            console.error("Error assigning attributes:", attrError);
+            toast({
+              type: "warning",
+              message: "Producto creado, pero hubo un error al asignar los atributos.",
+            });
+          }
+        }
+
+        const categoryMessage = category_ids && category_ids.length > 0
+          ? ` con ${category_ids.length} categoría(s)`
+          : "";
+        const attributesMessage = attributes && attributes.length > 0
+          ? ` y ${attributes.length} atributo(s)`
+          : "";
+
+        toast({
+          type: "success",
+          message: `Producto añadido correctamente${categoryMessage}${attributesMessage}.`
+        });
+
         setProducts(prevProducts => [...prevProducts, createdProduct]);
-        toast({ type: "success", message: "Producto añadido correctamente." });
         setNewProduct({ name: "", price: 0, images: [], description: "" });
         setIsAddProductOpen(false);
       } else {
@@ -130,6 +165,7 @@ export default function ShopAdminProductsPage() {
         });
       }
     } catch (error) {
+      console.error("Error adding product:", error);
       toast({
         type: "error",
         message: "Ocurrió un error al añadir el producto.",
@@ -283,10 +319,10 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between mb-4">
-        <AddProductDialog
+        <UpsertProductStepper
           isOpen={isAddProductOpen}
           setIsOpen={setIsAddProductOpen}
-          handleAddProduct={handleAddProduct}
+          handleSubmit={handleAddProduct}
         />
         <div className="flex space-x-2">
           <Button variant="outline" onClick={handleDownloadTemplate}>

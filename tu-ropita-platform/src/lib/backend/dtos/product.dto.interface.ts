@@ -4,4 +4,5 @@ export interface IProductDTO {
     description: string;
     images: string[];
     url: string;
+    category_ids?: number[];
 }

@@ -1,0 +1,10 @@
+DROP INDEX IF EXISTS idx_attributes_slug;
+DROP INDEX IF EXISTS idx_attribute_values_attribute;
+DROP INDEX IF EXISTS idx_attribute_values_slug;
+DROP INDEX IF EXISTS idx_product_attributes_product;
+DROP INDEX IF EXISTS idx_product_attributes_attribute;
+DROP INDEX IF EXISTS idx_product_attributes_value;
+DROP INDEX IF EXISTS idx_product_attributes_combo;
+DROP TABLE IF EXISTS product_attributes CASCADE;
+DROP TABLE IF EXISTS attribute_values CASCADE;
+DROP TABLE IF EXISTS attributes CASCADE;

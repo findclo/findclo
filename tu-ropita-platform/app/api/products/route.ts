@@ -6,7 +6,7 @@ import { promotionService } from "@/lib/backend/services/promotion.service";
 export async function GET(req: Request) {
     const url = new URL(req.url);
     const queryParams = new URLSearchParams(url.search);
-    // example of url : BASEURL/api/products?search=xxx&brandId=xxx
+    // example of url : BASEURL/api/products?search=xxx&brandId=xxx&attributeValues=10,11,15
     const listProductParams: IListProductsParams = {
         search: queryParams.get('search') || undefined,
         brandId: queryParams.has('brandId') ? Number(queryParams.get('brandId')) : undefined,
@@ -14,7 +14,8 @@ export async function GET(req: Request) {
         featured: queryParams.has('featured') ? true : false,
         isLandingPage: queryParams.has('isLandingPage') ? queryParams.get('isLandingPage') === 'true' : false,
         skipAI: queryParams.has('skipAI') ? queryParams.get('skipAI') === 'true' : false,
-        categoryId: queryParams.has('categoryId') ? Number(queryParams.get('categoryId')) : undefined
+        categoryId: queryParams.has('categoryId') ? Number(queryParams.get('categoryId')) : undefined,
+        attributeValueIds: queryParams.has('attributeValueIds') ? queryParams.get('attributeValueIds')?.split(',').map(id => parseInt(id.trim())) : undefined
     };
 
     try {
