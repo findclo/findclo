@@ -38,9 +38,6 @@ export interface IProductAttribute {
 export interface IProductAttributeDetail {
     attribute_id: number;
     attribute_name: string;
-    attribute_slug: string;
-    attribute_type: AttributeType;
     value_id: number;
     value: string;
-    value_slug: string;
 }

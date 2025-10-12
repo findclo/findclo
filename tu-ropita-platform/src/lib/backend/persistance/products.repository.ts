@@ -1,6 +1,7 @@
 import pool from "@/lib/backend/conf/db.connections";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
+import { AttributeType, IProductAttributeDetail } from "@/lib/backend/models/interfaces/attribute.interface";
 import { BrandStatus } from "@/lib/backend/models/interfaces/brand.interface";
 import { ICategory } from "@/lib/backend/models/interfaces/category.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
@@ -23,6 +24,8 @@ export interface IListProductsParams {
     limit?: number;
     sort?: 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
     includeCategories?: boolean;
+    attributeValueIds?: number[];
+    includeAttributes?: boolean;
 }
 
 
@@ -58,10 +61,10 @@ class ProductsRepository {
     }
 
     public async listProducts(params: IListProductsParams, searchEmbedding?: number[]): Promise<IProduct[]> {
-        const {query, values} = this.constructListQuery(params, searchEmbedding);
+        const { query, values } = this.constructListQuery(params, searchEmbedding);
         try {
             const res = await this.db.query(query, values);
-            return this.mapProductRows(res.rows, params.includeCategories);
+            return this.mapProductRows(res.rows, params.includeCategories, params.includeAttributes);
         } catch (err) {
             console.error('Error executing query:', err);
             throw err;
@@ -173,7 +176,7 @@ class ProductsRepository {
         `;
 
         const values = [images, productId];
-        
+
         try {
             const res = await this.db.query(query, values);
             if (res.rowCount === 0) {
@@ -298,7 +301,7 @@ class ProductsRepository {
     }
 
 
-    private mapProductRows(rows: any[], includeCategories: boolean = false): IProduct[] {
+    private mapProductRows(rows: any[], includeCategories: boolean = false, includeAttributes: boolean = false): IProduct[] {
         if (rows.length === 0) {
             return [];
         }
@@ -324,6 +327,10 @@ class ProductsRepository {
 
             if (includeCategories) {
                 this.mapCategoriesToProduct(row, baseProduct);
+            }
+
+            if (includeAttributes) {
+                this.mapAttributesToProduct(row, baseProduct);
             }
 
             return baseProduct;
@@ -361,25 +368,33 @@ class ProductsRepository {
         baseProduct.categories = categories;
     }
 
+
     private constructListQuery(params: IListProductsParams, searchEmbedding?: number[]): { query: string, values: any[] } {
         let query = `SELECT p.*`;
         if (searchEmbedding && searchEmbedding.length > 0) {
             query += `, (1 - (p.embedding <=> $${1}::vector)) AS similarity`;
         }
         if (params.includeCategories) {
-            query += `, string_agg(c.id::text, ',') as category_ids,
-                        string_agg(c.name, '||') as category_names,
-                        string_agg(c.slug, '||') as category_slugs,
-                        string_agg(c.parent_id::text, ',') as category_parent_ids,
-                        string_agg(c.level::text, ',') as category_levels,
-                        string_agg(c.description, '||') as category_descriptions`;
+            query += `, string_agg(DISTINCT c.id::text, ',') as category_ids,
+            string_agg(c.name, '||') as category_names,
+            string_agg(c.slug, '||') as category_slugs,
+            string_agg(c.parent_id::text, ',') as category_parent_ids,
+            string_agg(c.level::text, ',') as category_levels,
+            string_agg(c.description, '||') as category_descriptions`;
+        }
+        if (params.includeAttributes) {
+            query += `, string_agg(DISTINCT a.id::text, ',') as attribute_ids,
+            string_agg(a.name, '||') as attribute_names,
+            string_agg(a.type, '||') as attribute_types,
+            string_agg(av.id::text, ',') as value_ids,
+            string_agg(av.value, '||') as values`;
         }
 
         query += ` FROM products p`;
-        let searchByTsQuery : string = '';
+        let searchByTsQuery: string = '';
         const conditions: string[] = [];
         const values: any[] = [];
-        
+
         // Add embedding as first parameter if provided
         if (searchEmbedding && searchEmbedding.length > 0) {
             values.push(`[${searchEmbedding.join(',')}]`);
@@ -423,17 +438,29 @@ class ProductsRepository {
             }
         }
 
+        // Handle attribute filtering and/or inclusion
+        const needsAttributeJoin = (params.attributeValueIds && params.attributeValueIds.length > 0) ||
+            params.includeAttributes;
+
+        if (needsAttributeJoin) {
+            query += ' LEFT JOIN product_attributes pa ON p.id = pa.product_id ';
+
+            // Add attribute details if including attributes
+            if (params.includeAttributes) {
+                query += ' LEFT JOIN attributes a ON pa.attribute_id = a.id ';
+                query += ' LEFT JOIN attribute_values av ON pa.attribute_value_id = av.id ';
+            }
+        }
+
 
         // Handle search: prioritize vector search if we have embedding, fallback to text search
         if (params.search && params.search.trim().length > 0) {
             if (searchEmbedding && searchEmbedding.length > 0) {
-                // Vector search: filter by similarity threshold
                 conditions.push(`p.embedding IS NOT NULL`);
                 conditions.push(`(1 - (p.embedding <=> $1)) >= 0.4`); // Similarity threshold
             } else {
-                // Fallback to text search if no embedding
                 conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
-                
+
                 const sanitizedSearch = params.search
                     .trim()
                     .replace(/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚüÜ]/g, '')
@@ -475,14 +502,14 @@ class ProductsRepository {
                 case 'price_desc':
                     query += ` ORDER BY p.price DESC`;
                     break;
-                case 'name_asc':
-                    query += ` ORDER BY p.name ASC`;
-                    break;
-                case 'name_desc':
-                    query += ` ORDER BY p.name DESC`;
-                    break;
-                default:
-                    query += ` ORDER BY p.id DESC`;
+                    case 'name_asc':
+                        query += ` ORDER BY p.name ASC`;
+                        break;
+                        case 'name_desc':
+                            query += ` ORDER BY p.name DESC`;
+                            break;
+                            default:
+                                query += ` ORDER BY p.id DESC`;
             }
         } else {
             query += ` ORDER BY p.id DESC`;
@@ -501,9 +528,32 @@ class ProductsRepository {
         }
 
         console.log(query, values);
-        return {query, values};
+        return { query, values };
     }
 
+    private mapAttributesToProduct(row: any, baseProduct: IProduct) {
+        const attributes: IProductAttributeDetail[] = [];
+
+        if (row.attribute_ids) {
+            const attributeIds = row.attribute_ids.split(',').filter((id: string) => id && id.trim());
+            const attributeNames = row.attribute_names ? row.attribute_names.split('||').filter((name: string) => name) : [];
+            const valueIds = row.value_ids ? row.value_ids.split(',').filter((id: string) => id && id.trim()) : [];
+            const values = row.values ? row.values.split('||').filter((val: string) => val) : [];
+
+            for (let i = 0; i < attributeIds.length; i++) {
+                if (attributeIds[i]) {
+                    attributes.push({
+                        attribute_id: parseInt(attributeIds[i]),
+                        attribute_name: attributeNames[i] || '',
+                        value_id: valueIds[i] ? parseInt(valueIds[i]) : 0,
+                        value: values[i] || '',
+                    });
+                }
+            }
+        }
+
+        baseProduct.attributes = attributes;
+    }
 }
 
 

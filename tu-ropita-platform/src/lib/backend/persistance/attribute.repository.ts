@@ -318,11 +318,8 @@ class AttributeRepository {
         return {
             attribute_id: row.attribute_id,
             attribute_name: row.attribute_name,
-            attribute_slug: row.attribute_slug,
-            attribute_type: row.attribute_type,
             value_id: row.value_id,
             value: row.value,
-            value_slug: row.value_slug
         };
     }
 }
