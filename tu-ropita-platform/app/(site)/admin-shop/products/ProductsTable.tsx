@@ -1,6 +1,8 @@
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
 import { privateProductsApiWrapper } from "@/api-wrappers/products";
+import { privateAttributesApiWrapper } from "@/api-wrappers/attributes";
 import toast from "@/components/toast";
+import { IProductAttributeAssignment } from "@/lib/backend/dtos/attribute.dto.interface";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,7 +28,7 @@ import Cookies from "js-cookie";
 import { ArrowBigDownDash, ArrowBigUpDash, Edit, ExternalLink, Info, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import EditProductDialog from "./EditProductDialog";
+import UpsertProductStepper from "./UpsertProductStepper";
 import ProductPromotionDetailsDialog from "./ProductPromotionDetailsDialog";
 import PromoteProductDialog from "./PromoteProductDialog";
 
@@ -126,30 +128,64 @@ const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
-  const handleUpdateProduct = async (updatedProduct: IProduct) => {
+  const handleUpdateProduct = async (
+    productData: Omit<Partial<IProduct>, 'attributes'>,
+    category_ids?: number[],
+    attributes?: IProductAttributeAssignment[]
+  ) => {
+    if (!selectedProduct) return;
+
     try {
+      // Update product basic information
       const result = await privateProductsApiWrapper.updateProduct(
         authToken,
-        updatedProduct.id.toString(),
+        selectedProduct.id.toString(),
         {
-          name: updatedProduct.name,
-          price: updatedProduct.price,
-          description: updatedProduct.description,
-          images: updatedProduct.images,
-          url: updatedProduct.url,
+          name: productData.name || "",
+          price: productData.price || 0,
+          description: productData.description || "",
+          images: productData.images || [],
+          url: productData.url || "",
+          category_ids: category_ids || []
         }
       );
+
+      // Update attributes if provided
+      if (attributes && attributes.length > 0) {
+        try {
+          await privateAttributesApiWrapper.assignProductAttributes(
+            authToken,
+            selectedProduct.id,
+            { attributes: attributes }
+          );
+        } catch (attrError) {
+          console.error("Error assigning attributes:", attrError);
+          toast({
+            type: "warning",
+            message: "Producto actualizado, pero hubo un error al asignar los atributos.",
+          });
+        }
+      }
 
       if (result) {
         onProductUpdate(result);
         setSelectedProduct(null);
         setIsEditDialogOpen(false);
+
+        const categoryMessage = category_ids && category_ids.length > 0
+          ? ` con ${category_ids.length} categoría(s)`
+          : "";
+        const attributesMessage = attributes && attributes.length > 0
+          ? ` y ${attributes.length} atributo(s)`
+          : "";
+
         toast({
           type: "success",
-          message: "Producto actualizado correctamente.",
+          message: `Producto actualizado correctamente${categoryMessage}${attributesMessage}.`,
         });
       }
     } catch (error) {
+      console.error("Error updating product:", error);
       toast({
         type: "error",
         message: "Ocurrió un error al actualizar el producto.",
@@ -426,14 +462,12 @@ const openPromotionDetails = (promotionId: number) => {
           </TableBody>
         </Table>
       </ScrollArea>
-      {selectedProduct && (
-        <EditProductDialog
-          isOpen={isEditDialogOpen}
-          setIsOpen={setIsEditDialogOpen}
-          product={selectedProduct}
-          handleUpdateProduct={handleUpdateProduct}
-        />
-      )}
+      <UpsertProductStepper
+        isOpen={isEditDialogOpen}
+        setIsOpen={setIsEditDialogOpen}
+        product={selectedProduct}
+        handleSubmit={handleUpdateProduct}
+      />
       {selectedProduct && (
         <PromoteProductDialog
           isOpen={isPromotionDialogOpen}

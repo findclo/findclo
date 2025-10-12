@@ -14,22 +14,26 @@ import { AttributeSelector } from "./AttributeSelector";
 import toast from "@/components/toast";
 import { IProductAttributeAssignment } from "@/lib/backend/dtos/attribute.dto.interface";
 
-interface AddProductDialogProps {
+interface UpsertProductStepperProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  handleAddProduct: (product: Omit<Partial<IProduct>, 'attributes'> & {
-    category_ids?: number[];
-    attributes?: IProductAttributeAssignment[];
-  }) => void;
+  product?: IProduct | null;
+  handleSubmit: (
+    productData: Omit<Partial<IProduct>, 'attributes'>,
+    category_ids?: number[],
+    attributes?: IProductAttributeAssignment[]
+  ) => void;
 }
 
-const AddProductDialog: React.FC<AddProductDialogProps> = ({
+const UpsertProductStepper: React.FC<UpsertProductStepperProps> = ({
   isOpen,
   setIsOpen,
-  handleAddProduct,
+  product,
+  handleSubmit,
 }) => {
+  const isEditMode = !!product;
   const [currentStep, setCurrentStep] = useState(1);
-  const [newProduct, setNewProduct] = useState<Partial<IProduct>>({
+  const [productData, setProductData] = useState<Partial<IProduct>>({
     name: "",
     price: 0,
     images: [""],
@@ -39,35 +43,76 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
   const [selectedCategories, setSelectedCategories] = useState<Set<number>>(new Set());
   const [selectedAttributes, setSelectedAttributes] = useState<Map<number, Set<number>>>(new Map());
 
-  // Reset step when dialog opens/closes
+  // Initialize state when product changes or dialog opens
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      if (isEditMode && product) {
+        // Edit mode: populate with existing product data
+        setProductData({
+          name: product.name || "",
+          price: product.price || 0,
+          images: product.images && product.images.length > 0 ? product.images : [""],
+          description: product.description || "",
+          url: product.url || "",
+        });
+
+        // Load existing categories
+        if (product.categories && product.categories.length > 0) {
+          setSelectedCategories(new Set(product.categories.map(cat => cat.id)));
+        } else {
+          setSelectedCategories(new Set());
+        }
+
+        // Load existing attributes
+        if (product.attributes && product.attributes.length > 0) {
+          const attributesMap = new Map<number, Set<number>>();
+          product.attributes.forEach(attr => {
+            if (attr.values && attr.values.length > 0) {
+              attributesMap.set(attr.id, new Set(attr.values.map(val => val.id)));
+            }
+          });
+          setSelectedAttributes(attributesMap);
+        } else {
+          setSelectedAttributes(new Map());
+        }
+      } else {
+        // Create mode: reset to default values
+        setProductData({
+          name: "",
+          price: 0,
+          images: [""],
+          description: "",
+          url: "",
+        });
+        setSelectedCategories(new Set());
+        setSelectedAttributes(new Map());
+      }
       setCurrentStep(1);
     }
-  }, [isOpen]);
+  }, [isOpen, isEditMode, product]);
 
   const handleImageChange = (index: number, value: string) => {
-    const newImages = [...(newProduct.images || [])];
+    const newImages = [...(productData.images || [])];
     newImages[index] = value;
-    setNewProduct({ ...newProduct, images: newImages });
+    setProductData({ ...productData, images: newImages });
   };
 
   const addImageField = () => {
-    setNewProduct({ ...newProduct, images: [...(newProduct.images || []), ""] });
+    setProductData({ ...productData, images: [...(productData.images || []), ""] });
   };
 
   const removeImageField = (index: number) => {
-    const newImages = (newProduct.images || []).filter((_, i) => i !== index);
-    setNewProduct({ ...newProduct, images: newImages });
+    const newImages = (productData.images || []).filter((_, i) => i !== index);
+    setProductData({ ...productData, images: newImages });
   };
 
   // Validation for step 1
   const validateStep1 = (): boolean => {
-    if (!newProduct.name || newProduct.name.trim() === "") {
+    if (!productData.name || productData.name.trim() === "") {
       toast({ type: "error", message: "El nombre del producto es obligatorio." });
       return false;
     }
-    if (!newProduct.price || newProduct.price <= 0) {
+    if (!productData.price || productData.price <= 0) {
       toast({ type: "error", message: "El precio debe ser mayor a 0." });
       return false;
     }
@@ -88,7 +133,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
     }
   };
 
-  const onAddProduct = async () => {
+  const onSubmit = async () => {
     // Convert selectedAttributes Map to IProductAttributeAssignment[]
     const attributes: IProductAttributeAssignment[] = Array.from(selectedAttributes.entries()).map(
       ([attribute_id, value_ids]) => ({
@@ -98,15 +143,18 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
     );
 
     const filteredProduct = {
-      ...newProduct,
-      images: (newProduct.images || []).filter(url => url.trim() !== ""),
-      category_ids: Array.from(selectedCategories),
-      attributes: attributes.length > 0 ? attributes : undefined
+      ...productData,
+      images: (productData.images || []).filter(url => url.trim() !== ""),
     };
-    await handleAddProduct(filteredProduct);
 
-    // Reset form
-    setNewProduct({ name: "", price: 0, images: [""], description: "", url: "" });
+    await handleSubmit(
+      filteredProduct,
+      Array.from(selectedCategories),
+      attributes.length > 0 ? attributes : undefined
+    );
+
+    // Reset form after successful submission
+    setProductData({ name: "", price: 0, images: [""], description: "", url: "" });
     setSelectedCategories(new Set());
     setSelectedAttributes(new Map());
     setCurrentStep(1);
@@ -121,9 +169,9 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
         </Label>
         <Input
           id="name"
-          value={newProduct.name}
+          value={productData.name}
           onChange={(e) =>
-            setNewProduct({ ...newProduct, name: e.target.value })
+            setProductData({ ...productData, name: e.target.value })
           }
           className="col-span-3"
           placeholder="Nombre del producto"
@@ -136,9 +184,9 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
         <Input
           id="price"
           type="number"
-          value={newProduct.price}
+          value={productData.price}
           onChange={(e) =>
-            setNewProduct({ ...newProduct, price: parseFloat(e.target.value) })
+            setProductData({ ...productData, price: parseFloat(e.target.value) })
           }
           className="col-span-3"
           placeholder="0.00"
@@ -147,14 +195,14 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
       <div className="grid grid-cols-4 items-center gap-4">
         <Label className="text-right">URLs de Imágenes</Label>
         <div className="col-span-3 space-y-2">
-          {(newProduct.images || []).map((image, index) => (
+          {(productData.images || []).map((image, index) => (
             <div key={index} className="flex gap-2">
               <Input
                 value={image}
                 onChange={(e) => handleImageChange(index, e.target.value)}
                 placeholder={`URL de imagen ${index + 1}`}
               />
-              {(newProduct.images || []).length > 1 && (
+              {(productData.images || []).length > 1 && (
                 <Button
                   type="button"
                   variant="destructive"
@@ -181,9 +229,9 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
         </Label>
         <Input
           id="url"
-          value={newProduct.url || ""}
+          value={productData.url || ""}
           onChange={(e) =>
-            setNewProduct({ ...newProduct, url: e.target.value })
+            setProductData({ ...productData, url: e.target.value })
           }
           className="col-span-3"
           placeholder="https://..."
@@ -195,9 +243,9 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
         </Label>
         <Textarea
           id="description"
-          value={newProduct.description}
+          value={productData.description}
           onChange={(e) =>
-            setNewProduct({ ...newProduct, description: e.target.value })
+            setProductData({ ...productData, description: e.target.value })
           }
           className="col-span-3"
           placeholder="Descripción del producto"
@@ -221,7 +269,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
   const renderStep3 = () => (
     <div className="space-y-4">
       <div className="text-sm text-gray-600 dark:text-gray-400">
-        Selecciona los atributos para tu producto (opcional). Los atributos ayudan a los clientes a filtrar productos.
+        Selecciona los atributos para tu producto (opcional). Los atributos ayudan a los clientes a
+        filtrar productos.
       </div>
       <AttributeSelector
         selectedAttributes={selectedAttributes}
@@ -232,14 +281,16 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Añadir Producto
-        </Button>
-      </DialogTrigger>
+      {!isEditMode && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" /> Añadir Producto
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Añadir Nuevo Producto</DialogTitle>
+          <DialogTitle>{isEditMode ? "Editar Producto" : "Añadir Nuevo Producto"}</DialogTitle>
         </DialogHeader>
 
         {/* Step Indicator */}
@@ -269,8 +320,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={onAddProduct}>
-              Añadir Producto
+            <Button onClick={onSubmit}>
+              {isEditMode ? "Actualizar Producto" : "Añadir Producto"}
             </Button>
           )}
         </div>
@@ -279,4 +330,5 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
   );
 };
 
-export default AddProductDialog;
+export default UpsertProductStepper;
+
