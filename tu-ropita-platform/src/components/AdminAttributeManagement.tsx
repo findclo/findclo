@@ -373,7 +373,7 @@ export const AdminAttributeManagement: React.FC<AdminAttributeManagementProps> =
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Agregar Valor a "{state.selectedAttribute.name}"
+            Agregar Valor a <b>{state.selectedAttribute.name}</b>
           </h3>
           <button
             onClick={handleCancelEdit}

@@ -67,8 +67,8 @@ const UpsertProductStepper: React.FC<UpsertProductStepperProps> = ({
         if (product.attributes && product.attributes.length > 0) {
           const attributesMap = new Map<number, Set<number>>();
           product.attributes.forEach(attr => {
-            if (attr.values && attr.values.length > 0) {
-              attributesMap.set(attr.id, new Set(attr.values.map(val => val.id)));
+            if (attr.value && attr.value.length > 0) {
+              attributesMap.set(attr.attribute_id, new Set([attr.value_id]));
             }
           });
           setSelectedAttributes(attributesMap);
