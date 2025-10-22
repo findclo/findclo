@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -267,7 +268,10 @@ const openPromotionDetails = (promotionId: number) => {
                 Precio
               </TableHead>
               <TableHead className="sticky top-0 bg-background">
-                Descripción
+                Categorías
+              </TableHead>
+              <TableHead className="sticky top-0 bg-background">
+                Atributos
               </TableHead>
               <TableHead className="sticky top-0 bg-background">
                 Enlace
@@ -297,8 +301,91 @@ const openPromotionDetails = (promotionId: number) => {
                     {product.name}
                   </TableCell>
                   <TableCell>${product.price?.toFixed(2) || "0.00"}</TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {product.description}
+                  <TableCell>
+                    {/* Categorías */}
+                    <div className="flex flex-wrap gap-1">
+                      {product.categories && product.categories.length > 0 ? (
+                        <>
+                          {product.categories.slice(0, 2).map((category) => (
+                            <Badge key={category.id} variant="default" className="text-xs">
+                              {category.name}
+                            </Badge>
+                          ))}
+                          {product.categories.length > 2 && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="text-xs cursor-help">
+                                    +{product.categories.length - 2} más
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="flex flex-col gap-1">
+                                    {product.categories.slice(2).map((category) => (
+                                      <span key={category.id}>{category.name}</span>
+                                    ))}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Sin categorías</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {/* Atributos */}
+                    <div className="flex flex-wrap gap-1">
+                      {product.attributes && product.attributes.length > 0 ? (
+                        <>
+                          {/* Group attributes by attribute_name */}
+                          {(() => {
+                            const groupedAttrs = product.attributes.reduce((acc, attr) => {
+                              if (!acc[attr.attribute_name]) {
+                                acc[attr.attribute_name] = [];
+                              }
+                              acc[attr.attribute_name].push(attr.value);
+                              return acc;
+                            }, {} as Record<string, string[]>);
+
+                            const entries = Object.entries(groupedAttrs);
+                            const displayedEntries = entries.slice(0, 2);
+
+                            return (
+                              <>
+                                {displayedEntries.map(([attrName, values]) => (
+                                  <Badge key={attrName} variant="secondary" className="text-xs">
+                                    {attrName}: {values.join(", ")}
+                                  </Badge>
+                                ))}
+                                {entries.length > 2 && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-xs cursor-help">
+                                          +{entries.length - 2} más
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <div className="flex flex-col gap-1">
+                                          {entries.slice(2).map(([attrName, values]) => (
+                                            <span key={attrName}>{attrName}: {values.join(", ")}</span>
+                                          ))}
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Sin atributos</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
                     <Button
@@ -436,7 +523,7 @@ const openPromotionDetails = (promotionId: number) => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   {search
                     ? "No se encontraron productos"
                     : "No hay productos disponibles."}
