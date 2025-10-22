@@ -45,6 +45,51 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     fetchCategories();
   }, [categories.length]);
 
+  // Helper to check if any descendant category is selected
+  const hasAnySelectedDescendant = useCallback(
+    (categoriesTree: ICategoryTree[], selectedIds: Set<number>): boolean => {
+      return categoriesTree.some(cat => {
+        if (selectedIds.has(cat.id)) return true;
+        if (cat.children.length > 0) {
+          return hasAnySelectedDescendant(cat.children, selectedIds);
+        }
+        return false;
+      });
+    },
+    []
+  );
+
+  // Helper function to find parent categories of selected categories
+  const findParentCategories = useCallback(
+    (categoriesTree: ICategoryTree[], selectedIds: Set<number>, parentIds: Set<number> = new Set()): Set<number> => {
+      categoriesTree.forEach(category => {
+        if (category.children.length > 0) {
+          // Check if any child (recursively) is selected
+          const hasSelectedChild = hasAnySelectedDescendant(category.children, selectedIds);
+          if (hasSelectedChild) {
+            parentIds.add(category.id);
+          }
+          // Recursively process children
+          findParentCategories(category.children, selectedIds, parentIds);
+        }
+      });
+      return parentIds;
+    },
+    [hasAnySelectedDescendant]
+  );
+
+  // Auto-expand parent categories when selected categories change
+  useEffect(() => {
+    if (categories.length > 0 && selectedCategories.size > 0) {
+      const parentIds = findParentCategories(categories, selectedCategories);
+      setExpandedCategories(prevExpanded => {
+        const newExpanded = new Set(prevExpanded);
+        parentIds.forEach(id => newExpanded.add(id));
+        return newExpanded;
+      });
+    }
+  }, [categories, selectedCategories, findParentCategories]);
+
   // Helper functions
   const isLeafCategory = useCallback((category: ICategoryTree): boolean => {
     return category.children.length === 0;

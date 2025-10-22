@@ -136,7 +136,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
     if (!selectedProduct) return;
 
     try {
-      // Update product basic information
+      // Update product with all information in a single call
       const result = await privateProductsApiWrapper.updateProduct(
         authToken,
         selectedProduct.id.toString(),
@@ -146,26 +146,10 @@ const ProductTable: React.FC<ProductTableProps> = ({
           description: productData.description || "",
           images: productData.images || [],
           url: productData.url || "",
-          category_ids: category_ids || []
+          category_ids: category_ids || [],
+          attributes: attributes // Pass attributes directly to updateProduct
         }
       );
-
-      // Update attributes if provided
-      if (attributes && attributes.length > 0) {
-        try {
-          await privateAttributesApiWrapper.assignProductAttributes(
-            authToken,
-            selectedProduct.id,
-            { attributes: attributes }
-          );
-        } catch (attrError) {
-          console.error("Error assigning attributes:", attrError);
-          toast({
-            type: "warning",
-            message: "Producto actualizado, pero hubo un error al asignar los atributos.",
-          });
-        }
-      }
 
       if (result) {
         onProductUpdate(result);

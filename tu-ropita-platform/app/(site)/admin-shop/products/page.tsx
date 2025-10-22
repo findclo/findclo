@@ -54,7 +54,9 @@ export default function ShopAdminProductsPage() {
       const productsData =
         await privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(
           authToken,
-          brandId
+          brandId,
+          true, // includeCategories
+          true  // includeAttributes
         );
       if (productsData) {
         setProducts(productsData.products);
@@ -121,28 +123,12 @@ export default function ShopAdminProductsPage() {
           description: productData.description || "",
           images: productData.images || [],
           url: productData.url || "",
-          category_ids: category_ids || []
+          category_ids: category_ids || [],
+          attributes: attributes // Pass attributes directly to createProduct
         }
       );
 
       if (createdProduct) {
-        // Assign attributes if provided
-        if (attributes && attributes.length > 0) {
-          try {
-            await privateAttributesApiWrapper.assignProductAttributes(
-              authToken,
-              createdProduct.id,
-              { attributes: attributes }
-            );
-          } catch (attrError) {
-            console.error("Error assigning attributes:", attrError);
-            toast({
-              type: "warning",
-              message: "Producto creado, pero hubo un error al asignar los atributos.",
-            });
-          }
-        }
-
         const categoryMessage = category_ids && category_ids.length > 0
           ? ` con ${category_ids.length} categoría(s)`
           : "";

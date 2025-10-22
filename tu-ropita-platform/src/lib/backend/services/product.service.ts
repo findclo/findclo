@@ -1,5 +1,6 @@
 import { IAttributeFilterMap, IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
+import { IProductAttributeAssignment } from "@/lib/backend/dtos/attribute.dto.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/parsers/productCSVUpload.parser";
@@ -12,13 +13,25 @@ import {promotionService} from "@/lib/backend/services/promotion.service";
 import {imageProcessorService} from "@/lib/backend/services/simpleImageProcessor.service";
 import { embeddingProcessorService } from "@/lib/backend/services/embeddingProcessor.service";
 import { categoryService } from "@/lib/backend/services/category.service";
+import { attributeService } from "@/lib/backend/services/attribute.service";
 
 class ProductService {
 
     private parser: IProductCSVUploadParser = new ProductCSVUploadParser();
 
-    public async getProductById(productId: number,excludeBrandPaused:boolean, userQuery?: boolean): Promise<IProduct> {
-        const product = await productRepository.getProductById(productId,excludeBrandPaused);
+    public async getProductById(
+        productId: number,
+        excludeBrandPaused: boolean,
+        userQuery?: boolean,
+        includeCategories: boolean = false,
+        includeAttributes: boolean = false
+    ): Promise<IProduct> {
+        const product = await productRepository.getProductById(
+            productId,
+            excludeBrandPaused,
+            includeCategories,
+            includeAttributes
+        );
         // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
         if(!product){
             throw new ProductNotFoundException(productId);
@@ -127,13 +140,15 @@ class ProductService {
         return productRepository.deleteProduct(id);
     }
 
-    public async updateProduct(productId: number, updateProduct: IProductDTO): Promise<IProduct>{
-        const updatedProduct = await productRepository.updateProduct(productId, updateProduct);
+    public async updateProduct(productId: number, dto: IProductDTO): Promise<IProduct>{
+        await productRepository.updateProduct(productId, dto);
+        await this.updateProductCategories(productId, dto.category_ids);
+        await this.updateProductAttributes(productId, dto.attributes);
         await imageProcessorService.resetProductImageFlag(productId);
-        
         embeddingProcessorService.generateEmbeddingForProduct(productId);
-        
-        return updatedProduct;
+
+        // Return product with categories and attributes included
+        return this.getProductById(productId, false, undefined, true, true);
     }
 
     async updateProductStatus(id: number, status: string): Promise<IProduct> {
@@ -187,6 +202,24 @@ class ProductService {
             attribute_slug: attr.attribute_slug,
             values: Array.from(attr.values.values()).sort((a, b) => a.value.localeCompare(b.value))
         })).sort((a, b) => a.attribute_name.localeCompare(b.attribute_name));
+    }
+
+    private async updateProductCategories(productId: number, category_ids?: number[]): Promise<void> {
+        if (category_ids === undefined) {
+            return;
+        }
+
+        await categoryService.removeProductFromCategories(productId);
+        if (category_ids.length > 0) {
+            await categoryService.assignProductToCategories(productId, category_ids);
+        }
+    }
+
+    private async updateProductAttributes(productId: number, attributes?: IProductAttributeAssignment[]): Promise<void> {
+        if (attributes === undefined) {
+            return;
+        }
+        await attributeService.assignAttributesToProduct(productId, { attributes });
     }
 }
 

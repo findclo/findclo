@@ -36,11 +36,50 @@ class ProductsRepository {
         this.db = db;
     }
 
-    public async getProductById(productId: number, excludeBrandPaused: boolean): Promise<IProduct | null> {
-        let query = `SELECT p.*, b.status as brand_status, b.name as brand_name
-                     FROM Products p
-                              JOIN Brands b ON p.brand_id = b.id
-                     WHERE p.id = $1`;
+    public async getProductById(
+        productId: number,
+        excludeBrandPaused: boolean,
+        includeCategories: boolean = false,
+        includeAttributes: boolean = false
+    ): Promise<IProduct | null> {
+        let query = `SELECT p.*, b.status as brand_status, b.name as brand_name`;
+
+        // Include category aggregations if requested
+        if (includeCategories) {
+            query += `, string_agg(DISTINCT c.id::text, ',') as category_ids,
+            string_agg(c.name, '||') as category_names,
+            string_agg(c.slug, '||') as category_slugs,
+            string_agg(c.parent_id::text, ',') as category_parent_ids,
+            string_agg(c.level::text, ',') as category_levels,
+            string_agg(c.description, '||') as category_descriptions`;
+        }
+
+        // Include attribute aggregations if requested
+        if (includeAttributes) {
+            query += `, string_agg(a.id::text, ',' ORDER BY pa.id) as attribute_ids,
+            string_agg(a.name, '||' ORDER BY pa.id) as attribute_names,
+            string_agg(a.slug, '||' ORDER BY pa.id) as attribute_slugs,
+            string_agg(av.id::text, ',' ORDER BY pa.id) as value_ids,
+            string_agg(av.value, '||' ORDER BY pa.id) as values,
+            string_agg(av.slug, '||' ORDER BY pa.id) as value_slugs`;
+        }
+
+        query += ` FROM Products p JOIN Brands b ON p.brand_id = b.id`;
+
+        // Add category joins if requested
+        if (includeCategories) {
+            query += ` LEFT JOIN product_categories pc ON p.id = pc.product_id
+                       LEFT JOIN Category c ON pc.category_id = c.id`;
+        }
+
+        // Add attribute joins if requested
+        if (includeAttributes) {
+            query += ` LEFT JOIN product_attributes pa ON p.id = pa.product_id
+                       LEFT JOIN attributes a ON pa.attribute_id = a.id
+                       LEFT JOIN attribute_values av ON pa.attribute_value_id = av.id`;
+        }
+
+        query += ` WHERE p.id = $1`;
         const values: any[] = [productId];
 
         if (excludeBrandPaused) {
@@ -48,12 +87,17 @@ class ProductsRepository {
             values.push(BrandStatus.PAUSED);
         }
 
+        // Add GROUP BY when including categories or attributes
+        if (includeCategories || includeAttributes) {
+            query += ` GROUP BY p.id, b.status, b.name`;
+        }
+
         try {
             const res = await this.db.query(query, values);
             if (res.rowCount == null || res.rowCount <= 0) {
                 return null;
             }
-            return this.mapProductRows(res.rows)[0];
+            return this.mapProductRows(res.rows, includeCategories, includeAttributes)[0];
         } catch (error) {
             console.error('Error executing query:', error);
             throw error;
@@ -145,7 +189,6 @@ class ProductsRepository {
                 description = $3, 
                 images = $4,
                 url = $5,
-                has_tags_generated = false,
                 uploaded_to_blob = false,
                 tsv = to_tsvector('spanish', coalesce($1, '') || ' ' || coalesce($3, ''))
             WHERE id = $6
@@ -383,12 +426,12 @@ class ProductsRepository {
             string_agg(c.description, '||') as category_descriptions`;
         }
         if (params.includeAttributes) {
-            query += `, string_agg(DISTINCT a.id::text, ',') as attribute_ids,
-            string_agg(a.name, '||') as attribute_names,
-            string_agg(a.slug, '||') as attribute_slugs,
-            string_agg(av.id::text, ',') as value_ids,
-            string_agg(av.value, '||') as values,
-            string_agg(av.slug, '||') as value_slugs`;
+            query += `, string_agg(a.id::text, ',' ORDER BY pa.id) as attribute_ids,
+            string_agg(a.name, '||' ORDER BY pa.id) as attribute_names,
+            string_agg(a.slug, '||' ORDER BY pa.id) as attribute_slugs,
+            string_agg(av.id::text, ',' ORDER BY pa.id) as value_ids,
+            string_agg(av.value, '||' ORDER BY pa.id) as values,
+            string_agg(av.slug, '||' ORDER BY pa.id) as value_slugs`;
         }
 
         query += ` FROM products p`;
@@ -541,21 +584,22 @@ class ProductsRepository {
     private mapAttributesToProduct(row: any, baseProduct: IProduct) {
         const attributes: IProductAttributeDetail[] = [];
 
-        if (row.attribute_ids) {
-            const attributeIds = row.attribute_ids.split(',').filter((id: string) => id && id.trim());
+        if (row.value_ids) {
+            const attributeIds = row.attribute_ids ? row.attribute_ids.split(',').filter((id: string) => id && id.trim()) : [];
             const attributeNames = row.attribute_names ? row.attribute_names.split('||').filter((name: string) => name) : [];
             const attributeSlugs = row.attribute_slugs ? row.attribute_slugs.split('||').filter((slug: string) => slug) : [];
-            const valueIds = row.value_ids ? row.value_ids.split(',').filter((id: string) => id && id.trim()) : [];
+            const valueIds = row.value_ids.split(',').filter((id: string) => id && id.trim());
             const values = row.values ? row.values.split('||').filter((val: string) => val) : [];
             const valueSlugs = row.value_slugs ? row.value_slugs.split('||').filter((slug: string) => slug) : [];
 
-            for (let i = 0; i < attributeIds.length; i++) {
-                if (attributeIds[i]) {
+            // Iterate over valueIds instead of attributeIds to handle multiple values per attribute
+            for (let i = 0; i < valueIds.length; i++) {
+                if (valueIds[i] && attributeIds[i]) {
                     attributes.push({
                         attribute_id: parseInt(attributeIds[i]),
                         attribute_name: attributeNames[i] || '',
                         attribute_slug: attributeSlugs[i] || '',
-                        value_id: valueIds[i] ? parseInt(valueIds[i]) : 0,
+                        value_id: parseInt(valueIds[i]),
                         value: values[i] || '',
                         value_slug: valueSlugs[i] || '',
                     });

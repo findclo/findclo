@@ -84,7 +84,7 @@ export async function getUserDtoFromBody(req: Request): Promise<CreateUserDto> {
 
 
 export async function getProductDtoFromBody(req: Request) : Promise<IProductDTO>{
-  return getDtoFromBody<IProductDTO>(req, ['name', 'price', 'description','images', 'url']);
+  return getDtoFromBody<IProductDTO>(req, ['name', 'price', 'description','images', 'url'], ['category_ids', 'attributes']);
 }
 
 export async function getUpdateStatusFromBody(req: Request) : Promise<{ status: string }>{
