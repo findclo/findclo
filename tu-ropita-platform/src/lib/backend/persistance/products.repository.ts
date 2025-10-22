@@ -46,37 +46,24 @@ class ProductsRepository {
 
         // Include category aggregations if requested
         if (includeCategories) {
-            query += `, string_agg(DISTINCT c.id::text, ',') as category_ids,
-            string_agg(c.name, '||') as category_names,
-            string_agg(c.slug, '||') as category_slugs,
-            string_agg(c.parent_id::text, ',') as category_parent_ids,
-            string_agg(c.level::text, ',') as category_levels,
-            string_agg(c.description, '||') as category_descriptions`;
+            query += this.getCategoryAggregations();
         }
 
         // Include attribute aggregations if requested
         if (includeAttributes) {
-            query += `, string_agg(a.id::text, ',' ORDER BY pa.id) as attribute_ids,
-            string_agg(a.name, '||' ORDER BY pa.id) as attribute_names,
-            string_agg(a.slug, '||' ORDER BY pa.id) as attribute_slugs,
-            string_agg(av.id::text, ',' ORDER BY pa.id) as value_ids,
-            string_agg(av.value, '||' ORDER BY pa.id) as values,
-            string_agg(av.slug, '||' ORDER BY pa.id) as value_slugs`;
+            query += this.getAttributeAggregations();
         }
 
         query += ` FROM Products p JOIN Brands b ON p.brand_id = b.id`;
 
         // Add category joins if requested
         if (includeCategories) {
-            query += ` LEFT JOIN product_categories pc ON p.id = pc.product_id
-                       LEFT JOIN Category c ON pc.category_id = c.id`;
+            query += this.getCategoryJoins();
         }
 
         // Add attribute joins if requested
         if (includeAttributes) {
-            query += ` LEFT JOIN product_attributes pa ON p.id = pa.product_id
-                       LEFT JOIN attributes a ON pa.attribute_id = a.id
-                       LEFT JOIN attribute_values av ON pa.attribute_value_id = av.id`;
+            query += this.getAttributeJoins();
         }
 
         query += ` WHERE p.id = $1`;
@@ -212,122 +199,50 @@ class ProductsRepository {
     }
 
     async updateProductImages(productId: number, images: string[]): Promise<void> {
-        const query = `
-            UPDATE Products
-            SET images = $1
-            WHERE id = $2
-        `;
-
-        const values = [images, productId];
-
-        try {
-            const res = await this.db.query(query, values);
-            if (res.rowCount === 0) {
-                throw new ProductNotFoundException(productId);
-            }
-            console.log(`Successfully updated images for product ${productId}`);
-        } catch (error) {
-            console.error(`Error updating product images for ${productId}:`, error);
-            throw error;
-        }
+        await this.executeSimpleUpdate(
+            productId,
+            'images',
+            images,
+            `Successfully updated images for product ${productId}`
+        );
     }
 
     async getUnuploadedProducts(limit: number): Promise<IProduct[]> {
-        const query = `
-            SELECT p.*, b.status as brand_status
-            FROM Products p
-            JOIN Brands b ON p.brand_id = b.id
-            WHERE p.uploaded_to_blob = false 
-            AND p.status NOT IN ('DELETED')
-            ORDER BY p.id ASC
-            LIMIT $1
-        `;
-        
-        try {
-            const res = await this.db.query(query, [limit]);
-            return this.mapProductRows(res.rows);
-        } catch (error) {
-            console.error('Error getting unuploaded products:', error);
-            throw error;
-        }
+        return this.getProductsWithCondition('p.uploaded_to_blob = false', limit);
     }
 
     async markAsUploadedToBlob(productId: number): Promise<void> {
-        const query = `
-            UPDATE Products
-            SET uploaded_to_blob = true
-            WHERE id = $1
-        `;
-        
-        try {
-            const res = await this.db.query(query, [productId]);
-            if (res.rowCount === 0) {
-                throw new ProductNotFoundException(productId);
-            }
-            console.log(`Marked product ${productId} as uploaded to blob`);
-        } catch (error) {
-            console.error(`Error marking product ${productId} as uploaded:`, error);
-            throw error;
-        }
+        await this.executeSimpleUpdate(
+            productId,
+            'uploaded_to_blob',
+            true,
+            `Marked product ${productId} as uploaded to blob`
+        );
     }
 
     async resetUploadedToBlobFlag(productId: number): Promise<void> {
-        const query = `
-            UPDATE Products
-            SET uploaded_to_blob = false
-            WHERE id = $1
-        `;
-        
-        try {
-            const res = await this.db.query(query, [productId]);
-            if (res.rowCount === 0) {
-                throw new ProductNotFoundException(productId);
-            }
-            console.log(`Reset uploaded_to_blob flag for product ${productId}`);
-        } catch (error) {
-            console.error(`Error resetting flag for product ${productId}:`, error);
-            throw error;
-        }
+        await this.executeSimpleUpdate(
+            productId,
+            'uploaded_to_blob',
+            false,
+            `Reset uploaded_to_blob flag for product ${productId}`
+        );
     }
 
     async updateProductEmbedding(productId: number, embedding: number[]): Promise<void> {
-        const query = `
-            UPDATE Products
-            SET embedding = $1
-            WHERE id = $2
-        `;
-        
-        try {
-            const res = await this.db.query(query, [`[${embedding.join(',')}]`, productId]);
-            if (res.rowCount === 0) {
-                throw new ProductNotFoundException(productId);
-            }
-            console.log(`Updated embedding for product ${productId}`);
-        } catch (error) {
-            console.error(`Error updating embedding for product ${productId}:`, error);
-            throw error;
-        }
+        await this.executeSimpleUpdate(
+            productId,
+            'embedding',
+            `[${embedding.join(',')}]`,
+            `Updated embedding for product ${productId}`
+        );
     }
 
     async getProductsWithoutEmbedding(limit: number): Promise<IProduct[]> {
-        const query = `
-            SELECT p.*, b.status as brand_status
-            FROM Products p
-            JOIN Brands b ON p.brand_id = b.id
-            WHERE p.embedding IS NULL
-            AND p.status NOT IN ('DELETED')
-            AND (p.name IS NOT NULL AND p.name != '')
-            ORDER BY p.id ASC
-            LIMIT $1
-        `;
-
-        try {
-            const res = await this.db.query(query, [limit]);
-            return this.mapProductRows(res.rows);
-        } catch (error) {
-            console.error('Error getting products without embedding:', error);
-            throw error;
-        }
+        return this.getProductsWithCondition(
+            "p.embedding IS NULL AND (p.name IS NOT NULL AND p.name != '')",
+            limit
+        );
     }
 
     private async executeUpdate(query: string, values: any[]): Promise<IProduct> {
@@ -343,6 +258,54 @@ class ProductsRepository {
         }
     }
 
+    private async executeSimpleUpdate(
+        productId: number,
+        field: string,
+        value: any,
+        successMessage: string
+    ): Promise<void> {
+        const query = `
+            UPDATE Products
+            SET ${field} = $1
+            WHERE id = $2
+        `;
+
+        try {
+            const res = await this.db.query(query, [value, productId]);
+            if (res.rowCount === 0) {
+                throw new ProductNotFoundException(productId);
+            }
+            console.log(successMessage);
+        } catch (error) {
+            console.error(`Error updating ${field} for product ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    private parseAggregatedField(row: any, field: string, separator: string): string[] {
+        if (!row[field]) return [];
+        return row[field].split(separator).filter((item: string) => item && item.trim());
+    }
+
+    private async getProductsWithCondition(condition: string, limit: number): Promise<IProduct[]> {
+        const query = `
+            SELECT p.*, b.status as brand_status
+            FROM Products p
+            JOIN Brands b ON p.brand_id = b.id
+            WHERE ${condition}
+            AND p.status NOT IN ('DELETED')
+            ORDER BY p.id ASC
+            LIMIT $1
+        `;
+
+        try {
+            const res = await this.db.query(query, [limit]);
+            return this.mapProductRows(res.rows);
+        } catch (error) {
+            console.error('Error getting products with condition:', error);
+            throw error;
+        }
+    }
 
     private mapProductRows(rows: any[], includeCategories: boolean = false, includeAttributes: boolean = false): IProduct[] {
         if (rows.length === 0) {
@@ -384,12 +347,12 @@ class ProductsRepository {
         const categories: ICategory[] = [];
 
         if (row.category_ids) {
-            const categoryIds = row.category_ids.split(',').filter((id: string) => id && id.trim());
-            const categoryNames = row.category_names ? row.category_names.split('||').filter((name: string) => name) : [];
-            const categorySlugs = row.category_slugs ? row.category_slugs.split('||').filter((slug: string) => slug) : [];
-            const categoryParentIds = row.category_parent_ids ? row.category_parent_ids.split(',').filter((id: string) => id && id.trim()) : [];
-            const categoryLevels = row.category_levels ? row.category_levels.split(',').filter((level: string) => level && level.trim()) : [];
-            const categoryDescriptions = row.category_descriptions ? row.category_descriptions.split('||').filter((desc: string) => desc) : [];
+            const categoryIds = this.parseAggregatedField(row, 'category_ids', ',');
+            const categoryNames = this.parseAggregatedField(row, 'category_names', '||');
+            const categorySlugs = this.parseAggregatedField(row, 'category_slugs', '||');
+            const categoryParentIds = this.parseAggregatedField(row, 'category_parent_ids', ',');
+            const categoryLevels = this.parseAggregatedField(row, 'category_levels', ',');
+            const categoryDescriptions = this.parseAggregatedField(row, 'category_descriptions', '||');
 
             for (let i = 0; i < categoryIds.length; i++) {
                 if (categoryIds[i]) {
@@ -400,7 +363,7 @@ class ProductsRepository {
                         parent_id: categoryParentIds[i] ? parseInt(categoryParentIds[i]) : null,
                         sort_order: 0,
                         level: categoryLevels[i] ? parseInt(categoryLevels[i]) : 0,
-                        description: categoryDescriptions[i] || null,
+                        description: categoryDescriptions[i] || undefined,
                         created_at: new Date(),
                         updated_at: new Date()
                     });
@@ -418,20 +381,10 @@ class ProductsRepository {
             query += `, (1 - (p.embedding <=> $${1}::vector)) AS similarity`;
         }
         if (params.includeCategories) {
-            query += `, string_agg(DISTINCT c.id::text, ',') as category_ids,
-            string_agg(c.name, '||') as category_names,
-            string_agg(c.slug, '||') as category_slugs,
-            string_agg(c.parent_id::text, ',') as category_parent_ids,
-            string_agg(c.level::text, ',') as category_levels,
-            string_agg(c.description, '||') as category_descriptions`;
+            query += this.getCategoryAggregations();
         }
         if (params.includeAttributes) {
-            query += `, string_agg(a.id::text, ',' ORDER BY pa.id) as attribute_ids,
-            string_agg(a.name, '||' ORDER BY pa.id) as attribute_names,
-            string_agg(a.slug, '||' ORDER BY pa.id) as attribute_slugs,
-            string_agg(av.id::text, ',' ORDER BY pa.id) as value_ids,
-            string_agg(av.value, '||' ORDER BY pa.id) as values,
-            string_agg(av.slug, '||' ORDER BY pa.id) as value_slugs`;
+            query += this.getAttributeAggregations();
         }
 
         query += ` FROM products p`;
@@ -465,12 +418,7 @@ class ProductsRepository {
                                  params.includeCategories;
 
         if (needsCategoryJoin) {
-            query += ' LEFT JOIN product_categories pc ON p.id = pc.product_id ';
-
-            // Add category details if including categories
-            if (params.includeCategories) {
-                query += ' LEFT JOIN Category c ON pc.category_id = c.id ';
-            }
+            query += this.getCategoryJoins();
 
             // Add filtering conditions when filtering by category
             if (params.categoryIds && params.categoryIds.length > 0) {
@@ -487,13 +435,7 @@ class ProductsRepository {
             params.includeAttributes;
 
         if (needsAttributeJoin) {
-            query += ' LEFT JOIN product_attributes pa ON p.id = pa.product_id ';
-
-            // Add attribute details if including attributes
-            if (params.includeAttributes) {
-                query += ' LEFT JOIN attributes a ON pa.attribute_id = a.id ';
-                query += ' LEFT JOIN attribute_values av ON pa.attribute_value_id = av.id ';
-            }
+            query += this.getAttributeJoins();
 
             // Add filtering condition when filtering by attribute values
             if (params.attributeValueIds && params.attributeValueIds.length > 0) {
@@ -585,12 +527,12 @@ class ProductsRepository {
         const attributes: IProductAttributeDetail[] = [];
 
         if (row.value_ids) {
-            const attributeIds = row.attribute_ids ? row.attribute_ids.split(',').filter((id: string) => id && id.trim()) : [];
-            const attributeNames = row.attribute_names ? row.attribute_names.split('||').filter((name: string) => name) : [];
-            const attributeSlugs = row.attribute_slugs ? row.attribute_slugs.split('||').filter((slug: string) => slug) : [];
-            const valueIds = row.value_ids.split(',').filter((id: string) => id && id.trim());
-            const values = row.values ? row.values.split('||').filter((val: string) => val) : [];
-            const valueSlugs = row.value_slugs ? row.value_slugs.split('||').filter((slug: string) => slug) : [];
+            const attributeIds = this.parseAggregatedField(row, 'attribute_ids', ',');
+            const attributeNames = this.parseAggregatedField(row, 'attribute_names', '||');
+            const attributeSlugs = this.parseAggregatedField(row, 'attribute_slugs', '||');
+            const valueIds = this.parseAggregatedField(row, 'value_ids', ',');
+            const values = this.parseAggregatedField(row, 'values', '||');
+            const valueSlugs = this.parseAggregatedField(row, 'value_slugs', '||');
 
             // Iterate over valueIds instead of attributeIds to handle multiple values per attribute
             for (let i = 0; i < valueIds.length; i++) {
@@ -608,6 +550,35 @@ class ProductsRepository {
         }
 
         baseProduct.attributes = attributes;
+    }
+    
+    private getCategoryAggregations(): string {
+        return `, string_agg(DISTINCT c.id::text, ',') as category_ids,
+            string_agg(c.name, '||') as category_names,
+            string_agg(c.slug, '||') as category_slugs,
+            string_agg(c.parent_id::text, ',') as category_parent_ids,
+            string_agg(c.level::text, ',') as category_levels,
+            string_agg(c.description, '||') as category_descriptions`;
+    }
+
+    private getAttributeAggregations(): string {
+        return `, string_agg(a.id::text, ',' ORDER BY pa.id) as attribute_ids,
+            string_agg(a.name, '||' ORDER BY pa.id) as attribute_names,
+            string_agg(a.slug, '||' ORDER BY pa.id) as attribute_slugs,
+            string_agg(av.id::text, ',' ORDER BY pa.id) as value_ids,
+            string_agg(av.value, '||' ORDER BY pa.id) as values,
+            string_agg(av.slug, '||' ORDER BY pa.id) as value_slugs`;
+    }
+
+    private getCategoryJoins(): string {
+        return ` LEFT JOIN product_categories pc ON p.id = pc.product_id
+                 LEFT JOIN Category c ON pc.category_id = c.id`;
+    }
+
+    private getAttributeJoins(): string {
+        return ` LEFT JOIN product_attributes pa ON p.id = pa.product_id
+                 LEFT JOIN attributes a ON pa.attribute_id = a.id
+                 LEFT JOIN attribute_values av ON pa.attribute_value_id = av.id`;
     }
 }
 
