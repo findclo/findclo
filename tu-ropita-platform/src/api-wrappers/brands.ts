@@ -116,8 +116,12 @@ class PrivateBrandsApiWrapper {
         return updatedBrand as IBrand;
     }
 
-    async getBrandProductsAsPrivilegedUser(auth_token: string, brandId: string, includeCategories: boolean = false): Promise<IListProductResponseDto | null> {
-        const queryParams = includeCategories ? '?includeCategories=true' : '';
+    async getBrandProductsAsPrivilegedUser(auth_token: string, brandId: string, includeCategories: boolean = false, includeAttributes: boolean = false): Promise<IListProductResponseDto | null> {
+        const params = new URLSearchParams();
+        if (includeCategories) params.append('includeCategories', 'true');
+        if (includeAttributes) params.append('includeAttributes', 'true');
+        const queryParams = params.toString() ? `?${params.toString()}` : '';
+
         const [error, products] = await fetcher(`${ADMIN_BRANDS_PATH}/${brandId}/products${queryParams}`,{
             method: 'GET',
             headers: {

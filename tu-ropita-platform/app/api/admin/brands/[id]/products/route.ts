@@ -5,7 +5,17 @@ import {withBrandPermission} from "@/lib/routes_middlewares";
 
 export const GET = withBrandPermission(async(req: Request, {params}: {params: {id:string}}) => {
     try{
-        const products = await productService.listProducts({brandId: parseInt(params.id),excludeBrandPaused: false});
+        // Parse query parameters
+        const url = new URL(req.url);
+        const includeCategories = url.searchParams.get('includeCategories') === 'true';
+        const includeAttributes = url.searchParams.get('includeAttributes') === 'true';
+
+        const products = await productService.listProducts({
+            brandId: parseInt(params.id),
+            excludeBrandPaused: false,
+            includeCategories,
+            includeAttributes
+        });
 
 
         return new Response(JSON.stringify(products), {

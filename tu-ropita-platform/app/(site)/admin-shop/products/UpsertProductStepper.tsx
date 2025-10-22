@@ -68,7 +68,9 @@ const UpsertProductStepper: React.FC<UpsertProductStepperProps> = ({
           const attributesMap = new Map<number, Set<number>>();
           product.attributes.forEach(attr => {
             if (attr.value && attr.value.length > 0) {
-              attributesMap.set(attr.attribute_id, new Set([attr.value_id]));
+              const existingValues = attributesMap.get(attr.attribute_id) || new Set<number>();
+              existingValues.add(attr.value_id);
+              attributesMap.set(attr.attribute_id, existingValues);
             }
           });
           setSelectedAttributes(attributesMap);
@@ -150,7 +152,7 @@ const UpsertProductStepper: React.FC<UpsertProductStepperProps> = ({
     await handleSubmit(
       filteredProduct,
       Array.from(selectedCategories),
-      attributes.length > 0 ? attributes : undefined
+      attributes  // Always pass attributes array, even if empty (to clear all attributes when none selected)
     );
 
     // Reset form after successful submission

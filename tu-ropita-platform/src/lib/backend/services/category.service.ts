@@ -65,8 +65,6 @@ export class CategoryService {
 
     async removeProductFromCategories(productId: number, categoryIds?: number[]): Promise<void> {
         await categoryRepository.removeProductFromCategories(productId, categoryIds);
-        embeddingProcessorService.generateEmbeddingForProduct(productId);
-
     }
 
     async assignCategoryToProducts(productIds: number[], categoryId: number): Promise<void> {
