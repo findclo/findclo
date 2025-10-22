@@ -20,6 +20,7 @@ import {
   Download,
   FileDown,
   Loader2,
+  Plus,
   Upload
 } from "lucide-react";
 import { Suspense, useCallback, useEffect, useRef, useState, useMemo } from "react";
@@ -304,12 +305,15 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
 
   return (
     <div className="container mx-auto p-4">
+      <UpsertProductStepper
+        isOpen={isAddProductOpen}
+        setIsOpen={setIsAddProductOpen}
+        handleSubmit={handleAddProduct}
+      />
       <div className="flex justify-between mb-4">
-        <UpsertProductStepper
-          isOpen={isAddProductOpen}
-          setIsOpen={setIsAddProductOpen}
-          handleSubmit={handleAddProduct}
-        />
+        <Button onClick={() => setIsAddProductOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Añadir Producto
+        </Button>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={handleDownloadTemplate}>
             <Download className="mr-2 h-4 w-4" /> Descargar Plantilla

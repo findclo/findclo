@@ -344,34 +344,21 @@ class ProductsRepository {
     }
 
     private mapCategoriesToProduct(row: any, baseProduct: IProduct) {
-        const categories: ICategory[] = [];
-
-        if (row.category_ids) {
-            const categoryIds = this.parseAggregatedField(row, 'category_ids', ',');
-            const categoryNames = this.parseAggregatedField(row, 'category_names', '||');
-            const categorySlugs = this.parseAggregatedField(row, 'category_slugs', '||');
-            const categoryParentIds = this.parseAggregatedField(row, 'category_parent_ids', ',');
-            const categoryLevels = this.parseAggregatedField(row, 'category_levels', ',');
-            const categoryDescriptions = this.parseAggregatedField(row, 'category_descriptions', '||');
-
-            for (let i = 0; i < categoryIds.length; i++) {
-                if (categoryIds[i]) {
-                    categories.push({
-                        id: parseInt(categoryIds[i]),
-                        name: categoryNames[i] || '',
-                        slug: categorySlugs[i] || '',
-                        parent_id: categoryParentIds[i] ? parseInt(categoryParentIds[i]) : null,
-                        sort_order: 0,
-                        level: categoryLevels[i] ? parseInt(categoryLevels[i]) : 0,
-                        description: categoryDescriptions[i] || undefined,
-                        created_at: new Date(),
-                        updated_at: new Date()
-                    });
-                }
-            }
+        if (row.categories_json && Array.isArray(row.categories_json)) {
+            baseProduct.categories = row.categories_json.map((cat: any) => ({
+                id: cat.id,
+                name: cat.name,
+                slug: cat.slug,
+                parent_id: cat.parent_id,
+                sort_order: cat.sort_order || 0,
+                level: cat.level,
+                description: cat.description || undefined,
+                created_at: cat.created_at ? new Date(cat.created_at) : new Date(),
+                updated_at: cat.updated_at ? new Date(cat.updated_at) : new Date()
+            }));
+        } else {
+            baseProduct.categories = [];
         }
-
-        baseProduct.categories = categories;
     }
 
 
@@ -526,48 +513,43 @@ class ProductsRepository {
     private mapAttributesToProduct(row: any, baseProduct: IProduct) {
         const attributes: IProductAttributeDetail[] = [];
 
-        if (row.value_ids) {
-            const attributeIds = this.parseAggregatedField(row, 'attribute_ids', ',');
-            const attributeNames = this.parseAggregatedField(row, 'attribute_names', '||');
-            const attributeSlugs = this.parseAggregatedField(row, 'attribute_slugs', '||');
-            const valueIds = this.parseAggregatedField(row, 'value_ids', ',');
-            const values = this.parseAggregatedField(row, 'values', '||');
-            const valueSlugs = this.parseAggregatedField(row, 'value_slugs', '||');
-
-            // Iterate over valueIds instead of attributeIds to handle multiple values per attribute
-            for (let i = 0; i < valueIds.length; i++) {
-                if (valueIds[i] && attributeIds[i]) {
-                    attributes.push({
-                        attribute_id: parseInt(attributeIds[i]),
-                        attribute_name: attributeNames[i] || '',
-                        attribute_slug: attributeSlugs[i] || '',
-                        value_id: parseInt(valueIds[i]),
-                        value: values[i] || '',
-                        value_slug: valueSlugs[i] || '',
-                    });
-                }
-            }
+        if (row.attributes_json && Array.isArray(row.attributes_json)) {
+            baseProduct.attributes = row.attributes_json.map((attr: any) => ({
+                attribute_id: attr.attribute_id,
+                attribute_name: attr.attribute_name,
+                attribute_slug: attr.attribute_slug,
+                value_id: attr.value_id,
+                value: attr.value,
+                value_slug: attr.value_slug
+            }));
+        } else {
+            baseProduct.attributes = [];
         }
-
-        baseProduct.attributes = attributes;
     }
     
     private getCategoryAggregations(): string {
-        return `, string_agg(DISTINCT c.id::text, ',') as category_ids,
-            string_agg(c.name, '||') as category_names,
-            string_agg(c.slug, '||') as category_slugs,
-            string_agg(c.parent_id::text, ',') as category_parent_ids,
-            string_agg(c.level::text, ',') as category_levels,
-            string_agg(c.description, '||') as category_descriptions`;
+        return `, jsonb_agg(DISTINCT jsonb_build_object(
+                'id', c.id,
+                'name', c.name,
+                'slug', c.slug,
+                'parent_id', c.parent_id,
+                'sort_order', 0,
+                'level', c.level,
+                'description', c.description,
+                'created_at', c.created_at,
+                'updated_at', c.updated_at
+            )) FILTER (WHERE c.id IS NOT NULL) as categories_json`;
     }
 
     private getAttributeAggregations(): string {
-        return `, string_agg(a.id::text, ',' ORDER BY pa.id) as attribute_ids,
-            string_agg(a.name, '||' ORDER BY pa.id) as attribute_names,
-            string_agg(a.slug, '||' ORDER BY pa.id) as attribute_slugs,
-            string_agg(av.id::text, ',' ORDER BY pa.id) as value_ids,
-            string_agg(av.value, '||' ORDER BY pa.id) as values,
-            string_agg(av.slug, '||' ORDER BY pa.id) as value_slugs`;
+        return `, jsonb_agg(DISTINCT jsonb_build_object(
+                'attribute_id', a.id,
+                'attribute_name', a.name,
+                'attribute_slug', a.slug,
+                'value_id', av.id,
+                'value', av.value,
+                'value_slug', av.slug
+            )) FILTER (WHERE a.id IS NOT NULL AND av.id IS NOT NULL) as attributes_json`;
     }
 
     private getCategoryJoins(): string {
