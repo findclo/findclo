@@ -201,7 +201,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
         }
     };
     fetchCredits();
-}, [brandId]);
+}, [brandId, authToken]);
 
 const handleStopPromotion = async (promotionId: string) => {
   try {

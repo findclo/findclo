@@ -60,10 +60,6 @@ export const AdminAttributeManagement: React.FC<AdminAttributeManagementProps> =
 
   const token = Cookies.get("Authorization");
 
-  useEffect(() => {
-    loadAttributes();
-  }, []);
-
   const loadAttributes = useCallback(async () => {
     if (!token) return;
 
@@ -84,6 +80,10 @@ export const AdminAttributeManagement: React.FC<AdminAttributeManagementProps> =
       }));
     }
   }, [token]);
+
+  useEffect(() => {
+    loadAttributes();
+  }, [loadAttributes]);
 
   const handleCreateAttribute = useCallback(() => {
     setState(prev => ({

@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ICategoryTree } from "@/lib/backend/models/interfaces/category.interface";
 import { publicCategoriesApiWrapper } from "@/api-wrappers/categories";
-import { ChevronRight, ChevronDown, Tags } from "lucide-react";
+import { ChevronRight, ChevronDown, Tags, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CategorySelectorProps {
@@ -176,7 +177,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
               "hover:bg-gray-50 dark:hover:bg-gray-800",
               isSelected &&
                 "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-              !isLeaf && "opacity-60"
+              !isLeaf && "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
             )}
             style={{ marginLeft: `${level * 16}px` }}
           >
@@ -205,21 +206,28 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                 }
                 className={cn(!isLeaf && "cursor-not-allowed opacity-50")}
               />
-              <div className="flex-1 min-w-0">
-                <h3
-                  className={cn(
-                    "text-sm font-medium truncate",
-                    isLeaf
-                      ? "text-gray-900 dark:text-white"
-                      : "text-gray-500 dark:text-gray-400"
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <div className="flex-1">
+                  <h3
+                    className={cn(
+                      "text-sm font-medium truncate",
+                      isLeaf
+                        ? "text-gray-900 dark:text-white"
+                        : "text-gray-700 dark:text-gray-300"
+                    )}
+                  >
+                    {category.name}
+                  </h3>
+                  {!isLeaf && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Contiene subcategorías
+                    </p>
                   )}
-                >
-                  {category.name}
-                </h3>
-                {!isLeaf && (
-                  <p className="text-xs text-gray-400">
-                    Contiene subcategorías
-                  </p>
+                </div>
+                {isLeaf && (
+                  <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300">
+                    Seleccionable
+                  </Badge>
                 )}
               </div>
             </div>
@@ -265,9 +273,12 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
         </div>
       ) : (
         <>
-          <p className="text-xs text-gray-500">
-            Solo puedes seleccionar categorías que no tengan subcategorías
-          </p>
+          <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
+              Solo puedes seleccionar categorías que no tengan subcategorías (marcadas como &quot;Seleccionable&quot;)
+            </AlertDescription>
+          </Alert>
           <ScrollArea className="h-[300px] rounded-md border p-2">
             <div className="space-y-1">
               {filteredCategories.length > 0 ? (

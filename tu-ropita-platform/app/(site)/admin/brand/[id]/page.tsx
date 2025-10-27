@@ -116,7 +116,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
         fetchCredits();
         fetchBrandDetails();
         fetchProducts();
-    }, [id]);
+    }, [id, token]);
 
     useEffect(() => {
         async function fetchMetrics() {

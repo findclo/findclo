@@ -76,7 +76,7 @@ export default function AdminDashboard() {
             privateMetricsApiWrapper.getProductsMetrics(token!, dateRange.from, dateRange.to, selectedBrand === 'all' ? undefined : selectedBrand)
                 .then(metrics => setProductsMetrics(metrics));
         }
-    }, [dateRange, selectedBrand]);
+    }, [dateRange, selectedBrand, token]);
 
     const handleRefresh = async () => {
         try {

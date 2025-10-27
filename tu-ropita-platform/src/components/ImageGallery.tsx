@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface ImageGalleryProps {
   images: string[];
@@ -11,6 +11,14 @@ interface ImageGalleryProps {
 export default function ImageGallery({ images, productName }: ImageGalleryProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
+
+  const nextImage = useCallback(() => {
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+  }, [images.length]);
+
+  const prevImage = useCallback(() => {
+    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+  }, [images.length]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -36,15 +44,7 @@ export default function ImageGallery({ images, productName }: ImageGalleryProps)
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullScreen]);
-
-  const nextImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
-  };
+  }, [isFullScreen, nextImage, prevImage]);
 
   const setMainImage = (index: number) => {
     setCurrentImageIndex(index);

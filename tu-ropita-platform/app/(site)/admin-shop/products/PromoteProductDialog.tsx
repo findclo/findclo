@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 interface PromoteProductDialogProps {
@@ -61,7 +62,7 @@ const PromoteProductDialog: React.FC<PromoteProductDialogProps> = ({
         <div className="space-y-2">
           <Label className="text-sm font-medium">Producto</Label>
           <div className="rounded-lg bg-secondary p-3 flex items-center gap-2">
-            <img src={promotedProduct?.images[0]} alt={promotedProduct?.name} className="w-16 h-16 object-cover" />
+            <Image src={promotedProduct?.images[0] || ''} alt={promotedProduct?.name || ''} width={64} height={64} className="object-cover rounded" />
             <span className="font-medium">{promotedProduct?.name}</span>
           </div>
         </div>

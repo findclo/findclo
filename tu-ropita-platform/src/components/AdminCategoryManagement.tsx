@@ -62,12 +62,6 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
   });
   const token = Cookies.get("Authorization")
 
-  // Load categories on mount
-  useEffect(() => {
-    loadCategories();
-    loadAllCategories();
-  }, []);
-
   const loadCategories = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -98,6 +92,12 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       console.error('Error loading all categories:', error);
     }
   }, []);
+
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+    loadAllCategories();
+  }, [loadCategories, loadAllCategories]);
 
   const handleCreateCategory = useCallback(() => {
     setState(prev => ({
@@ -136,7 +136,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       console.error('Error deleting category:', error);
       alert('No se pudo eliminar la categoría');
     }
-  }, [loadCategories, loadAllCategories]);
+  }, [token, loadCategories, loadAllCategories]);
 
   const handleSaveCategory = useCallback(async () => {
     try {
@@ -159,7 +159,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
       console.error('Error saving category:', error);
       alert('No se pudo guardar la categoría');
     }
-  }, [state.isCreating, state.isEditing, state.selectedCategory, state.formData, loadCategories, loadAllCategories]);
+  }, [token, state.isCreating, state.isEditing, state.selectedCategory, state.formData, loadCategories, loadAllCategories]);
 
   const handleCancelEdit = useCallback(() => {
     setState(prev => ({
@@ -202,7 +202,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
 
   const handleDrop = useCallback(async (e: React.DragEvent, targetCategory: ICategoryTree) => {
     e.preventDefault();
-    
+
     if (!state.draggedCategory || state.draggedCategory.id === targetCategory.id) {
       return;
     }
@@ -221,37 +221,37 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
     } finally {
       setState(prev => ({ ...prev, draggedCategory: null }));
     }
-  }, [state.draggedCategory, loadCategories, loadAllCategories]);
+  }, [token, state.draggedCategory, loadCategories, loadAllCategories]);
 
-  const filterCategoriesByQuery = (categories: ICategoryTree[], query: string): ICategoryTree[] => {
+  const filterCategoriesByQuery = useCallback((categories: ICategoryTree[], query: string): ICategoryTree[] => {
     return categories.filter(category => {
       const matches = category.name.toLowerCase().includes(query) ||
                      category.description?.toLowerCase().includes(query);
-      
+
       if (matches) return true;
-      
+
       if (category.children.length > 0) {
         const matchingChildren = filterCategoriesByQuery(category.children, query);
         return matchingChildren.length > 0;
       }
-      
+
       return false;
     }).map(category => ({
       ...category,
-      children: category.children.length > 0 
+      children: category.children.length > 0
         ? filterCategoriesByQuery(category.children, query)
         : []
     }));
-  };
+  }, []);
 
-  const filterActiveCategories = (categories: ICategoryTree[]): ICategoryTree[] => {
+  const filterActiveCategories = useCallback((categories: ICategoryTree[]): ICategoryTree[] => {
     return categories.map(category => ({
       ...category,
-      children: category.children.length > 0 
+      children: category.children.length > 0
         ? filterActiveCategories(category.children)
         : []
     }));
-  };
+  }, []);
 
   const filteredCategories = useMemo(() => {
     let filtered = state.categories;
@@ -266,7 +266,7 @@ export const AdminCategoryManagement: React.FC<AdminCategoryManagementProps> = (
     }
 
     return filtered;
-  }, [state.categories, state.searchQuery, state.showInactive]);
+  }, [state.categories, state.searchQuery, state.showInactive, filterCategoriesByQuery, filterActiveCategories]);
 
   const renderCategoryItem = useCallback((category: ICategoryTree, level: number = 0) => {
     const hasChildren = category.children.length > 0;
