@@ -35,7 +35,7 @@ export default function BillingDashboard() {
         const brandData = await privateBrandsApiWrapper.getMyBrand(token);
         setBrand(brandData);
         return brandData;
-    }, []);
+    }, [token]);
     const fetchBills = useCallback(
         async (brandId: string) => {
             try {
@@ -48,7 +48,7 @@ export default function BillingDashboard() {
                 setLoading(false)
             }
         },
-        [])
+        [token])
 
     const fetchBillableItems = useCallback(async () => {
         try {

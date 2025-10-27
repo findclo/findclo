@@ -276,7 +276,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
           <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
             <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
-              Solo puedes seleccionar categorías que no tengan subcategorías (marcadas como "Seleccionable")
+              Solo puedes seleccionar categorías que no tengan subcategorías (marcadas como &quot;Seleccionable&quot;)
             </AlertDescription>
           </Alert>
           <ScrollArea className="h-[300px] rounded-md border p-2">

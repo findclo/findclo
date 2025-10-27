@@ -45,7 +45,7 @@ const ProductPromotionDetailsDialog: React.FC<ProductPromotionDetailsDialogProps
     };
 
     fetchPromotionDetails();
-  }, [isOpen, promotionId, brandId]);
+  }, [isOpen, promotionId, brandId, authToken]);
 
   if (!promotion) return null;
 

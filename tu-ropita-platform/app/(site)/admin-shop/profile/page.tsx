@@ -22,7 +22,7 @@ export default function AdminShopProfile() {
       const brandData = await privateBrandsApiWrapper.getMyBrand(authToken);
       setBrand(brandData);
       return brandData;
-    }, []);
+    }, [authToken]);
 
 
     useEffect(() => {
