@@ -131,6 +131,11 @@ class ProductService {
             await categoryService.assignProductToCategories(createdProduct.id, product.category_ids);
         }
 
+        // Assign attributes if provided
+        if (product.attributes && product.attributes.length > 0) {
+            await attributeService.assignAttributesToProduct(createdProduct.id, { attributes: product.attributes });
+        }
+
         embeddingProcessorService.generateEmbeddingForProduct(createdProduct.id);
 
         return createdProduct;
