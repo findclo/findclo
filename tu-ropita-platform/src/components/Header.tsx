@@ -65,18 +65,29 @@ const Header = () => {
 
   const menuItems = getMenuItems(user);
 
+  // Only show category menu for public users (not ADMIN or BRAND_OWNER)
+  const showCategoryMenu = !user || (user.user_type !== UserTypeEnum.ADMIN && user.user_type !== UserTypeEnum.BRAND_OWNER);
+
   return (
     <>
       {/* Top header for mobile */}
       <header className="border-b md:hidden fixed top-0 left-0 right-0 bg-white z-50">
-        <div className="container flex h-12 items-center justify-between relative">
-          {/* Left: Category Menu */}
-          <div className="flex-shrink-0">
-            <CategoryMegaMenu activeCategoryId={activeCategoryId} inline={true} />
-          </div>
+        <div className="container flex h-12 items-center justify-between">
+          {/* Left: Category Menu (only for public users) */}
+          {showCategoryMenu && (
+            <div className="flex-shrink-0">
+              <CategoryMegaMenu activeCategoryId={activeCategoryId} inline={true} />
+            </div>
+          )}
 
-          {/* Center: Logo */}
-          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
+          {/* Center/Left: Logo */}
+          <Link
+            href="/"
+            className={cn(
+              "flex items-center",
+              showCategoryMenu ? "absolute left-1/2 transform -translate-x-1/2" : "flex-1"
+            )}
+          >
             <Image
               src="/logo.webp"
               alt="FindClo Logo"
@@ -139,14 +150,22 @@ const Header = () => {
 
       {/* Existing header for desktop */}
       <header className="border-b hidden md:block sticky top-0 z-50 bg-white">
-        <div className="container flex h-16 items-center justify-between relative">
-          {/* Left: Category Menu */}
-          <div className="flex-shrink-0">
-            <CategoryMegaMenu activeCategoryId={activeCategoryId} inline={true} />
-          </div>
+        <div className="container flex h-16 items-center justify-between">
+          {/* Left: Category Menu (only for public users) */}
+          {showCategoryMenu && (
+            <div className="flex-shrink-0">
+              <CategoryMegaMenu activeCategoryId={activeCategoryId} inline={true} />
+            </div>
+          )}
 
-          {/* Center: Logo */}
-          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
+          {/* Center/Left: Logo */}
+          <Link
+            href="/"
+            className={cn(
+              "flex items-center",
+              showCategoryMenu ? "absolute left-1/2 transform -translate-x-1/2" : "flex-1"
+            )}
+          >
             <Image
               src="/logo.webp"
               alt="FindClo Logo"
