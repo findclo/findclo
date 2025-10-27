@@ -4,14 +4,6 @@ import { publicCategoriesApiWrapper } from "@/api-wrappers/categories";
 import { ICategoryTree } from "@/lib/backend/models/interfaces/category.interface";
 import { cn } from "@/lib/utils";
 import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -19,19 +11,86 @@ import {
 } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Grid3x3, Menu } from "lucide-react";
+import { Compass, ChevronRight, ChevronDown, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 interface CategoryMegaMenuProps {
   activeCategoryId?: number | null;
-  currentSearchQuery?: string;
+  inline?: boolean; // true when integrated in Header, false for standalone sticky behavior
 }
 
-export const CategoryMegaMenu = ({ activeCategoryId = null, currentSearchQuery = '' }: CategoryMegaMenuProps = {}) => {
+// Recursive component for category items with unlimited nesting
+interface RecursiveCategoryItemProps {
+  category: ICategoryTree;
+  level: number;
+  activeCategoryId: number | null;
+  onNavigate: (categoryId: number) => void;
+}
+
+const RecursiveCategoryItem: React.FC<RecursiveCategoryItemProps> = ({
+  category,
+  level,
+  activeCategoryId,
+  onNavigate
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasChildren = category.children && category.children.length > 0;
+  const isActive = activeCategoryId === category.id;
+
+  return (
+    <div className={cn("space-y-0.5", level > 0 && "ml-3")}>
+      <div className="flex items-center gap-0.5 group">
+        {hasChildren && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+            aria-label={isExpanded ? "Colapsar" : "Expandir"}
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-3 w-3 text-gray-500" />
+            ) : (
+              <ChevronRight className="h-3 w-3 text-gray-500" />
+            )}
+          </button>
+        )}
+        {!hasChildren && <span className="w-3.5" />}
+
+        <button
+          onClick={() => onNavigate(category.id)}
+          className={cn(
+            "text-xs text-left transition-colors flex-1 py-0.5",
+            isActive
+              ? "text-blue-600 font-semibold"
+              : "text-gray-700 hover:text-black hover:underline"
+          )}
+        >
+          {category.name}
+        </button>
+      </div>
+
+      {isExpanded && hasChildren && (
+        <div className="space-y-0.5 mt-0.5">
+          {category.children.map((child) => (
+            <RecursiveCategoryItem
+              key={child.id}
+              category={child}
+              level={level + 1}
+              activeCategoryId={activeCategoryId}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const CategoryMegaMenu = ({ activeCategoryId = null, inline = false }: CategoryMegaMenuProps = {}) => {
   const [categories, setCategories] = useState<ICategoryTree[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const router = useRouter();
 
   const loadCategories = useCallback(async () => {
@@ -52,13 +111,13 @@ export const CategoryMegaMenu = ({ activeCategoryId = null, currentSearchQuery =
 
   const handleCategoryClick = useCallback((categoryId: number) => {
     setIsSheetOpen(false);
-    const params = new URLSearchParams();
-    params.append('categoryId', categoryId.toString());
-    if (currentSearchQuery?.trim()) {
-      params.append('search', currentSearchQuery.trim());
-    }
-    router.push(`/search?${params.toString()}`);
-  }, [router, currentSearchQuery]);
+    setIsMegaMenuOpen(false);
+    // Preserve all existing query params from current URL
+    const currentParams = new URLSearchParams(window.location.search);
+    // Update only the categoryId
+    currentParams.set('categoryId', categoryId.toString());
+    router.push(`/search?${currentParams.toString()}`);
+  }, [router]);
 
   // Helper function to find parent category ID
   const getParentCategoryId = useCallback((categoryId: number | null): number | null => {
@@ -82,8 +141,12 @@ export const CategoryMegaMenu = ({ activeCategoryId = null, currentSearchQuery =
 
   if (isLoading) {
     return (
-      <div className="sticky top-0 z-50 bg-white border-b border-black/5">
-        <div className="container max-w-7xl mx-auto h-12 flex items-center justify-between">
+      <div className={cn(
+        inline ? "" : "sticky top-0 z-50 bg-white border-b border-black/5"
+      )}>
+        <div className={cn(
+          inline ? "flex items-center" : "container max-w-7xl mx-auto h-12 flex items-center justify-between"
+        )}>
           <div className="md:hidden">
             <div className="h-4 bg-neutral-200 rounded w-24 animate-pulse"></div>
           </div>
@@ -102,182 +165,178 @@ export const CategoryMegaMenu = ({ activeCategoryId = null, currentSearchQuery =
   const mainCategories = categories.filter(cat => cat.parent_id === null);
 
   return (
-    <div className="sticky top-0 z-50 bg-white border-b border-black/5">
-      <div className="container max-w-7xl mx-auto h-12 flex items-center justify-between">
+    <div className={cn(
+      inline ? "" : "sticky top-0 z-50 bg-white border-b border-black/5"
+    )}>
+      <div className={cn(
+        inline ? "flex items-center" : "container max-w-7xl mx-auto h-12 flex items-center justify-between"
+      )}>
         {/* Mobile - Sheet with Categories */}
         <div className="md:hidden">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" className="gap-2 font-medium text-sm">
-                <Grid3x3 className="h-4 w-4" />
-                Categorías
+                <Compass className="h-4 w-4" />
+                Explorar
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80 flex flex-col">
               <SheetHeader>
-                <SheetTitle>Categorías</SheetTitle>
+                <SheetTitle>Explorar</SheetTitle>
               </SheetHeader>
               <div className="mt-6 overflow-y-auto max-h-[calc(100vh-8rem)] pr-2">
-                <Accordion type="single" collapsible className="w-full">
-                  {mainCategories.map((mainCategory) => (
-                    <AccordionItem key={mainCategory.id} value={`cat-${mainCategory.id}`}>
-                      <AccordionTrigger className="text-sm font-medium">
-                        {mainCategory.name}
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-1 pl-2">
-                          {mainCategory.children.map((subCategory) => {
-                            const isSubCategoryActive = activeCategoryId === subCategory.id;
-                            return (
-                              <div key={subCategory.id}>
-                                <button
-                                  onClick={() => handleCategoryClick(subCategory.id)}
-                                  className={cn(
-                                    "block w-full text-left py-2 px-3 rounded-md",
-                                    "transition-colors duration-200",
-                                    isSubCategoryActive
-                                      ? "bg-black text-white font-medium text-sm"
-                                      : "text-sm text-neutral-600 hover:text-black hover:bg-neutral-50"
-                                  )}
-                                >
-                                  {subCategory.name}
-                                </button>
-                                {/* Third level categories */}
-                                {subCategory.children.length > 0 && (
-                                  <div className="ml-4 space-y-1 border-l border-neutral-200 pl-3 mt-1">
-                                    {subCategory.children.map((childCategory) => {
-                                      const isChildCategoryActive = activeCategoryId === childCategory.id;
-                                      return (
-                                        <button
-                                          key={childCategory.id}
-                                          onClick={() => handleCategoryClick(childCategory.id)}
-                                          className={cn(
-                                            "block w-full text-left py-1.5 px-2 rounded-md",
-                                            "transition-colors duration-200",
-                                            isChildCategoryActive
-                                              ? "bg-black text-white font-medium text-xs"
-                                              : "text-xs text-neutral-500 hover:text-black hover:bg-neutral-50"
-                                          )}
-                                        >
-                                          {childCategory.name}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
+                <Accordion type="single" collapsible defaultValue="explorar" className="w-full">
+                  <AccordionItem value="explorar" className="border-none">
+                    <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                      Categorías
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      {/* Nested accordion for main categories (Hombre/Mujer) */}
+                      <Accordion type="multiple" className="w-full pl-2">
+                        {mainCategories.map((mainCategory) => {
+                          const isMainCategoryActive = activeCategoryId === mainCategory.id;
+                          const hasChildren = mainCategory.children.length > 0;
+
+                          return (
+                            <AccordionItem key={mainCategory.id} value={`cat-${mainCategory.id}`} className="border-b">
+                              <div className="flex items-center">
+                                {hasChildren && (
+                                  <AccordionTrigger className="flex-1 text-sm font-medium hover:no-underline py-3">
+                                    <span
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCategoryClick(mainCategory.id);
+                                      }}
+                                      className={cn(
+                                        "hover:underline",
+                                        isMainCategoryActive && "text-blue-600 font-semibold"
+                                      )}
+                                    >
+                                      {mainCategory.name}
+                                    </span>
+                                  </AccordionTrigger>
+                                )}
+                                {!hasChildren && (
+                                  <button
+                                    onClick={() => handleCategoryClick(mainCategory.id)}
+                                    className={cn(
+                                      "flex-1 text-left py-3 text-sm font-medium",
+                                      isMainCategoryActive && "text-blue-600 font-semibold"
+                                    )}
+                                  >
+                                    {mainCategory.name}
+                                  </button>
                                 )}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
+                              {hasChildren && (
+                                <AccordionContent>
+                                  <div className="space-y-2 pl-2">
+                                    {mainCategory.children.map((subCategory) => (
+                                      <RecursiveCategoryItem
+                                        key={subCategory.id}
+                                        category={subCategory}
+                                        level={0}
+                                        activeCategoryId={activeCategoryId}
+                                        onNavigate={handleCategoryClick}
+                                      />
+                                    ))}
+                                  </div>
+                                </AccordionContent>
+                              )}
+                            </AccordionItem>
+                          );
+                        })}
+                      </Accordion>
+                    </AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </div>
             </SheetContent>
           </Sheet>
         </div>
 
-        {/* Desktop - Mega Menu */}
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList className="gap-8">
-            {mainCategories.map((mainCategory) => {
-              const isMainCategoryActive = activeParentCategoryId === mainCategory.id;
-              return (
-                <NavigationMenuItem key={mainCategory.id}>
-                  <NavigationMenuTrigger
-                    className={cn(
-                      "bg-transparent hover:bg-transparent focus:bg-transparent",
-                      "data-[state=open]:bg-transparent data-[active]:bg-transparent",
-                      "text-sm transition-colors duration-200",
-                      "h-auto px-0",
-                      isMainCategoryActive
-                        ? "text-black font-semibold border-b-2 border-black"
-                        : "text-black font-medium hover:text-black/60"
-                    )}
-                  >
-                    {mainCategory.name}
-                  </NavigationMenuTrigger>
-                <NavigationMenuContent
-                  className={cn(
-                    "bg-white border-t border-black/5 shadow-lg z-[100]",
-                    "animate-in fade-in-0 slide-in-from-top-2 duration-200"
-                  )}
-                >
-                  <div className="py-6 px-8 w-[600px]">
-                    {mainCategory.children.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-6">
-                        {mainCategory.children.map((subCategory) => {
-                          const isSubCategoryActive = activeCategoryId === subCategory.id;
-                          return (
-                            <div key={subCategory.id}>
-                              <NavigationMenuLink asChild>
-                                <button
-                                  onClick={() => handleCategoryClick(subCategory.id)}
-                                  className={cn(
-                                    "block w-full text-left",
-                                    "transition-colors duration-200",
-                                    "py-1.5 px-2 rounded-md",
-                                    isSubCategoryActive
-                                      ? "text-sm font-semibold text-black bg-neutral-100"
-                                      : "text-sm text-neutral-600 hover:text-black hover:bg-neutral-50"
-                                  )}
-                                >
-                                  {subCategory.name}
-                                </button>
-                              </NavigationMenuLink>
+        {/* Desktop - Full-Width Mega Menu */}
+        <div className="hidden md:flex relative">
+          <Button
+            variant="ghost"
+            className="gap-2 font-medium text-sm"
+            onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
+          >
+            <Compass className="h-4 w-4" />
+            Explorar
+            <ChevronDown className={cn(
+              "h-3 w-3 transition-transform duration-200",
+              isMegaMenuOpen && "rotate-180"
+            )} />
+          </Button>
 
-                              {/* Third level categories if they exist */}
-                              {subCategory.children.length > 0 && (
-                                <div className="mt-2 ml-2 space-y-1 border-l border-neutral-200 pl-3">
-                                  {subCategory.children.map((childCategory) => {
-                                    const isChildCategoryActive = activeCategoryId === childCategory.id;
-                                    return (
-                                      <NavigationMenuLink key={childCategory.id} asChild>
-                                        <button
-                                          onClick={() => handleCategoryClick(childCategory.id)}
-                                          className={cn(
-                                            "block w-full text-left",
-                                            "transition-colors duration-200",
-                                            "py-1",
-                                            isChildCategoryActive
-                                              ? "text-xs font-semibold text-black"
-                                              : "text-xs text-neutral-500 hover:text-black"
-                                          )}
-                                        >
-                                          {childCategory.name}
-                                        </button>
-                                      </NavigationMenuLink>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <NavigationMenuLink asChild>
+          {isMegaMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-black/20 z-40"
+                onClick={() => setIsMegaMenuOpen(false)}
+                aria-label="Cerrar menú"
+              />
+
+              {/* Full-Width Mega Menu */}
+              <div className="absolute top-full left-0 bg-white shadow-2xl z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200 w-[700px]">
+                <div className="py-4 px-6 max-h-96 overflow-y-auto">
+                  {/* Header */}
+                  <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+                    <h2 className="text-lg font-bold text-gray-900 uppercase">
+                      Explorar Categorías
+                    </h2>
+                    <button
+                      onClick={() => setIsMegaMenuOpen(false)}
+                      className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                      aria-label="Cerrar"
+                    >
+                      <X className="h-4 w-4 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Grid of Categories */}
+                  <div className={cn(
+                    "grid gap-6",
+                    mainCategories.length === 2 && "grid-cols-2",
+                    mainCategories.length === 3 && "grid-cols-3",
+                    mainCategories.length >= 4 && "grid-cols-4"
+                  )}>
+                    {mainCategories.map((mainCategory) => (
+                      <div key={mainCategory.id} className="space-y-2">
+                        {/* Category Title - Clickeable */}
                         <button
                           onClick={() => handleCategoryClick(mainCategory.id)}
-                          className={cn(
-                            "block w-full text-left",
-                            "text-sm text-neutral-600 hover:text-black",
-                            "transition-colors duration-200",
-                            "py-1.5 px-2 rounded-md hover:bg-neutral-50"
-                          )}
+                          className="w-full text-left border-b border-gray-300 pb-1 hover:border-blue-400 transition-colors group"
                         >
-                          Ver todos en {mainCategory.name}
+                          <h3 className="text-sm font-bold uppercase text-gray-900 group-hover:text-blue-600 transition-colors">
+                            {mainCategory.name}
+                          </h3>
                         </button>
-                      </NavigationMenuLink>
-                    )}
+
+                        {/* Subcategories - Recursive */}
+                        {mainCategory.children && mainCategory.children.length > 0 && (
+                          <div className="space-y-1.5">
+                            {mainCategory.children.map((subCategory) => (
+                              <RecursiveCategoryItem
+                                key={subCategory.id}
+                                category={subCategory}
+                                level={0}
+                                activeCategoryId={activeCategoryId}
+                                onNavigate={handleCategoryClick}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                </NavigationMenuContent>
-                </NavigationMenuItem>
-              );
-            })}
-          </NavigationMenuList>
-        </NavigationMenu>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

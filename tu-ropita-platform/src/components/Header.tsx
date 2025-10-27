@@ -8,12 +8,19 @@ import { useUser } from '@/providers/ClientUserProvider';
 import { BarChart, CreditCard, Home, LogOut, Menu, Package, ShoppingBag, Store, User, Layers, Tags } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { CategoryMegaMenu } from './CategoryMegaMenu';
 
 const Header = () => {
   const { user, signOut } = useUser();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Get categoryId from URL for highlighting active category
+  const activeCategoryId = searchParams.get('categoryId')
+    ? parseInt(searchParams.get('categoryId')!, 10)
+    : null;
 
   const handleSignOut = () => {
     const confirmSignOut = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
@@ -62,31 +69,39 @@ const Header = () => {
     <>
       {/* Top header for mobile */}
       <header className="border-b md:hidden fixed top-0 left-0 right-0 bg-white z-50">
-        <div className="container flex h-12 items-center justify-between">
-          <Link href="/" className="flex items-center">
+        <div className="container flex h-12 items-center justify-between relative">
+          {/* Left: Category Menu */}
+          <div className="flex-shrink-0">
+            <CategoryMegaMenu activeCategoryId={activeCategoryId} inline={true} />
+          </div>
+
+          {/* Center: Logo */}
+          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
             <Image
               src="/logo.webp"
               alt="FindClo Logo"
-              width={100}
-              height={32}
-              className="h-8 w-auto object-contain"
+              width={80}
+              height={26}
+              className="h-6 w-auto object-contain"
               priority
               unoptimized
-              style={{ minWidth: '100px' }}
+              style={{ minWidth: '80px' }}
             />
           </Link>
+
+          {/* Right: Menu hamburger */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="flex-shrink-0">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
               <nav className="flex flex-col gap-4">
                 {menuItems.map((item, index) => (
-                  <Link 
-                    key={index} 
-                    href={item.href} 
+                  <Link
+                    key={index}
+                    href={item.href}
                     className={cn(
                       "flex items-center gap-2 py-2",
                       pathname === item.href && "font-bold border-b-2 border-details"
@@ -99,9 +114,9 @@ const Header = () => {
                 {user && (
                   <>
                     <div className="border-t my-2"></div>
-                    <Button 
-                      onClick={handleSignOut} 
-                      variant="outline" 
+                    <Button
+                      onClick={handleSignOut}
+                      variant="outline"
                       className={cn(
                         "w-full justify-start",
                         "border-red-500 text-red-500 hover:bg-red-50",
@@ -123,9 +138,15 @@ const Header = () => {
       <div className="h-12 md:hidden"></div>
 
       {/* Existing header for desktop */}
-      <header className="border-b hidden md:block">
-        <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center">
+      <header className="border-b hidden md:block sticky top-0 z-50 bg-white">
+        <div className="container flex h-16 items-center justify-between relative">
+          {/* Left: Category Menu */}
+          <div className="flex-shrink-0">
+            <CategoryMegaMenu activeCategoryId={activeCategoryId} inline={true} />
+          </div>
+
+          {/* Center: Logo */}
+          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
             <Image
               src="/logo.webp"
               alt="FindClo Logo"
@@ -137,11 +158,13 @@ const Header = () => {
               style={{ minWidth: '120px' }}
             />
           </Link>
-          <nav className="flex items-center gap-4">
+
+          {/* Right: Navigation */}
+          <nav className="flex items-center gap-4 flex-shrink-0">
             {menuItems.map((item, index) => (
-              <Button 
-                key={index} 
-                asChild 
+              <Button
+                key={index}
+                asChild
                 variant="ghost"
                 className={cn(
                   pathname === item.href && "font-bold border-b-2 border-details"
@@ -154,9 +177,9 @@ const Header = () => {
               </Button>
             ))}
             {user && (
-              <Button 
-                onClick={handleSignOut} 
-                variant="outline" 
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
                 className={cn(
                   "border-red-500 text-red-500 hover:bg-red-50",
                   "focus:ring-red-500"
