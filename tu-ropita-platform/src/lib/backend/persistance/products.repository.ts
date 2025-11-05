@@ -26,6 +26,7 @@ export interface IListProductsParams {
     includeCategories?: boolean;
     attributeValueIds?: number[];
     includeAttributes?: boolean;
+    includeDeleted?: boolean;
 }
 
 
@@ -456,9 +457,14 @@ class ProductsRepository {
             values.push(params.brandId);
         }
 
+        // Exclude DELETED products unless includeDeleted is true
+        if (!params.includeDeleted) {
+            conditions.push(`p.status != 'DELETED'`);
+        }
+
         // Add condition to exclude PAUSED products when userQuery is true
         if (params.userQuery) {
-            conditions.push(`p.status NOT IN ('PAUSED', 'DELETED')`);
+            conditions.push(`p.status NOT IN ('PAUSED', 'PAUSED_BY_ADMIN')`);
         }
 
         if (conditions.length > 0) {
