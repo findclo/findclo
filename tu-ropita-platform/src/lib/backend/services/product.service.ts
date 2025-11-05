@@ -126,19 +126,17 @@ class ProductService {
     public async createProduct(product: IProductDTO, brandId: string): Promise<IProduct> {
         const createdProduct = await productRepository.createProduct(product, brandId);
 
-        // Assign categories if provided
         if (product.category_ids && product.category_ids.length > 0) {
             await categoryService.assignProductToCategories(createdProduct.id, product.category_ids);
         }
 
-        // Assign attributes if provided
         if (product.attributes && product.attributes.length > 0) {
             await attributeService.assignAttributesToProduct(createdProduct.id, { attributes: product.attributes });
         }
 
         embeddingProcessorService.generateEmbeddingForProduct(createdProduct.id);
 
-        return createdProduct;
+        return this.getProductById(createdProduct.id, false, undefined, true, true);
     }
 
     public async deleteProduct(id: number): Promise<boolean> {
