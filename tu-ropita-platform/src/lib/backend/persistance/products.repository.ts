@@ -437,7 +437,7 @@ class ProductsRepository {
         if (params.search && params.search.trim().length > 0) {
             if (searchEmbedding && searchEmbedding.length > 0) {
                 conditions.push(`p.embedding IS NOT NULL`);
-                conditions.push(`(1 - (p.embedding <=> $1)) >= 0.4`); // Similarity threshold
+                conditions.push(`(1 - (p.embedding <=> $1)) >= 0.55`); // Similarity threshold
             } else {
                 conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
 
