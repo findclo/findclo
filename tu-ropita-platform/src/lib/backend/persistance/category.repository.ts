@@ -249,6 +249,51 @@ class CategoryRepository {
         }
     }
 
+    async assignCategoriesToMultipleProducts(productIds: number[], categoryIds: number[]): Promise<void> {
+        if (productIds.length === 0 || categoryIds.length === 0) return;
+
+        const values: string[] = [];
+        const params: number[] = [];
+        let paramIndex = 1;
+
+        productIds.forEach(productId => {
+            categoryIds.forEach(categoryId => {
+                values.push(`($${paramIndex}, $${paramIndex + 1})`);
+                params.push(productId, categoryId);
+                paramIndex += 2;
+            });
+        });
+
+        const query = `
+            INSERT INTO product_categories (product_id, category_id)
+            VALUES ${values.join(', ')}
+            ON CONFLICT (product_id, category_id) DO NOTHING
+        `;
+
+        try {
+            await this.db.query(query, params);
+        } catch (error) {
+            console.error('Error assigning categories to multiple products:', error);
+            throw new Error('Failed to assign categories to multiple products.');
+        }
+    }
+
+    async removeCategoriesFromMultipleProducts(productIds: number[], categoryIds: number[]): Promise<void> {
+        if (productIds.length === 0 || categoryIds.length === 0) return;
+
+        const query = `
+            DELETE FROM product_categories
+            WHERE product_id = ANY($1) AND category_id = ANY($2)
+        `;
+
+        try {
+            await this.db.query(query, [productIds, categoryIds]);
+        } catch (error) {
+            console.error('Error removing categories from multiple products:', error);
+            throw new Error('Failed to remove categories from multiple products.');
+        }
+    }
+
     async removeProductFromCategories(productId: number, categoryIds?: number[]): Promise<void> {
         let query = 'DELETE FROM product_categories WHERE product_id = $1';
         let values: any[] = [productId];

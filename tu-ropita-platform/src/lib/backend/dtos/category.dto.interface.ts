@@ -26,3 +26,13 @@ export interface IProductsCategoryAssignmentDTO {
     productIds: number[];
     categoryId: number;
 }
+
+export interface IProductsCategoriesAssignmentDTO {
+    productIds: number[];
+    categoryIds: number[];
+}
+
+export interface IProductsCategoriesRemovalDTO {
+    productIds: number[];
+    categoryIds: number[];
+}
