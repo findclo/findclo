@@ -43,7 +43,7 @@ const Header = () => {
     if (user.user_type === UserTypeEnum.BRAND_OWNER) {
       return [
         { label: 'Productos', href: '/admin-shop/products', icon: Package },
-        { label: 'Categorías', href: '/admin-shop/categories', icon: Layers },
+        { label: 'Etiquetado', href: '/admin-shop/categories', icon: Layers },
         { label: 'Perfil', href: '/admin-shop/profile', icon: User },
         { label: 'Estadísticas', href: '/admin-shop/stats', icon: BarChart },
         { label: 'Facturación', href: '/admin-shop/billing', icon: CreditCard },
@@ -73,10 +73,31 @@ const Header = () => {
       {/* Top header for mobile */}
       <header className="border-b md:hidden fixed top-0 left-0 right-0 bg-white z-50">
         <div className="container flex h-12 items-center justify-between">
-          {/* Left: Category Menu (only for public users) */}
+          {/* Left: Unified Menu (categories + navigation) for public users */}
           {showCategoryMenu && (
             <div className="flex-shrink-0">
-              <CategoryMegaMenu activeCategoryId={activeCategoryId} inline={true} />
+              <CategoryMegaMenu
+                activeCategoryId={activeCategoryId}
+                inline={true}
+                menuItems={menuItems}
+                currentPath={pathname}
+                footerContent={
+                  user ? (
+                    <Button
+                      onClick={handleSignOut}
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start",
+                        "border-red-500 text-red-500 hover:bg-red-50",
+                        "focus:ring-red-500"
+                      )}
+                    >
+                      <LogOut className="h-5 w-5 mr-2" />
+                      Salir
+                    </Button>
+                  ) : null
+                }
+              />
             </div>
           )}
 
@@ -85,7 +106,7 @@ const Header = () => {
             href="/"
             className={cn(
               "flex items-center",
-              showCategoryMenu ? "absolute left-1/2 transform -translate-x-1/2" : "flex-1"
+              showCategoryMenu ? "absolute left-1/2 transform -translate-x-1/2" : ""
             )}
           >
             <Image
@@ -100,48 +121,50 @@ const Header = () => {
             />
           </Link>
 
-          {/* Right: Menu hamburger */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="flex-shrink-0">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <nav className="flex flex-col gap-4">
-                {menuItems.map((item, index) => (
-                  <Link
-                    key={index}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-2 py-2",
-                      pathname === item.href && "font-bold border-b-2 border-details"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                  </Link>
-                ))}
-                {user && (
-                  <>
-                    <div className="border-t my-2"></div>
-                    <Button
-                      onClick={handleSignOut}
-                      variant="outline"
+          {/* Right: Menu for non-public users (admin/brand owner) */}
+          {!showCategoryMenu && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="flex-shrink-0">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                <nav className="flex flex-col gap-4">
+                  {menuItems.map((item, index) => (
+                    <Link
+                      key={index}
+                      href={item.href}
                       className={cn(
-                        "w-full justify-start",
-                        "border-red-500 text-red-500 hover:bg-red-50",
-                        "focus:ring-red-500"
+                        "flex items-center gap-2 py-2",
+                        pathname === item.href && "font-bold border-b-2 border-details"
                       )}
                     >
-                      <LogOut className="h-5 w-5 mr-2" />
-                      Salir
-                    </Button>
-                  </>
-                )}
-              </nav>
-            </SheetContent>
-          </Sheet>
+                      <item.icon className="h-5 w-5" />
+                      {item.label}
+                    </Link>
+                  ))}
+                  {user && (
+                    <>
+                      <div className="border-t my-2"></div>
+                      <Button
+                        onClick={handleSignOut}
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start",
+                          "border-red-500 text-red-500 hover:bg-red-50",
+                          "focus:ring-red-500"
+                        )}
+                      >
+                        <LogOut className="h-5 w-5 mr-2" />
+                        Salir
+                      </Button>
+                    </>
+                  )}
+                </nav>
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
       </header>
 

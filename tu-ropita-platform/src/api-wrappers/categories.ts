@@ -3,6 +3,8 @@ import {
     ICategoryCreateDTO,
     ICategoryUpdateDTO,
     IProductsCategoryAssignmentDTO,
+    IProductsCategoriesAssignmentDTO,
+    IProductsCategoriesRemovalDTO,
 } from "@/lib/backend/dtos/category.dto.interface";
 import { ICategory, ICategoryBreadcrumb } from "@/lib/backend/models/interfaces/category.interface";
 import { fetcher } from "@/lib/fetcher/fetchWrapper";
@@ -107,6 +109,42 @@ class PrivateCategoriesApiWrapper {
 
         if (error) {
             console.error(`Error assigning category to products: ${error}`);
+            return false;
+        }
+
+        return true;
+    }
+
+    async assignCategoriesToProducts(auth_token: string, brandId: string, productIds: number[], categoryIds: number[]): Promise<boolean> {
+        const [error] = await fetcher(`/brands/${brandId}/products/categories`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ productIds, categoryIds } as IProductsCategoriesAssignmentDTO)
+        });
+
+        if (error) {
+            console.error(`Error assigning categories to products: ${error}`);
+            return false;
+        }
+
+        return true;
+    }
+
+    async removeCategoriesFromProducts(auth_token: string, brandId: string, productIds: number[], categoryIds: number[]): Promise<boolean> {
+        const [error] = await fetcher(`/brands/${brandId}/products/categories`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ productIds, categoryIds } as IProductsCategoriesRemovalDTO)
+        });
+
+        if (error) {
+            console.error(`Error removing categories from products: ${error}`);
             return false;
         }
 

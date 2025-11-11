@@ -1,8 +1,9 @@
 "use client"
 
 import { privateBrandsApiWrapper } from "@/api-wrappers/brands";
-import { privateCategoriesApiWrapper, publicCategoriesApiWrapper } from "@/api-wrappers/categories";
+import { privateCategoriesApiWrapper } from "@/api-wrappers/categories";
 import { privateProductsApiWrapper } from "@/api-wrappers/products";
+import { privateAttributesApiWrapper } from "@/api-wrappers/attributes";
 import toast from "@/components/toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,25 +13,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
-import { ICategoryTree } from "@/lib/backend/models/interfaces/category.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
-import { ChevronDown, ChevronRight, Loader2, Package, Tags } from "lucide-react";
+import { Loader2, Package, Tags, Palette } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CategorySelector } from "../products/CategorySelector";
+import { AttributeSelector } from "../products/AttributeSelector";
+import { Separator } from "@/components/ui/separator";
 
 export default function CategoryAssignmentPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
   const [products, setProducts] = useState<IProduct[]>([]);
-  const [categories, setCategories] = useState<ICategoryTree[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
+  const [selectedCategories, setSelectedCategories] = useState<Set<number>>(new Set());
+  const [selectedAttributes, setSelectedAttributes] = useState<Map<number, Set<number>>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [isAssigningAttributes, setIsAssigningAttributes] = useState(false);
+  const [isRemovingAttributes, setIsRemovingAttributes] = useState(false);
   const [productSearchQuery, setProductSearchQuery] = useState("");
-  const [categorySearchQuery, setCategorySearchQuery] = useState("");
   const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
 
   const authToken = useMemo(() => Cookies.get("Authorization"), []);
@@ -49,18 +53,11 @@ export default function CategoryAssignmentPage() {
       }
       setBrand(brandData);
 
-      // Fetch products and categories in parallel
-      const [productsResponse, categoriesResponse] = await Promise.all([
-        privateProductsApiWrapper.getProductsOfBrand(authToken, brandData.id.toString(), true),
-        publicCategoriesApiWrapper.getCategoryTree()
-      ]);
+      // Fetch products
+      const productsResponse = await privateProductsApiWrapper.getProductsOfBrand(authToken, brandData.id.toString(), true);
 
       if (productsResponse) {
         setProducts(productsResponse.products);
-      }
-
-      if (categoriesResponse) {
-        setCategories(categoriesResponse.categories);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -95,33 +92,6 @@ export default function CategoryAssignmentPage() {
     return filtered;
   }, [products, productSearchQuery, showOnlyUnassigned]);
 
-  const filterCategoriesByQuery = useCallback((categories: ICategoryTree[], query: string): ICategoryTree[] => {
-    if (!query) return categories;
-
-    return categories.filter(category => {
-      const matches = category.name.toLowerCase().includes(query.toLowerCase()) ||
-                     category.description?.toLowerCase().includes(query.toLowerCase());
-
-      if (matches) return true;
-
-      if (category.children.length > 0) {
-        const matchingChildren = filterCategoriesByQuery(category.children, query);
-        return matchingChildren.length > 0;
-      }
-
-      return false;
-    }).map(category => ({
-      ...category,
-      children: category.children.length > 0
-        ? filterCategoriesByQuery(category.children, query)
-        : []
-    }));
-  }, []);
-
-  const filteredCategories = useMemo(() => {
-    return filterCategoriesByQuery(categories, categorySearchQuery);
-  }, [categories, categorySearchQuery, filterCategoriesByQuery]);
-
   const toggleProductSelection = useCallback((productId: number) => {
     setSelectedProducts(prev => {
       const newSet = new Set(prev);
@@ -142,32 +112,8 @@ export default function CategoryAssignmentPage() {
     }
   }, [selectedProducts.size, filteredProducts]);
 
-  const toggleCategoryExpansion = useCallback((categoryId: number) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
-      } else {
-        newSet.add(categoryId);
-      }
-      return newSet;
-    });
-  }, []);
-
-  const isLeafCategory = useCallback((category: ICategoryTree) => {
-    return category.children.length === 0;
-  }, []);
-
-  const handleCategorySelect = useCallback((categoryId: number, category: ICategoryTree) => {
-    if (!isLeafCategory(category)) {
-      toast({ type: "error", message: "Solo puedes seleccionar categorías que no tengan subcategorías." });
-      return;
-    }
-    setSelectedCategory(categoryId);
-  }, [isLeafCategory]);
-
-  const handleAssignCategory = useCallback(async () => {
-    if (!brand || !selectedCategory || selectedProducts.size === 0) {
+  const handleAssignCategories = useCallback(async () => {
+    if (!brand || selectedCategories.size === 0 || selectedProducts.size === 0) {
       toast({ type: "error", message: "Selecciona al menos un producto y una categoría." });
       return;
     }
@@ -180,107 +126,152 @@ export default function CategoryAssignmentPage() {
     try {
       setIsAssigning(true);
       const productIds = Array.from(selectedProducts);
+      const categoryIds = Array.from(selectedCategories);
 
-      const success = await privateCategoriesApiWrapper.assignCategoryToProducts(
+      const success = await privateCategoriesApiWrapper.assignCategoriesToProducts(
         authToken,
         brand.id.toString(),
         productIds,
-        selectedCategory
+        categoryIds
       );
 
       if (success) {
         toast({
           type: "success",
-          message: `Categoría asignada exitosamente a ${productIds.length} producto(s).`
+          message: `${categoryIds.length} categoría(s) asignada(s) exitosamente a ${productIds.length} producto(s).`
         });
-        setSelectedProducts(new Set());
-        setSelectedCategory(null);
+        // Refresh products to show updated categories
+        await fetchData();
       } else {
-        toast({ type: "error", message: "Error al asignar la categoría." });
+        toast({ type: "error", message: "Error al asignar las categorías." });
       }
     } catch (error) {
-      console.error('Error assigning category:', error);
-      toast({ type: "error", message: "Error al asignar la categoría." });
+      console.error('Error assigning categories:', error);
+      toast({ type: "error", message: "Error al asignar las categorías." });
     } finally {
       setIsAssigning(false);
     }
-  }, [brand, selectedCategory, selectedProducts, authToken]);
+  }, [brand, selectedCategories, selectedProducts, authToken, fetchData]);
 
-  const renderCategoryItem = useCallback((category: ICategoryTree, level: number = 0) => {
-    const hasChildren = category.children.length > 0;
-    const isExpanded = expandedCategories.has(category.id);
-    const isSelected = selectedCategory === category.id;
-    const isLeaf = isLeafCategory(category);
+  const handleRemoveCategories = useCallback(async () => {
+    if (!brand || selectedCategories.size === 0 || selectedProducts.size === 0) {
+      toast({ type: "error", message: "Selecciona al menos un producto y una categoría." });
+      return;
+    }
 
-    return (
-      <div key={category.id} className="category-item">
-        <div
-          className={cn(
-            'flex items-center p-2 rounded-lg border transition-all duration-200',
-            'hover:bg-gray-50 dark:hover:bg-gray-800',
-            isSelected && 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
-            !isLeaf && 'opacity-60'
-          )}
-          style={{ marginLeft: `${level * 20}px` }}
-        >
-          {/* Expand/Collapse Button */}
-          {hasChildren && (
-            <button
-              onClick={() => toggleCategoryExpansion(category.id)}
-              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded mr-2"
-            >
-              {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
-          )}
+    if (!authToken) {
+      toast({ type: "error", message: "No se encontró token de autenticación." });
+      return;
+    }
 
-          {/* Radio button for leaf categories only */}
-          <div className="flex items-center space-x-2 flex-1">
-            <input
-              type="radio"
-              name="category"
-              value={category.id}
-              checked={isSelected}
-              disabled={!isLeaf}
-              onChange={() => handleCategorySelect(category.id, category)}
-              className={cn(
-                "w-4 h-4",
-                !isLeaf && "cursor-not-allowed opacity-50"
-              )}
-            />
-            <div className="flex-1 min-w-0">
-              <h3 className={cn(
-                'text-sm font-medium truncate',
-                isLeaf ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
-              )}>
-                {category.name}
-              </h3>
-              {!isLeaf && (
-                <p className="text-xs text-gray-400">
-                  Contiene subcategorías
-                </p>
-              )}
-              {category.description && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {category.description}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+    try {
+      setIsRemoving(true);
+      const productIds = Array.from(selectedProducts);
+      const categoryIds = Array.from(selectedCategories);
 
-        {/* Children */}
-        {hasChildren && isExpanded && (
-          <div className="mt-1">
-            {category.children.map(child => renderCategoryItem(child, level + 1))}
-          </div>
-        )}
-      </div>
-    );
-  }, [expandedCategories, selectedCategory, isLeafCategory, toggleCategoryExpansion, handleCategorySelect]);
+      const success = await privateCategoriesApiWrapper.removeCategoriesFromProducts(
+        authToken,
+        brand.id.toString(),
+        productIds,
+        categoryIds
+      );
+
+      if (success) {
+        toast({
+          type: "success",
+          message: `${categoryIds.length} categoría(s) removida(s) exitosamente de ${productIds.length} producto(s).`
+        });
+        // Refresh products to show updated categories
+        await fetchData();
+      } else {
+        toast({ type: "error", message: "Error al remover las categorías." });
+      }
+    } catch (error) {
+      console.error('Error removing categories:', error);
+      toast({ type: "error", message: "Error al remover las categorías." });
+    } finally {
+      setIsRemoving(false);
+    }
+  }, [brand, selectedCategories, selectedProducts, authToken, fetchData]);
+
+  const handleAssignAttributes = useCallback(async () => {
+    if (!brand || selectedAttributes.size === 0 || selectedProducts.size === 0) {
+      toast({ type: "error", message: "Selecciona al menos un producto y un atributo." });
+      return;
+    }
+
+    if (!authToken) {
+      toast({ type: "error", message: "No se encontró token de autenticación." });
+      return;
+    }
+
+    try {
+      setIsAssigningAttributes(true);
+      const productIds = Array.from(selectedProducts);
+
+      // Convert Map<number, Set<number>> to the DTO format
+      const attributes = Array.from(selectedAttributes.entries()).map(([attribute_id, value_ids]) => ({
+        attribute_id,
+        value_ids: Array.from(value_ids)
+      }));
+
+      await privateAttributesApiWrapper.assignAttributesToMultipleProducts(
+        authToken,
+        brand.id.toString(),
+        productIds,
+        { attributes }
+      );
+
+      toast({
+        type: "success",
+        message: `Atributos asignados exitosamente a ${productIds.length} producto(s).`
+      });
+      // Refresh products to show updated attributes
+      await fetchData();
+    } catch (error) {
+      console.error('Error assigning attributes:', error);
+      toast({ type: "error", message: "Error al asignar los atributos." });
+    } finally {
+      setIsAssigningAttributes(false);
+    }
+  }, [brand, selectedAttributes, selectedProducts, authToken, fetchData]);
+
+  const handleRemoveAttributes = useCallback(async () => {
+    if (!brand || selectedAttributes.size === 0 || selectedProducts.size === 0) {
+      toast({ type: "error", message: "Selecciona al menos un producto y un atributo." });
+      return;
+    }
+
+    if (!authToken) {
+      toast({ type: "error", message: "No se encontró token de autenticación." });
+      return;
+    }
+
+    try {
+      setIsRemovingAttributes(true);
+      const productIds = Array.from(selectedProducts);
+      const attributeIds = Array.from(selectedAttributes.keys());
+
+      await privateAttributesApiWrapper.removeAttributesFromMultipleProducts(
+        authToken,
+        brand.id.toString(),
+        productIds,
+        attributeIds
+      );
+
+      toast({
+        type: "success",
+        message: `Atributos removidos exitosamente de ${productIds.length} producto(s).`
+      });
+      // Refresh products to show updated attributes
+      await fetchData();
+    } catch (error) {
+      console.error('Error removing attributes:', error);
+      toast({ type: "error", message: "Error al remover los atributos." });
+    } finally {
+      setIsRemovingAttributes(false);
+    }
+  }, [brand, selectedAttributes, selectedProducts, authToken, fetchData]);
 
   if (isLoading) {
     return (
@@ -298,190 +289,247 @@ export default function CategoryAssignmentPage() {
     );
   }
 
-  const selectedCategoryName = selectedCategory
-    ? categories.find(c => c.id === selectedCategory)?.name || 'Categoría seleccionada'
-    : null;
-
   return (
     <div className="container mx-auto p-4">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Asignar Categorías a Productos
+          Gestión de Categorías y Atributos
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Selecciona productos y asígnalos a una categoría específica
+          Asigna o remueve categorías y atributos de múltiples productos a la vez
         </p>
       </div>
 
-      {/* Action Bar */}
-      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Package className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                {selectedProducts.size} producto(s) seleccionado(s)
-              </span>
-            </div>
-            {selectedCategoryName && (
-              <div className="flex items-center space-x-2">
-                <Tags className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Categoría: {selectedCategoryName}
-                </span>
-              </div>
-            )}
-          </div>
-          <Button
-            onClick={handleAssignCategory}
-            disabled={selectedProducts.size === 0 || !selectedCategory || isAssigning}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isAssigning ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Asignando...
-              </>
-            ) : (
-              'Asignar Categoría'
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Products Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Package className="w-5 h-5" />
-              <span>Productos ({filteredProducts.length})</span>
-            </CardTitle>
-            <div className="space-y-2">
-              <Input
-                placeholder="Buscar productos..."
-                value={productSearchQuery}
-                onChange={(e) => setProductSearchQuery(e.target.value)}
-              />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="select-all"
-                    checked={selectedProducts.size === filteredProducts.length && filteredProducts.length > 0}
-                    onCheckedChange={toggleSelectAllProducts}
-                  />
-                  <Label htmlFor="select-all" className="text-sm">
-                    Seleccionar todos
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="show-unassigned"
-                    checked={showOnlyUnassigned}
-                    onCheckedChange={(checked) => setShowOnlyUnassigned(checked === true)}
-                  />
-                  <Label htmlFor="show-unassigned" className="text-sm">
-                    Solo sin categoría
-                  </Label>
+        {/* Left Column: Products */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Package className="w-5 h-5" />
+                <span>Productos ({filteredProducts.length})</span>
+              </CardTitle>
+              <div className="space-y-2">
+                <Input
+                  placeholder="Buscar productos..."
+                  value={productSearchQuery}
+                  onChange={(e) => setProductSearchQuery(e.target.value)}
+                />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="select-all"
+                      checked={selectedProducts.size === filteredProducts.length && filteredProducts.length > 0}
+                      onCheckedChange={toggleSelectAllProducts}
+                    />
+                    <Label htmlFor="select-all" className="text-sm">
+                      Seleccionar todos
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="show-unassigned"
+                      checked={showOnlyUnassigned}
+                      onCheckedChange={(checked) => setShowOnlyUnassigned(checked === true)}
+                    />
+                    <Label htmlFor="show-unassigned" className="text-sm">
+                      Solo sin categoría
+                    </Label>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-96">
-              <div className="space-y-2">
-                {filteredProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className={cn(
-                      "flex items-center space-x-3 p-3 rounded-lg border transition-all",
-                      "hover:bg-gray-50 dark:hover:bg-gray-800",
-                      selectedProducts.has(product.id) && "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                    )}
-                  >
-                    <Checkbox
-                      checked={selectedProducts.has(product.id)}
-                      onCheckedChange={() => toggleProductSelection(product.id)}
-                    />
-                    {product.images && product.images.length > 0 && (
-                      <div className="relative w-12 h-12 rounded-md overflow-hidden">
-                        <Image
-                          src={product.images[0]}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {product.name}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        ${product.price}
-                      </p>
-                      {/* Current categories display */}
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {product.categories && product.categories.length > 0 ? (
-                          product.categories.map((category) => (
-                            <Badge
-                              key={category.id}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {category.name}
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px]">
+                <div className="space-y-2">
+                  {filteredProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className={cn(
+                        "flex items-center space-x-3 p-3 rounded-lg border transition-all",
+                        "hover:bg-gray-50 dark:hover:bg-gray-800",
+                        selectedProducts.has(product.id) && "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                      )}
+                    >
+                      <Checkbox
+                        checked={selectedProducts.has(product.id)}
+                        onCheckedChange={() => toggleProductSelection(product.id)}
+                      />
+                      {product.images && product.images.length > 0 && (
+                        <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
+                          <Image
+                            src={product.images[0]}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          ${product.price}
+                        </p>
+                        {/* Current categories and attributes display */}
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {product.categories && product.categories.length > 0 ? (
+                            product.categories.map((category) => (
+                              <Badge
+                                key={category.id}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {category.name}
+                              </Badge>
+                            ))
+                          ) : (
+                            <Badge variant="outline" className="text-xs text-gray-400">
+                              Sin categoría
                             </Badge>
-                          ))
-                        ) : (
-                          <Badge variant="outline" className="text-xs text-gray-400">
-                            Sin categoría
-                          </Badge>
-                        )}
+                          )}
+                          {product.attributes && product.attributes.length > 0 && (
+                            <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
+                              {product.attributes.length} atributo(s)
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {filteredProducts.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">
-                    No se encontraron productos.
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+                  ))}
+                  {filteredProducts.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">
+                      No se encontraron productos.
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Categories Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Tags className="w-5 h-5" />
-              <span>Categorías</span>
-            </CardTitle>
-            <Input
-              placeholder="Buscar categorías..."
-              value={categorySearchQuery}
-              onChange={(e) => setCategorySearchQuery(e.target.value)}
-            />
-            <p className="text-sm text-gray-500">
-              Solo puedes seleccionar categorías que no tengan subcategorías
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-96">
-              <div className="space-y-1">
-                {filteredCategories.map(category => renderCategoryItem(category))}
-                {filteredCategories.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">
-                    No se encontraron categorías.
-                  </p>
-                )}
+        {/* Right Column: Categories and Attributes */}
+        <div className="space-y-6">
+          {/* Categories Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Tags className="w-5 h-5" />
+                <span>Categorías</span>
+              </CardTitle>
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Package className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      {selectedProducts.size} producto(s) • {selectedCategories.size} categoría(s)
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleAssignCategories}
+                    disabled={selectedProducts.size === 0 || selectedCategories.size === 0 || isAssigning}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    size="sm"
+                  >
+                    {isAssigning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Asignando...
+                      </>
+                    ) : (
+                      'Asignar Categorías'
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleRemoveCategories}
+                    disabled={selectedProducts.size === 0 || selectedCategories.size === 0 || isRemoving}
+                    variant="destructive"
+                    className="flex-1"
+                    size="sm"
+                  >
+                    {isRemoving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Removiendo...
+                      </>
+                    ) : (
+                      'Remover Categorías'
+                    )}
+                  </Button>
+                </div>
               </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <CategorySelector
+                selectedCategories={selectedCategories}
+                onCategoriesChange={setSelectedCategories}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Attributes Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Palette className="w-5 h-5" />
+                <span>Atributos</span>
+              </CardTitle>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Package className="w-4 h-4 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                      {selectedProducts.size} producto(s) • {selectedAttributes.size} atributo(s)
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleAssignAttributes}
+                    disabled={selectedProducts.size === 0 || selectedAttributes.size === 0 || isAssigningAttributes}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                    size="sm"
+                  >
+                    {isAssigningAttributes ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Asignando...
+                      </>
+                    ) : (
+                      'Asignar Atributos'
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleRemoveAttributes}
+                    disabled={selectedProducts.size === 0 || selectedAttributes.size === 0 || isRemovingAttributes}
+                    variant="destructive"
+                    className="flex-1"
+                    size="sm"
+                  >
+                    {isRemovingAttributes ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Removiendo...
+                      </>
+                    ) : (
+                      'Remover Atributos'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <AttributeSelector
+                selectedAttributes={selectedAttributes}
+                onAttributesChange={setSelectedAttributes}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -172,6 +172,60 @@ class PrivateAttributesApiWrapper {
 
         return response as { message: string };
     }
+
+    // ========== BRAND OWNER: Bulk Product Attributes ==========
+
+    async assignAttributesToMultipleProducts(
+        auth_token: string,
+        brandId: string,
+        productIds: number[],
+        attributesData: IProductAttributesAssignDTO
+    ): Promise<{ message: string }> {
+        const [error, response] = await fetcher(`/brands/${brandId}/products/attributes`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                productIds,
+                attributes: attributesData.attributes
+            })
+        });
+
+        if (error) {
+            console.error(`Error assigning attributes to multiple products: ${error}`);
+            throw new Error(`Error assigning attributes to multiple products: ${error}`);
+        }
+
+        return response as { message: string };
+    }
+
+    async removeAttributesFromMultipleProducts(
+        auth_token: string,
+        brandId: string,
+        productIds: number[],
+        attributeIds: number[]
+    ): Promise<{ message: string }> {
+        const [error, response] = await fetcher(`/brands/${brandId}/products/attributes`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                productIds,
+                attributeIds
+            })
+        });
+
+        if (error) {
+            console.error(`Error removing attributes from multiple products: ${error}`);
+            throw new Error(`Error removing attributes from multiple products: ${error}`);
+        }
+
+        return response as { message: string };
+    }
 }
 
 export const publicAttributesApiWrapper = new PublicAttributesApiWrapper();

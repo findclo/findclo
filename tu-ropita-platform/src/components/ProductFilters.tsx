@@ -37,7 +37,7 @@ export const ProductFilters = ({ attributes }: ProductFiltersProps) => {
     const filters: Record<string, string[]> = {};
 
     // Parse value IDs from URL
-    const valueIdsParam = searchParams.get('attributeValues');
+    const valueIdsParam = searchParams.get('attributeValueIds');
     if (!valueIdsParam) return filters;
 
     const valueIds = valueIdsParam.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
@@ -82,7 +82,7 @@ export const ProductFilters = ({ attributes }: ProductFiltersProps) => {
     const params = new URLSearchParams(searchParams.toString());
 
     // Remove previous attribute values parameter
-    params.delete('attributeValues');
+    params.delete('attributeValueIds');
 
     // Convert selected slugs to value IDs
     const valueIds: number[] = [];
@@ -101,7 +101,7 @@ export const ProductFilters = ({ attributes }: ProductFiltersProps) => {
 
     // Add value IDs as single parameter
     if (valueIds.length > 0) {
-      params.set('attributeValues', valueIds.join(','));
+      params.set('attributeValueIds', valueIds.join(','));
     }
 
     router.push(`${pathname}?${params.toString()}`);
@@ -113,7 +113,7 @@ export const ProductFilters = ({ attributes }: ProductFiltersProps) => {
     const params = new URLSearchParams(searchParams.toString());
 
     // Remove attribute values parameter
-    params.delete('attributeValues');
+    params.delete('attributeValueIds');
 
     router.push(`${pathname}?${params.toString()}`);
     setIsOpen(false);

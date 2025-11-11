@@ -74,6 +74,20 @@ export class CategoryService {
         });
     }
 
+    async assignCategoriesToProducts(productIds: number[], categoryIds: number[]): Promise<void> {
+        await categoryRepository.assignCategoriesToMultipleProducts(productIds, categoryIds);
+        productIds.forEach(productId => {
+            embeddingProcessorService.generateEmbeddingForProduct(productId);
+        });
+    }
+
+    async removeCategoriesFromProducts(productIds: number[], categoryIds: number[]): Promise<void> {
+        await categoryRepository.removeCategoriesFromMultipleProducts(productIds, categoryIds);
+        productIds.forEach(productId => {
+            embeddingProcessorService.generateEmbeddingForProduct(productId);
+        });
+    }
+
     async updateCategoryHierarchy(categoryId: number, newParentId: number | null): Promise<void> {
         const isValid = await this.validateCategoryHierarchy(categoryId, newParentId);
         if (!isValid) {

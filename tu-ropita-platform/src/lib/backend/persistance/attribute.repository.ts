@@ -231,6 +231,53 @@ class AttributeRepository {
         }
     }
 
+    async assignAttributesToMultipleProducts(productIds: number[], data: IProductAttributesAssignDTO): Promise<void> {
+        if (productIds.length === 0 || data.attributes.length === 0) return;
+
+        const client = await this.db.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            for (const productId of productIds) {
+                for (const attr of data.attributes) {
+                    for (const valueId of attr.value_ids) {
+                        const insertQuery = `
+                            INSERT INTO product_attributes (product_id, attribute_id, attribute_value_id)
+                            VALUES ($1, $2, $3)
+                            ON CONFLICT (product_id, attribute_id, attribute_value_id) DO NOTHING
+                        `;
+                        await client.query(insertQuery, [productId, attr.attribute_id, valueId]);
+                    }
+                }
+            }
+
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('Error assigning attributes to multiple products:', error);
+            throw new Error('Failed to assign attributes to multiple products.');
+        } finally {
+            client.release();
+        }
+    }
+
+    async removeAttributesFromMultipleProducts(productIds: number[], attributeIds: number[]): Promise<void> {
+        if (productIds.length === 0 || attributeIds.length === 0) return;
+
+        const query = `
+            DELETE FROM product_attributes
+            WHERE product_id = ANY($1) AND attribute_id = ANY($2)
+        `;
+
+        try {
+            await this.db.query(query, [productIds, attributeIds]);
+        } catch (error) {
+            console.error('Error removing attributes from multiple products:', error);
+            throw new Error('Failed to remove attributes from multiple products.');
+        }
+    }
+
     async getProductAttributes(productId: number): Promise<IProductAttributeDetail[]> {
         const query = `
             SELECT
