@@ -11,13 +11,24 @@ import {
 } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Compass, ChevronRight, ChevronDown, X } from "lucide-react";
+import { Menu, ChevronRight, ChevronDown, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+
+export interface MenuItemType {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+}
 
 interface CategoryMegaMenuProps {
   activeCategoryId?: number | null;
   inline?: boolean; // true when integrated in Header, false for standalone sticky behavior
+  menuItems?: MenuItemType[]; // Additional menu items to show below categories (mobile only)
+  footerContent?: React.ReactNode; // Custom footer content for mobile menu
+  currentPath?: string; // Current pathname for highlighting active menu items
 }
 
 // Recursive component for category items with unlimited nesting
@@ -86,7 +97,13 @@ const RecursiveCategoryItem: React.FC<RecursiveCategoryItemProps> = ({
   );
 };
 
-export const CategoryMegaMenu = ({ activeCategoryId = null, inline = false }: CategoryMegaMenuProps = {}) => {
+export const CategoryMegaMenu = ({
+  activeCategoryId = null,
+  inline = false,
+  menuItems = [],
+  footerContent = null,
+  currentPath = ''
+}: CategoryMegaMenuProps = {}) => {
   const [categories, setCategories] = useState<ICategoryTree[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -176,80 +193,110 @@ export const CategoryMegaMenu = ({ activeCategoryId = null, inline = false }: Ca
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" className="gap-2 font-medium text-sm">
-                <Compass className="h-4 w-4" />
-                Explorar
+                <Menu className="h-4 w-4" />
+                Menú
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80 flex flex-col">
               <SheetHeader>
-                <SheetTitle>Explorar</SheetTitle>
+                <SheetTitle>Menú</SheetTitle>
               </SheetHeader>
-              <div className="mt-6 overflow-y-auto max-h-[calc(100vh-8rem)] pr-2">
-                <Accordion type="single" collapsible defaultValue="explorar" className="w-full">
-                  <AccordionItem value="explorar" className="border-none">
-                    <AccordionTrigger className="text-base font-semibold hover:no-underline">
-                      Categorías
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {/* Nested accordion for main categories (Hombre/Mujer) */}
-                      <Accordion type="multiple" className="w-full pl-2">
-                        {mainCategories.map((mainCategory) => {
-                          const isMainCategoryActive = activeCategoryId === mainCategory.id;
-                          const hasChildren = mainCategory.children.length > 0;
 
-                          return (
-                            <AccordionItem key={mainCategory.id} value={`cat-${mainCategory.id}`} className="border-b">
-                              <div className="flex items-center">
-                                {hasChildren && (
-                                  <AccordionTrigger className="flex-1 text-sm font-medium hover:no-underline py-3">
-                                    <span
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleCategoryClick(mainCategory.id);
-                                      }}
+              {/* Contenedor principal dividido en parte scrollable y footer fijo */}
+              <div className="flex flex-col flex-1 justify-between overflow-hidden">
+                {/* Sección scrollable */}
+                <div className="overflow-y-auto pr-2 mt-6">
+                  <Accordion type="single" collapsible defaultValue="explorar" className="w-full">
+                    <AccordionItem value="explorar" className="border-none">
+                      <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                        Categorías
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <Accordion type="multiple" className="w-full pl-2">
+                          {mainCategories.map((mainCategory) => {
+                            const isMainCategoryActive = activeCategoryId === mainCategory.id;
+                            const hasChildren = mainCategory.children.length > 0;
+
+                            return (
+                              <AccordionItem key={mainCategory.id} value={`cat-${mainCategory.id}`} className="border-b">
+                                <div className="flex items-center">
+                                  {hasChildren ? (
+                                    <AccordionTrigger className="flex-1 text-sm font-medium hover:no-underline py-3">
+                                      <span
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCategoryClick(mainCategory.id);
+                                        }}
+                                        className={cn(
+                                          "hover:underline",
+                                          isMainCategoryActive && "text-blue-600 font-semibold"
+                                        )}
+                                      >
+                                        {mainCategory.name}
+                                      </span>
+                                    </AccordionTrigger>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleCategoryClick(mainCategory.id)}
                                       className={cn(
-                                        "hover:underline",
+                                        "flex-1 text-left py-3 text-sm font-medium",
                                         isMainCategoryActive && "text-blue-600 font-semibold"
                                       )}
                                     >
                                       {mainCategory.name}
-                                    </span>
-                                  </AccordionTrigger>
+                                    </button>
+                                  )}
+                                </div>
+
+                                {hasChildren && (
+                                  <AccordionContent>
+                                    <div className="space-y-2 pl-2">
+                                      {mainCategory.children.map((subCategory) => (
+                                        <RecursiveCategoryItem
+                                          key={subCategory.id}
+                                          category={subCategory}
+                                          level={0}
+                                          activeCategoryId={activeCategoryId}
+                                          onNavigate={handleCategoryClick}
+                                        />
+                                      ))}
+                                    </div>
+                                  </AccordionContent>
                                 )}
-                                {!hasChildren && (
-                                  <button
-                                    onClick={() => handleCategoryClick(mainCategory.id)}
-                                    className={cn(
-                                      "flex-1 text-left py-3 text-sm font-medium",
-                                      isMainCategoryActive && "text-blue-600 font-semibold"
-                                    )}
-                                  >
-                                    {mainCategory.name}
-                                  </button>
-                                )}
-                              </div>
-                              {hasChildren && (
-                                <AccordionContent>
-                                  <div className="space-y-2 pl-2">
-                                    {mainCategory.children.map((subCategory) => (
-                                      <RecursiveCategoryItem
-                                        key={subCategory.id}
-                                        category={subCategory}
-                                        level={0}
-                                        activeCategoryId={activeCategoryId}
-                                        onNavigate={handleCategoryClick}
-                                      />
-                                    ))}
-                                  </div>
-                                </AccordionContent>
-                              )}
-                            </AccordionItem>
-                          );
-                        })}
-                      </Accordion>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                              </AccordionItem>
+                            );
+                          })}
+                        </Accordion>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+
+                {/* Footer fijo al fondo */}
+                <div className="border-t pt-4 pb-5 bg-white">
+                  {footerContent && <div className="mb-4">{footerContent}</div>}
+
+                  {menuItems.length > 0 && (
+                    <nav className="flex flex-col gap-2">
+                      {menuItems.map((item, index) => (
+                        <Link
+                          key={index}
+                          href={item.href}
+                          onClick={() => setIsSheetOpen(false)}
+                          className={cn(
+                            "flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors",
+                            currentPath === item.href
+                              ? "bg-blue-50 text-blue-600 font-semibold"
+                              : "text-gray-700 hover:bg-gray-100"
+                          )}
+                        >
+                          <item.icon className="h-5 w-5" />
+                          <span className="text-sm">{item.label}</span>
+                        </Link>
+                      ))}
+                    </nav>
+                  )}
+                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -262,8 +309,8 @@ export const CategoryMegaMenu = ({ activeCategoryId = null, inline = false }: Ca
             className="gap-2 font-medium text-sm"
             onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
           >
-            <Compass className="h-4 w-4" />
-            Explorar
+            <Menu className="h-4 w-4" />
+            Menú
             <ChevronDown className={cn(
               "h-3 w-3 transition-transform duration-200",
               isMegaMenuOpen && "rotate-180"
@@ -285,7 +332,7 @@ export const CategoryMegaMenu = ({ activeCategoryId = null, inline = false }: Ca
                   {/* Header */}
                   <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
                     <h2 className="text-lg font-bold text-gray-900 uppercase">
-                      Explorar Categorías
+                      Menú de Categorías
                     </h2>
                     <button
                       onClick={() => setIsMegaMenuOpen(false)}
