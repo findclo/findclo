@@ -20,4 +20,5 @@ export interface IListProductResponseDto {
     totalPages: number;
     pageSize: number;
     attributes?: IAttributeFilterMap[];
+    totalBrandProducts?: number;
 }

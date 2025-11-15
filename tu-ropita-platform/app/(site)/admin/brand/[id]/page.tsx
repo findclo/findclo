@@ -32,6 +32,14 @@ import { ArrowLeft, ArrowUpDown, FileDown, Search } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface GroupedMetrics {
     [key: string]: {
@@ -59,6 +67,9 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     const [isRemoveCreditsOpen, setIsRemoveCreditsOpen] = useState(false)
     const [creditsToRemove, setCreditsToRemove] = useState<string>('')
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const pageSize = 50;
 
     const groupedMetrics: GroupedMetrics = useMemo(() => {
         return productsMetrics.reduce((acc, metric) => {
@@ -94,10 +105,19 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
             setBrand(brandData);
         }
 
-        async function fetchProducts() {
-            const productsData = await privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(token,id);
+        async function fetchProducts(page: number = 1) {
+            const productsData = await privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(
+                token,
+                id,
+                false, // includeCategories
+                false, // includeAttributes
+                page,
+                pageSize
+            );
             if (productsData) {
                 setProducts(productsData.products);
+                setTotalPages(productsData.totalPages);
+                setCurrentPage(productsData.pageNum);
             }
         }
 
@@ -116,7 +136,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
         fetchCredits();
         fetchBrandDetails();
         fetchProducts();
-    }, [id, token]);
+    }, [id, token, pageSize]);
 
     useEffect(() => {
         async function fetchMetrics() {
@@ -297,6 +317,26 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     if (!brand) {
         return <div className="flex items-center justify-center h-screen">Loading...</div>
     }
+
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            // Refetch products with new page
+            privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(
+                token,
+                id,
+                false,
+                false,
+                page,
+                pageSize
+            ).then((productsData) => {
+                if (productsData) {
+                    setProducts(productsData.products);
+                    setTotalPages(productsData.totalPages);
+                    setCurrentPage(productsData.pageNum);
+                }
+            });
+        }
+    };
 
     const handleExport = () => {
         const csvHeader = "name,price,description,images,url\n"
@@ -573,6 +613,49 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                     </ScrollArea>
                 </CardContent>
             </Card>
+
+            {totalPages > 1 && (
+                <div className="flex justify-center mt-4">
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        if (currentPage > 1) handlePageChange(currentPage - 1);
+                                    }}
+                                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                                />
+                            </PaginationItem>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                <PaginationItem key={page}>
+                                    <PaginationLink
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handlePageChange(page);
+                                        }}
+                                        isActive={currentPage === page}
+                                    >
+                                        {page}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            ))}
+                            <PaginationItem>
+                                <PaginationNext
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                                    }}
+                                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
 
             {/* TODO: add payment history */}
         </div>

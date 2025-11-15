@@ -103,6 +103,43 @@ class ProductsRepository {
         }
     }
 
+    public async countProducts(params: IListProductsParams, searchEmbedding?: number[]): Promise<number> {
+        const { query: listQuery, values } = this.constructListQuery(params, searchEmbedding);
+
+        // Extract the WHERE clause and FROM clause from the list query
+        // Remove the SELECT, GROUP BY, ORDER BY, LIMIT, and OFFSET parts
+        const fromIndex = listQuery.indexOf('FROM products');
+        const groupByIndex = listQuery.indexOf('GROUP BY');
+
+        if (fromIndex === -1) {
+            throw new Error('Invalid query structure for counting');
+        }
+
+        // Build count query - we need to count distinct product IDs due to joins
+        let countQuery = `SELECT COUNT(DISTINCT p.id) as total ${listQuery.substring(fromIndex, groupByIndex !== -1 ? groupByIndex : listQuery.indexOf('ORDER BY'))}`;
+
+        try {
+            const res = await this.db.query(countQuery, values.slice(0, values.length - (params.page && params.page > 1 ? 2 : 1))); // Remove LIMIT and possibly OFFSET values
+            return parseInt(res.rows[0].total);
+        } catch (err) {
+            console.error('Error executing count query:', err);
+            throw err;
+        }
+    }
+
+    public async countProductsByBrand(brandId: number): Promise<number> {
+        const query = `SELECT COUNT(*) as total FROM products p WHERE p.brand_id = $1 AND p.status != 'DELETED'`;
+        const values = [brandId];
+
+        try {
+            const res = await this.db.query(query, values);
+            return parseInt(res.rows[0].total);
+        } catch (err) {
+            console.error('Error executing count by brand query:', err);
+            throw err;
+        }
+    }
+
     public async bulkProductInsert(products: IProductDTO[], brandId: string): Promise<IProduct[]> {
         const valuePlaceholders = products.map((_, index) => {
             const offset = index * 8;

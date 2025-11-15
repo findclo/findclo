@@ -17,9 +17,11 @@ class PublicProductsApiWrapper {
         return response_of_product as IProduct;
     }
 
-    async getProductsByBrandId(brandId: string): Promise<IListProductResponseDto | null> {
-        const queryParams = new URLSearchParams({ brandId });
-        const [error, products] = await fetcher(`${PRODUCTS_PATH}?${queryParams}`);
+    async getProductsByBrandId(brandId: string, page?: number, limit?: number): Promise<IListProductResponseDto | null> {
+        const params = new URLSearchParams({ brandId });
+        if (page !== undefined) params.append('page', page.toString());
+        if (limit !== undefined) params.append('limit', limit.toString());
+        const [error, products] = await fetcher(`${PRODUCTS_PATH}?${params}`);
         if (error) {
             console.error(`Error fetching products by brand id ${brandId}: ${error}`);
             return null;
@@ -136,8 +138,14 @@ class PrivateProductsApiWrapper {
         return created_product as IProduct;
     }
     
-    async getProductsOfBrand(auth_token: string, brandId: string, includeCategories: boolean = false): Promise<IListProductResponseDto | null> {
-        const queryParams = includeCategories ? '?includeCategories=true' : '';
+    async getProductsOfBrand(auth_token: string, brandId: string, includeCategories: boolean = false, includeAttributes: boolean = false, page?: number, limit?: number): Promise<IListProductResponseDto | null> {
+        const params = new URLSearchParams();
+        if (includeCategories) params.append('includeCategories', 'true');
+        if (includeAttributes) params.append('includeAttributes', 'true');
+        if (page !== undefined) params.append('page', page.toString());
+        if (limit !== undefined) params.append('limit', limit.toString());
+        const queryParams = params.toString() ? `?${params.toString()}` : '';
+
         const [error, products] = await fetcher(`/brands/${brandId}/products${queryParams}`, {
             method: 'GET',
             headers: {

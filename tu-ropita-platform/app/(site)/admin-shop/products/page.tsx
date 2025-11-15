@@ -26,6 +26,14 @@ import {
 import { Suspense, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import UpsertProductStepper from "./UpsertProductStepper";
 import ProductTable from "./ProductsTable";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function ShopAdminProductsPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
@@ -38,6 +46,10 @@ export default function ShopAdminProductsPage() {
     description: "",
   });
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalBrandProducts, setTotalBrandProducts] = useState<number>(0);
+  const pageSize = 50;
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Estabilizar authToken para prevenir re-renders innecesarios
   const authToken = useMemo(() => Cookies.get("Authorization"), []);
@@ -50,20 +62,27 @@ export default function ShopAdminProductsPage() {
   }, [authToken]);
 
   const fetchProducts = useCallback(
-    async (brandId: string) => {
+    async (brandId: string, page: number = 1) => {
       if (!authToken) return;
       const productsData =
         await privateBrandsApiWrapper.getBrandProductsAsPrivilegedUser(
           authToken,
           brandId,
           true, // includeCategories
-          true  // includeAttributes
+          true, // includeAttributes
+          page,
+          pageSize
         );
       if (productsData) {
         setProducts(productsData.products);
+        setTotalPages(productsData.totalPages);
+        setCurrentPage(productsData.pageNum);
+        if (productsData.totalBrandProducts !== undefined) {
+          setTotalBrandProducts(productsData.totalBrandProducts);
+        }
       }
     },
-    [authToken]
+    [authToken, pageSize]
   );
 
   const fetchPromotions = useCallback(async (brandId: string) => {
@@ -250,6 +269,12 @@ export default function ShopAdminProductsPage() {
     fileInputRef.current?.click();
   };
 
+  const handlePageChange = (page: number) => {
+    if (brand && page >= 1 && page <= totalPages) {
+      fetchProducts(brand.id.toString(), page);
+    }
+  };
+
   const handleDownloadTemplate = () => {
     const templateContent = `data:text/csv;charset=utf-8,name,price,description,images,url
 Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de botones y múltiples bolsillos","https://images.unsplash.com/photo-1543076447-215ad9ba6923?w=800; https://images.unsplash.com/photo-1578681994506-b8f463449011?w=800",https://example.com/products/denim-jacket
@@ -332,7 +357,9 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
       </div>
       <Card className="mt-6">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xl font-bold">Productos</CardTitle>
+          <CardTitle className="text-xl font-bold">
+            Productos {totalBrandProducts > 0 && `(${totalBrandProducts} total)`}
+          </CardTitle>
         </CardHeader>
         <Suspense fallback={<div>Cargando productos...</div>}>
           <ProductTable
@@ -346,7 +373,49 @@ Chaqueta Vaquera Clásica,79.99,"Chaqueta vaquera azul versátil con cierre de b
           />
         </Suspense>
       </Card>
-      <div className="flex justify-end mt-4 space-x-2">
+      <div className="flex justify-between items-center mt-4">
+        <div className="flex-1">
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) handlePageChange(currentPage - 1);
+                    }}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(page);
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                    }}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
         <Button variant="outline" onClick={handleExport}>
           <FileDown className="mr-2 h-4 w-4" /> Exportar
         </Button>

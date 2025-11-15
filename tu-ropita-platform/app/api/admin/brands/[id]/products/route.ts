@@ -10,6 +10,8 @@ export const GET = withBrandPermission(async(req: Request, {params}: {params: {i
         const url = new URL(req.url);
         const includeCategories = url.searchParams.get('includeCategories') === 'true';
         const includeAttributes = url.searchParams.get('includeAttributes') === 'true';
+        const page = url.searchParams.get('page') ? parseInt(url.searchParams.get('page')!) : undefined;
+        const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined;
 
         // Only admins should see deleted products
         const user = (req as any).user;
@@ -20,7 +22,9 @@ export const GET = withBrandPermission(async(req: Request, {params}: {params: {i
             excludeBrandPaused: false,
             includeCategories,
             includeAttributes,
-            includeDeleted
+            includeDeleted,
+            page,
+            limit
         });
 
 

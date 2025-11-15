@@ -35,10 +35,16 @@ export const GET = withBrandPermission(async(req: Request, {params}: {params: {i
     try{
         const url = new URL(req.url);
         const includeCategories = url.searchParams.get('includeCategories') === 'true';
+        const includeAttributes = url.searchParams.get('includeAttributes') === 'true';
+        const page = url.searchParams.get('page') ? parseInt(url.searchParams.get('page')!) : undefined;
+        const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined;
 
         const products = await productService.listProducts({
             brandId: parseInt(params.id),
-            includeCategories
+            includeCategories,
+            includeAttributes,
+            page,
+            limit
         });
 
         return new Response(JSON.stringify(products), {
