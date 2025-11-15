@@ -22,6 +22,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CategorySelector } from "../products/CategorySelector";
 import { AttributeSelector } from "../products/AttributeSelector";
 import { Separator } from "@/components/ui/separator";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function CategoryAssignmentPage() {
   const [brand, setBrand] = useState<IBrand | null>(null);
@@ -36,10 +44,14 @@ export default function CategoryAssignmentPage() {
   const [isRemovingAttributes, setIsRemovingAttributes] = useState(false);
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalBrandProducts, setTotalBrandProducts] = useState<number>(0);
+  const pageSize = 50;
 
   const authToken = useMemo(() => Cookies.get("Authorization"), []);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (page: number = 1) => {
     if (!authToken) return;
 
     try {
@@ -53,11 +65,23 @@ export default function CategoryAssignmentPage() {
       }
       setBrand(brandData);
 
-      // Fetch products
-      const productsResponse = await privateProductsApiWrapper.getProductsOfBrand(authToken, brandData.id.toString(), true);
+      // Fetch products with pagination
+      const productsResponse = await privateProductsApiWrapper.getProductsOfBrand(
+        authToken,
+        brandData.id.toString(),
+        true, // includeCategories
+        true, // includeAttributes
+        page,
+        pageSize
+      );
 
       if (productsResponse) {
         setProducts(productsResponse.products);
+        setTotalPages(productsResponse.totalPages);
+        setCurrentPage(productsResponse.pageNum);
+        if (productsResponse.totalBrandProducts !== undefined) {
+          setTotalBrandProducts(productsResponse.totalBrandProducts);
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -65,7 +89,7 @@ export default function CategoryAssignmentPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [authToken]);
+  }, [authToken, pageSize]);
 
   useEffect(() => {
     fetchData();
@@ -141,7 +165,7 @@ export default function CategoryAssignmentPage() {
           message: `${categoryIds.length} categoría(s) asignada(s) exitosamente a ${productIds.length} producto(s).`
         });
         // Refresh products to show updated categories
-        await fetchData();
+        await fetchData(currentPage);
       } else {
         toast({ type: "error", message: "Error al asignar las categorías." });
       }
@@ -151,7 +175,7 @@ export default function CategoryAssignmentPage() {
     } finally {
       setIsAssigning(false);
     }
-  }, [brand, selectedCategories, selectedProducts, authToken, fetchData]);
+  }, [brand, selectedCategories, selectedProducts, authToken, fetchData, currentPage]);
 
   const handleRemoveCategories = useCallback(async () => {
     if (!brand || selectedCategories.size === 0 || selectedProducts.size === 0) {
@@ -182,7 +206,7 @@ export default function CategoryAssignmentPage() {
           message: `${categoryIds.length} categoría(s) removida(s) exitosamente de ${productIds.length} producto(s).`
         });
         // Refresh products to show updated categories
-        await fetchData();
+        await fetchData(currentPage);
       } else {
         toast({ type: "error", message: "Error al remover las categorías." });
       }
@@ -192,7 +216,7 @@ export default function CategoryAssignmentPage() {
     } finally {
       setIsRemoving(false);
     }
-  }, [brand, selectedCategories, selectedProducts, authToken, fetchData]);
+  }, [brand, selectedCategories, selectedProducts, authToken, fetchData, currentPage]);
 
   const handleAssignAttributes = useCallback(async () => {
     if (!brand || selectedAttributes.size === 0 || selectedProducts.size === 0) {
@@ -227,14 +251,14 @@ export default function CategoryAssignmentPage() {
         message: `Atributos asignados exitosamente a ${productIds.length} producto(s).`
       });
       // Refresh products to show updated attributes
-      await fetchData();
+      await fetchData(currentPage);
     } catch (error) {
       console.error('Error assigning attributes:', error);
       toast({ type: "error", message: "Error al asignar los atributos." });
     } finally {
       setIsAssigningAttributes(false);
     }
-  }, [brand, selectedAttributes, selectedProducts, authToken, fetchData]);
+  }, [brand, selectedAttributes, selectedProducts, authToken, fetchData, currentPage]);
 
   const handleRemoveAttributes = useCallback(async () => {
     if (!brand || selectedAttributes.size === 0 || selectedProducts.size === 0) {
@@ -264,14 +288,20 @@ export default function CategoryAssignmentPage() {
         message: `Atributos removidos exitosamente de ${productIds.length} producto(s).`
       });
       // Refresh products to show updated attributes
-      await fetchData();
+      await fetchData(currentPage);
     } catch (error) {
       console.error('Error removing attributes:', error);
       toast({ type: "error", message: "Error al remover los atributos." });
     } finally {
       setIsRemovingAttributes(false);
     }
-  }, [brand, selectedAttributes, selectedProducts, authToken, fetchData]);
+  }, [brand, selectedAttributes, selectedProducts, authToken, fetchData, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchData(page);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -308,7 +338,7 @@ export default function CategoryAssignmentPage() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Package className="w-5 h-5" />
-                <span>Productos ({filteredProducts.length})</span>
+                <span>Productos</span>
               </CardTitle>
               <div className="space-y-2">
                 <Input
@@ -408,6 +438,48 @@ export default function CategoryAssignmentPage() {
               </ScrollArea>
             </CardContent>
           </Card>
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) handlePageChange(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(page);
+                        }}
+                        isActive={currentPage === page}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Categories and Attributes */}

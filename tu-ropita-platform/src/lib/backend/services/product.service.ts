@@ -86,7 +86,6 @@ class ProductService {
             params.excludeBrandPaused = true;
         }
 
-        // Enable attribute inclusion for filter aggregation
         params.includeAttributes = true;
 
         const products : IProduct[] = await productRepository.listProducts(params, searchEmbedding);
@@ -96,12 +95,23 @@ class ProductService {
         // Aggregate attributes from products for filtering
         const attributes = this.aggregateAttributesFromProducts(products);
 
+        // Calculate pagination values
+        const pageSize = params.limit || products.length;
+        const pageNum = params.page || 1;
+        const totalCount = await productRepository.countProducts(params, searchEmbedding);
+        const totalPages = Math.ceil(totalCount / pageSize);
+        let totalBrandProducts: number | undefined;
+        if (params.brandId) {
+            totalBrandProducts = await productRepository.countProductsByBrand(params.brandId);
+        }
+
         return {
-            pageNum: 1,
-            pageSize: products.length,
+            pageNum,
+            pageSize,
             products: products,
-            totalPages: 1,
-            attributes
+            totalPages,
+            attributes,
+            totalBrandProducts
         };
 
     }
