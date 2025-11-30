@@ -150,3 +150,10 @@ export function parseSuccessResponse(data: any): Response {
     headers: { 'Content-Type': 'application/json' }
   });
 }
+
+export function formatPrice(price: number): string {
+  return price.toLocaleString('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}

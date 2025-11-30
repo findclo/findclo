@@ -36,21 +36,32 @@ export function SearchBar({
   const handleSearch = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const queryParams = new URLSearchParams();
       setIsLoading(true);
-      if (searchQuery.trim()) {
-        queryParams.append('search', searchQuery.trim());
+
+      if (!searchQuery.trim()) {
+        setIsLoading(false);
+        return;
       }
-      if (selectedCategoryId) {
-        queryParams.append('categoryId', selectedCategoryId.toString());
+
+      const queryParams = new URLSearchParams();
+      queryParams.append('search', searchQuery.trim());
+
+      // Preserve attribute filters if they exist
+      const currentParams = new URLSearchParams(window.location.search);
+      const attributeValueIds = currentParams.get('attributeValueIds');
+      if (attributeValueIds) {
+        queryParams.append('attributeValueIds', attributeValueIds);
       }
+
+      // DO NOT include categoryId - this clears categories when searching
+
       router.push(`/search?${queryParams.toString()}`);
       setIsLoading(false);
     } catch (error) {
       console.error('Error during search:', error);
       setIsLoading(false);
     }
-  }, [searchQuery, selectedCategoryId, router]);
+  }, [searchQuery, router]);
 
   return (
     <div className="relative z-10 w-full max-w-3xl mx-auto">

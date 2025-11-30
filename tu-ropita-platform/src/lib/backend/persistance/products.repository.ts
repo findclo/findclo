@@ -549,7 +549,6 @@ class ProductsRepository {
             values.push(offset);
         }
 
-        console.log(query, values);
         return { query, values };
     }
 
