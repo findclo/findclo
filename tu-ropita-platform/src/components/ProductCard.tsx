@@ -1,4 +1,5 @@
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+import { formatPrice } from "@/lib/utils";
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -24,7 +25,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="flex-grow p-2">
           <h3 className="font-medium text-sm mb-1">{product.name}</h3>
           <p className="text-xs text-gray-600 mb-1 line-clamp-2">{product.description}</p>
-          <p className="font-semibold text-sm">$ {product.price.toFixed(2)}</p>
+          <p className="font-semibold text-sm">$ {formatPrice(product.price)}</p>
         </div>
       </div>
     </Link>

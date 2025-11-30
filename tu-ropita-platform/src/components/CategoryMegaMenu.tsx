@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, ChevronRight, ChevronDown, X } from "lucide-react";
+import { Menu, Plus, Minus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -55,17 +55,17 @@ const RecursiveCategoryItem: React.FC<RecursiveCategoryItemProps> = ({
         {hasChildren && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+            className="flex items-center justify-center p-2 hover:bg-details/10 rounded transition-colors"
             aria-label={isExpanded ? "Colapsar" : "Expandir"}
           >
             {isExpanded ? (
-              <ChevronDown className="h-3 w-3 text-gray-500" />
+              <Minus className="h-4 w-4 text-details stroke-[2.5]" />
             ) : (
-              <ChevronRight className="h-3 w-3 text-gray-500" />
+              <Plus className="h-4 w-4 text-details stroke-[2.5]" />
             )}
           </button>
         )}
-        {!hasChildren && <span className="w-3.5" />}
+        {!hasChildren && <span className="w-10" />}
 
         <button
           onClick={() => onNavigate(category.id)}
@@ -136,26 +136,6 @@ export const CategoryMegaMenu = ({
     router.push(`/search?${currentParams.toString()}`);
   }, [router]);
 
-  // Helper function to find parent category ID
-  const getParentCategoryId = useCallback((categoryId: number | null): number | null => {
-    if (!categoryId) return null;
-
-    for (const mainCat of categories) {
-      if (mainCat.id === categoryId) return mainCat.id;
-
-      for (const subCat of mainCat.children) {
-        if (subCat.id === categoryId) return mainCat.id;
-
-        for (const childCat of subCat.children) {
-          if (childCat.id === categoryId) return mainCat.id;
-        }
-      }
-    }
-    return null;
-  }, [categories]);
-
-  const activeParentCategoryId = getParentCategoryId(activeCategoryId);
-
   if (isLoading) {
     return (
       <div className={cn(
@@ -219,28 +199,34 @@ export const CategoryMegaMenu = ({
 
                             return (
                               <AccordionItem key={mainCategory.id} value={`cat-${mainCategory.id}`} className="border-b">
-                                <div className="flex items-center">
+                                <div className="flex items-center gap-1">
                                   {hasChildren ? (
-                                    <AccordionTrigger className="flex-1 text-sm font-medium hover:no-underline py-3">
-                                      <span
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleCategoryClick(mainCategory.id);
-                                        }}
-                                        className={cn(
-                                          "hover:underline",
-                                          isMainCategoryActive && "text-blue-600 font-semibold"
-                                        )}
-                                      >
-                                        {mainCategory.name}
-                                      </span>
+                                    <AccordionTrigger className="flex-1 text-sm font-medium hover:no-underline py-3 [&>svg]:hidden group">
+                                      <div className="flex items-center gap-2 flex-1">
+                                        <div className="p-1.5 hover:bg-details/10 rounded transition-colors">
+                                          <Plus className="h-4 w-4 text-details stroke-[2.5] group-data-[state=open]:hidden" />
+                                          <Minus className="h-4 w-4 text-details stroke-[2.5] group-data-[state=closed]:hidden" />
+                                        </div>
+                                        <span
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCategoryClick(mainCategory.id);
+                                          }}
+                                          className={cn(
+                                            "hover:underline",
+                                            isMainCategoryActive && "text-details font-semibold"
+                                          )}
+                                        >
+                                          {mainCategory.name}
+                                        </span>
+                                      </div>
                                     </AccordionTrigger>
                                   ) : (
                                     <button
                                       onClick={() => handleCategoryClick(mainCategory.id)}
                                       className={cn(
                                         "flex-1 text-left py-3 text-sm font-medium",
-                                        isMainCategoryActive && "text-blue-600 font-semibold"
+                                        isMainCategoryActive && "text-details font-semibold"
                                       )}
                                     >
                                       {mainCategory.name}
@@ -311,10 +297,6 @@ export const CategoryMegaMenu = ({
           >
             <Menu className="h-4 w-4" />
             Menú
-            <ChevronDown className={cn(
-              "h-3 w-3 transition-transform duration-200",
-              isMegaMenuOpen && "rotate-180"
-            )} />
           </Button>
 
           {isMegaMenuOpen && (
