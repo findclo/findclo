@@ -27,6 +27,10 @@ export interface IListProductsParams {
     attributeValueIds?: number[];
     includeAttributes?: boolean;
     includeDeleted?: boolean;
+    // Brand detection parameters
+    detectedBrandIds?: number[];
+    brandBoostScores?: Map<number, number>;
+    isExactBrandMatch?: boolean;
 }
 
 
@@ -402,9 +406,36 @@ class ProductsRepository {
 
     private constructListQuery(params: IListProductsParams, searchEmbedding?: number[]): { query: string, values: any[] } {
         let query = `SELECT p.*`;
+
+        // Add similarity score for semantic search
         if (searchEmbedding && searchEmbedding.length > 0) {
             query += `, (1 - (p.embedding <=> $${1}::vector)) AS similarity`;
         }
+
+        // Add brand boost score for hybrid ranking
+        if (params.brandBoostScores && params.brandBoostScores.size > 0) {
+            query += `, CASE `;
+            params.brandBoostScores.forEach((score, brandId) => {
+                query += `WHEN p.brand_id = ${brandId} THEN ${score} `;
+            });
+            query += `ELSE 0.0 END AS brand_boost`;
+
+            // Calculate combined score for hybrid ranking
+            if (searchEmbedding && searchEmbedding.length > 0) {
+                query += `, (CASE `;
+                params.brandBoostScores.forEach((score, brandId) => {
+                    query += `WHEN p.brand_id = ${brandId} THEN ${score} `;
+                });
+                query += `ELSE 0.0 END + (1 - (p.embedding <=> $1::vector)) * 0.5) AS combined_score`;
+            } else {
+                query += `, CASE `;
+                params.brandBoostScores.forEach((score, brandId) => {
+                    query += `WHEN p.brand_id = ${brandId} THEN ${score} `;
+                });
+                query += `ELSE 0.0 END AS combined_score`;
+            }
+        }
+
         if (params.includeCategories) {
             query += this.getCategoryAggregations();
         }
@@ -470,12 +501,27 @@ class ProductsRepository {
         }
 
 
-        // Handle search: prioritize vector search if we have embedding, fallback to text search
+        // Handle search with brand detection support
         if (params.search && params.search.trim().length > 0) {
             if (searchEmbedding && searchEmbedding.length > 0) {
-                conditions.push(`p.embedding IS NOT NULL`);
-                conditions.push(`(1 - (p.embedding <=> $1)) >= 0.5`); // Similarity threshold
+                // Adaptive filtering based on brand detection
+                if (params.isExactBrandMatch && params.detectedBrandIds && params.detectedBrandIds.length > 0) {
+                    // EXACT BRAND MATCH: Strict filtering - show only detected brand products
+                    conditions.push(`p.brand_id = ANY($${values.length + 1})`);
+                    values.push(params.detectedBrandIds);
+                    // Still require valid embedding for semantic ranking within brand
+                    conditions.push(`p.embedding IS NOT NULL`);
+                } else if (!params.isExactBrandMatch && params.detectedBrandIds && params.detectedBrandIds.length > 0) {
+                    // FUZZY BRAND MATCH: Boosting - show brand products + semantically similar products
+                    conditions.push(`(p.brand_id = ANY($${values.length + 1}) OR ((1 - (p.embedding <=> $1)) >= 0.5 AND p.embedding IS NOT NULL))`);
+                    values.push(params.detectedBrandIds);
+                } else {
+                    // NO BRAND MATCH: Pure semantic search
+                    conditions.push(`p.embedding IS NOT NULL`);
+                    conditions.push(`(1 - (p.embedding <=> $1)) >= 0.5`);
+                }
             } else {
+                // Fallback to text search when no embeddings
                 conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
 
                 const sanitizedSearch = params.search
@@ -514,7 +560,10 @@ class ProductsRepository {
             query += searchByTsQuery;
         }
 
-        if (searchEmbedding && searchEmbedding.length > 0) {
+        // Ordering: prioritize combined score when brand boosting is active
+        if (params.brandBoostScores && params.brandBoostScores.size > 0) {
+            query += ` ORDER BY combined_score DESC, p.id DESC`;
+        } else if (searchEmbedding && searchEmbedding.length > 0) {
             query += ` ORDER BY similarity DESC`;
         } else if (params.sort) {
             switch (params.sort) {

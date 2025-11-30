@@ -75,6 +75,35 @@ class ProductService {
             categoryIds = await categoryService.getDescendantIds(params.categoryId);
         }
         params.categoryIds = categoryIds;
+
+        // Brand detection logic - only if searching and not already filtering by brandId
+        if (params.search && !params.skipAI && !params.brandId) {
+            const detectedBrands = await brandService.detectBrandsInQuery(params.search);
+
+            if (detectedBrands.length > 0) {
+                const exactMatch = detectedBrands.find(db => db.isExact);
+
+                if (exactMatch) {
+                    // EXACT MATCH: Strict filtering - show only this brand's products
+                    params.detectedBrandIds = [exactMatch.brand.id];
+                    params.isExactBrandMatch = true;
+                    console.log(`[Brand Search] Exact match: "${exactMatch.brand.name}" - showing only this brand`);
+                } else {
+                    // FUZZY MATCH: Boosting - boost matched brands but show others too
+                    params.detectedBrandIds = detectedBrands.map(db => db.brand.id);
+                    params.isExactBrandMatch = false;
+
+                    const brandBoostScores = new Map<number, number>();
+                    detectedBrands.forEach(db => {
+                        brandBoostScores.set(db.brand.id, 5.0 * db.similarity);
+                    });
+                    params.brandBoostScores = brandBoostScores;
+
+                    console.log(`[Brand Search] Fuzzy matches: ${detectedBrands.map(db => `${db.brand.name}(boost: ${(5.0 * db.similarity).toFixed(2)})`).join(', ')}`);
+                }
+            }
+        }
+
         // Vector search using embeddings for semantic search
         let searchEmbedding: number[] = [];
         if (params.search && !params.skipAI) {
