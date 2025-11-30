@@ -129,11 +129,11 @@ export const CategoryMegaMenu = ({
   const handleCategoryClick = useCallback((categoryId: number) => {
     setIsSheetOpen(false);
     setIsMegaMenuOpen(false);
-    // Preserve all existing query params from current URL
-    const currentParams = new URLSearchParams(window.location.search);
-    // Update only the categoryId
-    currentParams.set('categoryId', categoryId.toString());
-    router.push(`/search?${currentParams.toString()}`);
+
+    const queryParams = new URLSearchParams();
+    queryParams.set('categoryId', categoryId.toString());
+
+    router.push(`/search?${queryParams.toString()}`);
   }, [router]);
 
   if (isLoading) {
