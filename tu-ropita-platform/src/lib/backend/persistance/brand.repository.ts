@@ -15,6 +15,8 @@ export interface IBrandRepository {
     changeBrandStatus(id: number, status: BrandStatus): Promise<boolean>;
     getBrandOwnersIds(brandId: number): Promise<number[]>;
     getBrandsOfUser(userId: number): Promise<IBrand[]>;
+    findBrandByExactMatch(searchQuery: string): Promise<IBrand | null>;
+    findBrandsByFuzzyMatch(searchQuery: string, similarityThreshold?: number): Promise<Array<{ brand: IBrand; similarity: number }>>;
 }
 
 class BrandRepository implements IBrandRepository {
@@ -104,13 +106,13 @@ class BrandRepository implements IBrandRepository {
 
     async getBrandsOfUser(userId: number): Promise<IBrand[]> {
         const query = `
-            SELECT b.* 
+            SELECT b.*
             FROM Brands b
             JOIN user_brands ub ON b.id = ub.brand_id
             WHERE ub.user_id = $1;
         `;
         const values = [userId];
-        
+
         try {
             const res = await this.db.query(query, values);
             if (res.rowCount === 0) {
@@ -120,6 +122,53 @@ class BrandRepository implements IBrandRepository {
         } catch (error) {
             console.error('Error fetching brands of user:', error);
             throw error;
+        }
+    }
+
+    async findBrandByExactMatch(searchQuery: string): Promise<IBrand | null> {
+        const query = `
+            SELECT * FROM Brands
+            WHERE LOWER(name) = LOWER($1)
+            LIMIT 1
+        `;
+        const values = [searchQuery.trim()];
+
+        try {
+            const res = await this.db.query(query, values);
+            if (res.rowCount === 0) {
+                return null;
+            }
+            return this.mapBrandRow(res.rows[0]);
+        } catch (error) {
+            console.error('Error in exact brand matching:', error);
+            return null;
+        }
+    }
+
+    async findBrandsByFuzzyMatch(
+        searchQuery: string,
+        similarityThreshold: number = 0.3
+    ): Promise<Array<{ brand: IBrand; similarity: number }>> {
+        const query = `
+            SELECT
+                id, name, image, websiteurl, description, status,
+                similarity(LOWER(name), LOWER($1)) as similarity_score
+            FROM Brands
+            WHERE similarity(LOWER(name), LOWER($1)) > $2
+            ORDER BY similarity_score DESC
+            LIMIT 5
+        `;
+        const values = [searchQuery.trim(), similarityThreshold];
+
+        try {
+            const res = await this.db.query(query, values);
+            return res.rows.map(row => ({
+                brand: this.mapBrandRow(row),
+                similarity: parseFloat(row.similarity_score)
+            }));
+        } catch (error) {
+            console.error('Error in fuzzy brand matching:', error);
+            return [];
         }
     }
 

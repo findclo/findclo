@@ -11,6 +11,7 @@ export interface IBrandService {
     updateBrand(id: number, brand:IBrandDto): Promise<IBrand>;
     deleteBrand(id: number): Promise<boolean>;
     changeBrandStatus(id: number, status: string): Promise<IBrand>;
+    detectBrandsInQuery(searchQuery: string): Promise<Array<{ brand: IBrand; similarity: number; isExact: boolean }>>;
 }
 
 class BrandService implements IBrandService {
@@ -49,6 +50,36 @@ class BrandService implements IBrandService {
             return this.getBrandById(id);
         }
         throw new Error('Failed to change brand status');
+    }
+
+    async detectBrandsInQuery(searchQuery: string): Promise<Array<{ brand: IBrand; similarity: number; isExact: boolean }>> {
+        if (!searchQuery || searchQuery.trim().length === 0) {
+            return [];
+        }
+
+        // First try exact match
+        const exactMatch = await brandRepository.findBrandByExactMatch(searchQuery);
+        if (exactMatch) {
+            console.log(`[Brand Detection] Exact match found: ${exactMatch.name}`);
+            return [{
+                brand: exactMatch,
+                similarity: 1.0,
+                isExact: true
+            }];
+        }
+
+        // Try fuzzy matching
+        const fuzzyMatches = await brandRepository.findBrandsByFuzzyMatch(searchQuery, 0.3);
+
+        if (fuzzyMatches.length > 0) {
+            console.log(`[Brand Detection] Fuzzy matches found: ${fuzzyMatches.map(m => `${m.brand.name}(${m.similarity.toFixed(2)})`).join(', ')}`);
+        }
+
+        return fuzzyMatches.map(match => ({
+            brand: match.brand,
+            similarity: match.similarity,
+            isExact: false
+        }));
     }
 
 }
