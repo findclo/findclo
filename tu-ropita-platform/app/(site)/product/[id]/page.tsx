@@ -6,6 +6,7 @@ import ImageGallery from '@/components/ImageGallery';
 import RelatedProducts from '@/components/RelatedProducts';
 import ShareButtons from '@/components/ShareButtons';
 import { IProduct } from '@/lib/backend/models/interfaces/product.interface';
+import { formatPrice } from '@/lib/utils';
 import { notFound } from 'next/navigation';
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
@@ -39,7 +40,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
         
         <div className="w-full md:w-1/2">
           <h2 className="text-xl font-semibold mb-2">{product.name}</h2>
-          <p className="text-2xl font-bold mb-4">${product.price}</p>
+          <p className="text-2xl font-bold mb-4"> $ {formatPrice(product.price)}</p>
           <p className="mb-6">{product.description}</p>
           <BuyButton productId={product.id.toString()} productUrl={product.url}/>
 
