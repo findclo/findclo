@@ -29,8 +29,19 @@ class PublicProductsApiWrapper {
         return products as IListProductResponseDto;
     }
 
-    async getFilteredProducts(query: string, filters: any): Promise<IListProductResponseDto | null> {
-        const queryParams = new URLSearchParams({ search: query, ...filters });
+    async getFilteredProducts(query: string, filters: any, page?: number, limit?: number): Promise<IListProductResponseDto | null> {
+        const params: any = { search: query, ...filters };
+        if (page !== undefined) params.page = page.toString();
+        if (limit !== undefined) params.limit = limit.toString();
+
+        // Remove undefined values to prevent them from being sent as "undefined" strings
+        Object.keys(params).forEach(key => {
+            if (params[key] === undefined) {
+                delete params[key];
+            }
+        });
+
+        const queryParams = new URLSearchParams(params);
         const [error, products] = await fetcher(`${PRODUCTS_PATH}?${queryParams}`);
         if (error) {
             console.error(`Error fetching filtered products: ${error}`);

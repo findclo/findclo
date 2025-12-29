@@ -32,6 +32,7 @@ import React, { useEffect, useState } from "react";
 import UpsertProductStepper from "./UpsertProductStepper";
 import ProductPromotionDetailsDialog from "./ProductPromotionDetailsDialog";
 import PromoteProductDialog from "./PromoteProductDialog";
+import { formatPrice } from "@/lib/utils";
 
 interface ProductTableProps {
   products: IProduct[];
@@ -300,7 +301,7 @@ const openPromotionDetails = (promotionId: number) => {
                   <TableCell className="font-medium">
                     {product.name}
                   </TableCell>
-                  <TableCell>${product.price?.toFixed(2) || "0.00"}</TableCell>
+                  <TableCell>$ {formatPrice(product.price || 0)}</TableCell>
                   <TableCell>
                     {/* Categorías */}
                     <div className="flex flex-wrap gap-1">

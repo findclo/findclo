@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { Loader2, Package, Tags, Palette } from "lucide-react";
 import Image from "next/image";
@@ -401,7 +401,7 @@ export default function CategoryAssignmentPage() {
                           {product.name}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          ${product.price}
+                          $ {formatPrice(product.price)}
                         </p>
                         {/* Current categories and attributes display */}
                         <div className="mt-1 flex flex-wrap gap-1">

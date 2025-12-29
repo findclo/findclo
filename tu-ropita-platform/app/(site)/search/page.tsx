@@ -1,9 +1,11 @@
 import { publicProductsApiWrapper } from "@/api-wrappers/products";
 import RelatedProducts from "@/components/RelatedProducts";
 import { SearchBar } from "@/components/SearchBar";
-import SearchResults from "@/components/SearchResults";
+import InfiniteSearchResults from "./InfiniteSearchResults";
 import { ProductFilters } from "@/components/ProductFilters";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
+
+const PAGE_SIZE = 50;
 
 interface SearchPageProps {
     searchParams: {
@@ -21,6 +23,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     let products: IProduct[] = [];
     let noProductsFound = false;
     let attributes: any[] = [];
+    let totalPages = 1;
 
     try {
         // Build filters object including all params (for attribute filters)
@@ -36,7 +39,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             }
         });
 
-        const result = await publicProductsApiWrapper.getFilteredProducts(query, filters);
+        const result = await publicProductsApiWrapper.getFilteredProducts(query, filters, 1, PAGE_SIZE);
         if (result && result.products.length > 0) {
             result.products = result.products.filter(p => p.status !== 'DELETED' && p.status !== 'PAUSED' && p.status !== 'PAUSED_BY_ADMIN');
         }
@@ -46,6 +49,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         } else {
             products = result.products;
             attributes = result.attributes || [];
+            totalPages = result.totalPages;
         }
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -94,7 +98,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             )}
                             {!noProductsFound && (
                                 <div className="mt-8">
-                                    <SearchResults products={products} />
+                                    <InfiniteSearchResults
+                                        initialProducts={products}
+                                        initialTotalPages={totalPages}
+                                        searchParams={searchParams}
+                                    />
                                 </div>
                             )}
                         </>
