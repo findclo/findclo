@@ -15,7 +15,9 @@ export async function GET(req: Request) {
         isLandingPage: queryParams.has('isLandingPage') ? queryParams.get('isLandingPage') === 'true' : false,
         skipAI: queryParams.has('skipAI') ? queryParams.get('skipAI') === 'true' : false,
         categoryId: queryParams.has('categoryId') ? Number(queryParams.get('categoryId')) : undefined,
-        attributeValueIds: queryParams.has('attributeValueIds') ? queryParams.get('attributeValueIds')?.split(',').map(id => parseInt(id.trim())) : undefined
+        attributeValueIds: queryParams.has('attributeValueIds') ? queryParams.get('attributeValueIds')?.split(',').map(id => parseInt(id.trim())) : undefined,
+        page: queryParams.has('page') ? Number(queryParams.get('page')) : undefined,
+        limit: queryParams.has('limit') ? Number(queryParams.get('limit')) : undefined
     };
 
     try {
