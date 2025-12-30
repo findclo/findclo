@@ -47,7 +47,7 @@ class ProductsRepository {
         includeCategories: boolean = false,
         includeAttributes: boolean = false
     ): Promise<IProduct | null> {
-        let query = `SELECT p.*, b.status as brand_status, b.name as brand_name`;
+        let query = `SELECT p.*, b.status as brand_status, b.name as brand_name, b.image as brand_image, b.websiteUrl as brand_websiteUrl, b.description as brand_description`;
 
         // Include category aggregations if requested
         if (includeCategories) {
@@ -81,7 +81,7 @@ class ProductsRepository {
 
         // Add GROUP BY when including categories or attributes
         if (includeCategories || includeAttributes) {
-            query += ` GROUP BY p.id, b.status, b.name`;
+            query += ` GROUP BY p.id, b.id`;
         }
 
         try {
@@ -331,7 +331,7 @@ class ProductsRepository {
 
     private async getProductsWithCondition(condition: string, limit: number): Promise<IProduct[]> {
         const query = `
-            SELECT p.*, b.status as brand_status
+            SELECT p.*, b.status as brand_status, b.name as brand_name, b.image as brand_image, b.websiteUrl as brand_websiteUrl, b.description as brand_description
             FROM Products p
             JOIN Brands b ON p.brand_id = b.id
             WHERE ${condition}
@@ -365,11 +365,11 @@ class ProductsRepository {
                 url: row.url,
                 brand: {
                     id: row.brand_id,
-                    name: row.brand_name,
-                    image: '',
-                    websiteUrl: '',
-                    status: BrandStatus.ACTIVE,
-                    description: ''
+                    name: row.brand_name || '',
+                    image: row.brand_image || '',
+                    websiteUrl: row.brand_websiteUrl || '',
+                    status: row.brand_status || BrandStatus.ACTIVE,
+                    description: row.brand_description || ''
                 }
             };
 
@@ -405,7 +405,7 @@ class ProductsRepository {
 
 
     private constructListQuery(params: IListProductsParams, searchEmbedding?: number[]): { query: string, values: any[] } {
-        let query = `SELECT p.*`;
+        let query = `SELECT p.*, b.status as brand_status, b.name as brand_name, b.image as brand_image, b.websiteUrl as brand_websiteUrl, b.description as brand_description`;
 
         // Add similarity score for semantic search
         if (searchEmbedding && searchEmbedding.length > 0) {
@@ -444,6 +444,7 @@ class ProductsRepository {
         }
 
         query += ` FROM products p`;
+        query += ' JOIN Brands b ON p.brand_id = b.id ';
         let searchByTsQuery: string = '';
         const conditions: string[] = [];
         const values: any[] = [];
@@ -463,7 +464,6 @@ class ProductsRepository {
         }
 
         if (params.excludeBrandPaused) {
-            query += ' JOIN Brands b ON p.brand_id = b.id ';
             conditions.push(`b.status != $${values.length + 1}`);
             values.push(BrandStatus.PAUSED);
         }
@@ -554,7 +554,7 @@ class ProductsRepository {
             query += ` WHERE ` + conditions.join(' AND ');
         }
 
-        query += ` GROUP BY p.id `;
+        query += ` GROUP BY p.id, b.id`;
 
         if (searchByTsQuery != '') {
             query += searchByTsQuery;
