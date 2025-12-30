@@ -20,6 +20,25 @@ export default function ProductCard({ product }: ProductCardProps) {
             objectFit="cover"
             className="transition-transform duration-300 ease-in-out transform group-hover:scale-105"
           />
+
+          {/* Brand logo overlay */}
+          {product.brand.image && (
+            <Link
+              href={`/brand/${product.brand.id}`}
+              className="absolute top-2 right-2 z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-8 h-8 rounded-full bg-white shadow-sm border border-gray-200 p-1 hover:shadow-md transition-shadow">
+                <Image
+                  src={product.brand.image}
+                  alt={`${product.brand.name} logo`}
+                  width={24}
+                  height={24}
+                  className="rounded-full object-cover"
+                />
+              </div>
+            </Link>
+          )}
         </div>
         {/* Text content */}
         <div className="flex-grow p-2">
