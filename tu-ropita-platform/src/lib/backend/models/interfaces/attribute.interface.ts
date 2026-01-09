@@ -35,4 +35,5 @@ export interface IProductAttributeDetail {
     value_id: number;
     value: string;
     value_slug: string;
+    count?: number; // Aggregated count from SQL queries
 }

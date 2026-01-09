@@ -653,6 +653,135 @@ class ProductsRepository {
                  LEFT JOIN attributes a ON pa.attribute_id = a.id
                  LEFT JOIN attribute_values av ON pa.attribute_value_id = av.id`;
     }
+
+    async getAttributesForFilters(params: IListProductsParams, searchEmbedding?: number[]): Promise<IProductAttributeDetail[]> {
+       // TODO: remove duplicate code from query
+        let query = `
+            SELECT
+                a.id as attribute_id,
+                a.name as attribute_name,
+                a.slug as attribute_slug,
+                av.id as value_id,
+                av.value as value,
+                av.slug as value_slug,
+                COUNT(DISTINCT p.id)::int as count
+            FROM products p
+            JOIN Brands b ON p.brand_id = b.id
+        `;
+
+        const conditions: string[] = [];
+        const values: any[] = [];
+
+        // Add embedding as first parameter if provided
+        if (searchEmbedding && searchEmbedding.length > 0) {
+            values.push(`[${searchEmbedding.join(',')}]`);
+        }
+
+        // Apply featured filter with promotions join
+        if (params.featured) {
+            query += ` JOIN promotions prom ON prom.product_id = p.id`;
+            conditions.push(`prom.is_active = true`);
+            conditions.push(`prom.credits_spent < prom.credits_allocated`);
+            if (params.isLandingPage) {
+                conditions.push(`prom.show_on_landing = true`);
+            }
+        }
+
+        // Exclude paused brands
+        if (params.excludeBrandPaused) {
+            conditions.push(`b.status != $${values.length + 1}`);
+            values.push(BrandStatus.PAUSED);
+        }
+
+        // Handle category filtering
+        const needsCategoryJoin = (params.categoryIds && params.categoryIds.length > 0) || params.categoryId;
+
+        if (needsCategoryJoin) {
+            query += this.getCategoryJoins();
+
+            if (params.categoryIds && params.categoryIds.length > 0) {
+                conditions.push(`pc.category_id = ANY($${values.length + 1})`);
+                values.push(params.categoryIds);
+            } else if (params.categoryId) {
+                conditions.push(`pc.category_id = $${values.length + 1}`);
+                values.push(params.categoryId);
+            }
+        }
+
+        // CRITICAL: Join attributes tables
+        query += this.getAttributeJoins();
+
+        // Add attribute value filtering if provided
+        if (params.attributeValueIds && params.attributeValueIds.length > 0) {
+            conditions.push(`pa.attribute_value_id = ANY($${values.length + 1})`);
+            values.push(params.attributeValueIds);
+        }
+
+        // Handle search with brand detection and semantic search
+        if (params.search && params.search.trim().length > 0) {
+            if (searchEmbedding && searchEmbedding.length > 0) {
+                // Adaptive filtering based on brand detection
+                if (params.isExactBrandMatch && params.detectedBrandIds && params.detectedBrandIds.length > 0) {
+                    conditions.push(`p.brand_id = ANY($${values.length + 1})`);
+                    values.push(params.detectedBrandIds);
+                    conditions.push(`p.embedding IS NOT NULL`);
+                } else if (!params.isExactBrandMatch && params.detectedBrandIds && params.detectedBrandIds.length > 0) {
+                    conditions.push(`(p.brand_id = ANY($${values.length + 1}) OR ((1 - (p.embedding <=> $1)) >= 0.5 AND p.embedding IS NOT NULL))`);
+                    values.push(params.detectedBrandIds);
+                } else {
+                    conditions.push(`p.embedding IS NOT NULL`);
+                    conditions.push(`(1 - (p.embedding <=> $1)) >= 0.5`);
+                }
+            } else {
+                // Fallback to text search
+                conditions.push(`tsv @@ plainto_tsquery('spanish', $${values.length + 1})`);
+
+                const sanitizedSearch = params.search
+                    .trim()
+                    .replace(/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚüÜ]/g, '')
+                    .split(/\s+/)
+                    .map(word => word.toLowerCase())
+                    .join(' & ');
+
+                values.push(sanitizedSearch);
+            }
+        }
+
+        // Brand filter
+        if (params.brandId) {
+            conditions.push(`p.brand_id = $${values.length + 1}`);
+            values.push(params.brandId);
+        }
+
+        // Exclude DELETED products unless includeDeleted is true
+        if (!params.includeDeleted) {
+            conditions.push(`p.status != 'DELETED'`);
+        }
+
+        // Exclude PAUSED products when userQuery is true
+        if (params.userQuery) {
+            conditions.push(`p.status NOT IN ('PAUSED', 'PAUSED_BY_ADMIN')`);
+        }
+
+        // Add WHERE clause
+        if (conditions.length > 0) {
+            query += ` WHERE ` + conditions.join(' AND ');
+            query += ` AND a.id IS NOT NULL`;
+        } else {
+            query += ` WHERE a.id IS NOT NULL`;
+        }
+
+        // GROUP BY to aggregate in SQL
+        query += ` GROUP BY a.id, a.name, a.slug, av.id, av.value, av.slug`;
+
+        // Order by attribute and value name
+        query += ` ORDER BY a.name, av.value`;
+
+        // NO LIMIT, NO OFFSET - get all attributes across all pages
+
+        const result = await this.db.query(query, values);
+        return result.rows;
+    }
 }
 
 

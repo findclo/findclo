@@ -1,6 +1,7 @@
 import { IAttributeFilterMap, IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.dto.interface";
 import { IProductDTO } from "@/lib/backend/dtos/product.dto.interface";
 import { IProductAttributeAssignment } from "@/lib/backend/dtos/attribute.dto.interface";
+import { IProductAttributeDetail } from "@/lib/backend/models/interfaces/attribute.interface";
 import { ProductNotFoundException } from "@/lib/backend/exceptions/productNotFound.exception";
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface";
 import { IProductCSVUploadParser, ProductCSVUploadParser } from "@/lib/backend/parsers/productCSVUpload.parser";
@@ -121,8 +122,14 @@ class ProductService {
         // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
         productsInteractionsService.addListOfProductViewInListingRelatedInteraction(products.map(p => p.id.toString())).then(r  =>{});
 
-        // Aggregate attributes from products for filtering
-        const attributes = this.aggregateAttributesFromProducts(products);
+        // Get attributes using optimized query (no full product loading, SQL aggregation)
+        const attributeParams = { ...params };
+        delete attributeParams.page; // Remove pagination
+        delete attributeParams.limit; // Remove limit to get all products
+
+        // Use optimized method that fetches and aggregates attributes in SQL
+        const productAttributes: IProductAttributeDetail[] = await productRepository.getAttributesForFilters(attributeParams, searchEmbedding);
+        const attributes = this.aggregateAttributesFromProductAttributes(productAttributes);
 
         // Calculate pagination values
         const pageSize = params.limit || products.length;
@@ -244,6 +251,43 @@ class ProductService {
             attribute_slug: attr.attribute_slug,
             values: Array.from(attr.values.values()).sort((a, b) => a.value.localeCompare(b.value))
         })).sort((a, b) => a.attribute_name.localeCompare(b.attribute_name));
+    }
+
+    private aggregateAttributesFromProductAttributes(productAttributes: IProductAttributeDetail[]): IAttributeFilterMap[] {
+        const attributeMap = new Map<number, {
+            attribute_id: number;
+            attribute_name: string;
+            attribute_slug: string;
+            values: { value_id: number; value: string; value_slug: string; count: number }[];
+        }>();
+
+        // Group by attribute_id (counts already come from SQL)
+        productAttributes.forEach(attr => {
+            if (!attributeMap.has(attr.attribute_id)) {
+                attributeMap.set(attr.attribute_id, {
+                    attribute_id: attr.attribute_id,
+                    attribute_name: attr.attribute_name,
+                    attribute_slug: attr.attribute_slug,
+                    values: []
+                });
+            }
+
+            // Add value with count from SQL query
+            attributeMap.get(attr.attribute_id)!.values.push({
+                value_id: attr.value_id,
+                value: attr.value,
+                value_slug: attr.value_slug,
+                count: attr.count || 0  // Count comes directly from SQL
+            });
+        });
+
+        // Convert to array (already sorted by SQL ORDER BY)
+        return Array.from(attributeMap.values()).map(attr => ({
+            attribute_id: attr.attribute_id,
+            attribute_name: attr.attribute_name,
+            attribute_slug: attr.attribute_slug,
+            values: attr.values // Already sorted by SQL ORDER BY
+        }));
     }
 
     private async updateProductCategories(productId: number, category_ids?: number[]): Promise<void> {
