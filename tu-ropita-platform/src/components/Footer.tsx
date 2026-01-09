@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import { FileText, Shield } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 
 const Footer = () => {
   return (
@@ -9,14 +7,14 @@ const Footer = () => {
         {/* Links */}
         <div className="flex flex-wrap justify-center gap-6">
           <Link
-            href="/terminos"
+            href="/terms"
             className="flex items-center gap-2 text-sm text-foreground/60 hover:text-details transition-colors"
           >
             <span>Términos y Condiciones</span>
           </Link>
 
           <Link
-            href="/privacidad"
+            href="/privacy"
             className="flex items-center gap-2 text-sm text-foreground/60 hover:text-details transition-colors"
           >
             <span>Política de Privacidad</span>

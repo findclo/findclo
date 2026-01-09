@@ -144,7 +144,7 @@ export default function TerminosPage() {
                 Todo el contenido de FindClo, incluyendo pero no limitado a texto, gráficos, logos, iconos, imágenes, clips de audio, descargas digitales y software, es propiedad de FindClo o de sus proveedores de contenido y está protegido por las leyes de derechos de autor internacionales.
               </p>
               <p>
-                Las marcas comerciales, logos y marcas de servicio (colectivamente, las "Marcas") mostradas en el sitio son propiedad registrada y no registrada de FindClo y de terceros. No se otorga ninguna licencia o derecho de uso de estas Marcas sin el consentimiento previo por escrito de FindClo o del tercero propietario.
+                Las marcas comerciales, logos y marcas de servicio (colectivamente, las &quot;Marcas&quot;) mostradas en el sitio son propiedad registrada y no registrada de FindClo y de terceros. No se otorga ninguna licencia o derecho de uso de estas Marcas sin el consentimiento previo por escrito de FindClo o del tercero propietario.
               </p>
               <p>
                 Las imágenes y descripciones de productos son propiedad de las marcas respectivas. El uso no autorizado de cualquier contenido puede violar las leyes de derechos de autor, marcas comerciales y otras leyes aplicables.
@@ -185,7 +185,7 @@ export default function TerminosPage() {
             </h2>
             <div className="space-y-3 text-foreground/80 text-sm md:text-base">
               <p>
-                FindClo proporciona este sitio web y todos los contenidos "tal cual" y "según disponibilidad", sin garantías de ningún tipo, ya sean expresas o implícitas. No garantizamos que:
+                FindClo proporciona este sitio web y todos los contenidos &quot;tal cual&quot; y &quot;según disponibilidad&quot;, sin garantías de ningún tipo, ya sean expresas o implícitas. No garantizamos que:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>El sitio estará disponible ininterrumpidamente o libre de errores</li>

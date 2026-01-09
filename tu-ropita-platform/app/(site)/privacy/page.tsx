@@ -283,7 +283,7 @@ export default function PrivacidadPage() {
                 Podemos actualizar nuestra Política de Privacidad periódicamente para reflejar cambios en nuestras prácticas o por razones operativas, legales o regulatorias.
               </p>
               <p>
-                Le notificaremos sobre cualquier cambio material publicando la nueva Política de Privacidad en esta página y actualizando la fecha de "Última actualización" al inicio del documento.
+                Le notificaremos sobre cualquier cambio material publicando la nueva Política de Privacidad en esta página y actualizando la fecha de &quot;Última actualización&quot; al inicio del documento.
               </p>
               <p>
                 Le recomendamos revisar esta Política de Privacidad periódicamente para estar informado sobre cómo protegemos su información.
