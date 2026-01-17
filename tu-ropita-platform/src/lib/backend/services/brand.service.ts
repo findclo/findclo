@@ -1,4 +1,5 @@
 import {BrandStatus, IBrand} from "@/lib/backend/models/interfaces/brand.interface";
+import { IUser } from "@/lib/backend/models/interfaces/user.interface";
 import { brandRepository } from "@/lib/backend/persistance/brand.repository";
 import {IBrandDto} from "@/lib/backend/dtos/brand.dto.interface";
 import {BrandNotFoundException} from "@/lib/backend/exceptions/brandNotFound.exception";
@@ -12,6 +13,7 @@ export interface IBrandService {
     deleteBrand(id: number): Promise<boolean>;
     changeBrandStatus(id: number, status: string): Promise<IBrand>;
     detectBrandsInQuery(searchQuery: string): Promise<Array<{ brand: IBrand; similarity: number; isExact: boolean }>>;
+    getBrandOwners(brandId: number): Promise<IUser[]>;
 }
 
 class BrandService implements IBrandService {
@@ -80,6 +82,10 @@ class BrandService implements IBrandService {
             similarity: match.similarity,
             isExact: false
         }));
+    }
+
+    async getBrandOwners(brandId: number): Promise<IUser[]> {
+        return brandRepository.getBrandOwners(brandId);
     }
 
 }

@@ -26,9 +26,10 @@ import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits"
 import { IMetrics } from "@/lib/backend/models/interfaces/metrics/metric.interface"
 import { IProductMetric } from "@/lib/backend/models/interfaces/metrics/product.metric.interface"
 import { IProduct } from "@/lib/backend/models/interfaces/product.interface"
+import { IUser } from "@/lib/backend/models/interfaces/user.interface"
 import { addDays, format } from 'date-fns'
 import Cookies from "js-cookie"
-import { ArrowLeft, ArrowUpDown, FileDown, Search } from 'lucide-react'
+import { ArrowLeft, ArrowUpDown, FileDown, Mail, Search } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
@@ -69,6 +70,7 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [brandOwners, setBrandOwners] = useState<IUser[]>([]);
     const pageSize = 50;
 
     const groupedMetrics: GroupedMetrics = useMemo(() => {
@@ -133,9 +135,19 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
             }
         };
 
+        async function fetchOwners() {
+            if (id) {
+                const response = await privateBrandsApiWrapper.getBrandOwners(token, id);
+                if (response) {
+                    setBrandOwners(response.owners);
+                }
+            }
+        };
+
         fetchCredits();
         fetchBrandDetails();
         fetchProducts();
+        fetchOwners();
     }, [id, token, pageSize]);
 
     useEffect(() => {
@@ -484,6 +496,33 @@ export default function BrandDetails({ params }: { params: { id: string } }) {
                     </div>
                 </CardContent>
             </Card>
+
+            {brandOwners.length > 0 && (
+                <Card className="mb-6">
+                    <CardHeader>
+                        <CardTitle>Propietario</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {brandOwners.map((owner) => (
+                                <div key={owner.id} className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium">{owner.full_name || 'Sin nombre'}</p>
+                                        <p className="text-sm text-muted-foreground">{owner.email}</p>
+                                    </div>
+                                    <a
+                                        href={`mailto:${owner.email}`}
+                                        className="flex items-center gap-2 text-primary hover:underline"
+                                    >
+                                        <Mail className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Contactar</span>
+                                    </a>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid gap-6 mb-6">
                 <Card>

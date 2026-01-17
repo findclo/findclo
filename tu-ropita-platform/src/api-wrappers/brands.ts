@@ -3,6 +3,7 @@ import { IListProductResponseDto } from "@/lib/backend/dtos/listProductResponse.
 import { IBrand } from "@/lib/backend/models/interfaces/brand.interface";
 import { IBrandCredits } from "@/lib/backend/models/interfaces/IBrandCredits";
 import { IPromotion, IPromotionAdmin } from "@/lib/backend/models/interfaces/IPromotion";
+import { IUser } from "@/lib/backend/models/interfaces/user.interface";
 import { baseFetcher, fetcher } from "@/lib/fetcher/fetchWrapper";
 
 const BRANDS_PATH : string = `/brands`;
@@ -221,6 +222,20 @@ class PrivateBrandsApiWrapper {
             return null;
         }
         return {success: true};
+    }
+
+    async getBrandOwners(auth_token: string, brandId: string): Promise<{owners: IUser[]} | null> {
+        const [error, response] = await fetcher(`${ADMIN_BRANDS_PATH}/${brandId}/owners`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${auth_token}`,
+            },
+        });
+        if (error) {
+            console.error(`Error fetching owners for brand ${brandId}: ${error}`);
+            return null;
+        }
+        return response as {owners: IUser[]};
     }
 }
 

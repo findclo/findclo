@@ -360,7 +360,7 @@ class ProductsRepository {
                 name: row.name,
                 price: parseFloat(row.price),
                 description: row.description,
-                images: row.images && row.images.length > 0 ? row.images : [],
+                images: Array.isArray(row.images) ? row.images : [],
                 status: row.status,
                 url: row.url,
                 brand: {
