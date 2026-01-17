@@ -711,9 +711,13 @@ class ProductsRepository {
         // CRITICAL: Join attributes tables
         query += this.getAttributeJoins();
 
-        // Add attribute value filtering if provided
+        // Add attribute value filtering if provided - use subquery to filter products, not attributes
         if (params.attributeValueIds && params.attributeValueIds.length > 0) {
-            conditions.push(`pa.attribute_value_id = ANY($${values.length + 1})`);
+            conditions.push(`p.id IN (
+                SELECT pav_filter.product_id
+                FROM product_attributes pav_filter
+                WHERE pav_filter.attribute_value_id = ANY($${values.length + 1})
+            )`);
             values.push(params.attributeValueIds);
         }
 
