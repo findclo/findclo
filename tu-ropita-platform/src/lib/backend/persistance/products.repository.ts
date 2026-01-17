@@ -113,14 +113,15 @@ class ProductsRepository {
         // Extract the WHERE clause and FROM clause from the list query
         // Remove the SELECT, GROUP BY, ORDER BY, LIMIT, and OFFSET parts
         const fromIndex = listQuery.indexOf('FROM products');
-        const groupByIndex = listQuery.indexOf('GROUP BY');
+        // Use lastIndexOf to find the main GROUP BY, not one inside a subquery
+        const groupByIndex = listQuery.lastIndexOf('GROUP BY');
 
         if (fromIndex === -1) {
             throw new Error('Invalid query structure for counting');
         }
 
         // Build count query - we need to count distinct product IDs due to joins
-        let countQuery = `SELECT COUNT(DISTINCT p.id) as total ${listQuery.substring(fromIndex, groupByIndex !== -1 ? groupByIndex : listQuery.indexOf('ORDER BY'))}`;
+        let countQuery = `SELECT COUNT(DISTINCT p.id) as total ${listQuery.substring(fromIndex, groupByIndex !== -1 ? groupByIndex : listQuery.lastIndexOf('ORDER BY'))}`;
 
         try {
             const res = await this.db.query(countQuery, values.slice(0, values.length - (params.page && params.page > 1 ? 2 : 1))); // Remove LIMIT and possibly OFFSET values
@@ -494,8 +495,16 @@ class ProductsRepository {
             query += this.getAttributeJoins();
 
             // Add filtering condition when filtering by attribute values
+            // Use AND logic across attribute types, OR logic within same attribute
             if (params.attributeValueIds && params.attributeValueIds.length > 0) {
-                conditions.push(`pa.attribute_value_id = ANY($${values.length + 1})`);
+                conditions.push(`p.id IN (
+                    SELECT pav_filter.product_id
+                    FROM product_attributes pav_filter
+                    JOIN attribute_values av_filter ON pav_filter.attribute_value_id = av_filter.id
+                    WHERE pav_filter.attribute_value_id = ANY($${values.length + 1})
+                    GROUP BY pav_filter.product_id
+                    HAVING COUNT(DISTINCT pav_filter.attribute_value_id) = ${params.attributeValueIds.length}
+                )`);
                 values.push(params.attributeValueIds);
             }
         }
@@ -711,12 +720,17 @@ class ProductsRepository {
         // CRITICAL: Join attributes tables
         query += this.getAttributeJoins();
 
-        // Add attribute value filtering if provided - use subquery to filter products, not attributes
+        // Add attribute value filtering if provided - use subquery to filter products
+        // Use AND logic across attribute types, OR logic within same attribute
         if (params.attributeValueIds && params.attributeValueIds.length > 0) {
             conditions.push(`p.id IN (
                 SELECT pav_filter.product_id
                 FROM product_attributes pav_filter
+                JOIN attribute_values av_filter ON pav_filter.attribute_value_id = av_filter.id
                 WHERE pav_filter.attribute_value_id = ANY($${values.length + 1})
+                GROUP BY pav_filter.product_id
+                HAVING COUNT(DISTINCT pav_filter.attribute_value_id) = ${params.attributeValueIds.length}
+
             )`);
             values.push(params.attributeValueIds);
         }
