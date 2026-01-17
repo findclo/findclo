@@ -21,6 +21,17 @@ const Footer = () => {
           </Link>
         </div>
 
+        {/* Contacto */}
+        <div className="text-sm text-foreground/60">
+          <span>Contacto: </span>
+          <a
+            href="mailto:contactofindclo@gmail.com"
+            className="hover:text-details transition-colors"
+          >
+            contactofindclo@gmail.com
+          </a>
+        </div>
+
         <p className="text-xs text-foreground/40 text-center">
           FindClo © {new Date().getFullYear()} — Todos los derechos reservados
         </p>

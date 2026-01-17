@@ -3,6 +3,7 @@ import { IBrandDto } from "@/lib/backend/dtos/brand.dto.interface";
 import { BrandAlreadyExistsException } from "@/lib/backend/exceptions/brandAlreadyExists.exception";
 import { BrandNotFoundException } from "@/lib/backend/exceptions/brandNotFound.exception";
 import { BrandStatus, IBrand } from "@/lib/backend/models/interfaces/brand.interface";
+import { IUser } from "@/lib/backend/models/interfaces/user.interface";
 import { Pool } from "pg";
 import { NotFoundException } from "../exceptions/NotFoundException";
 
@@ -14,6 +15,7 @@ export interface IBrandRepository {
     deleteBrand(id: number): Promise<boolean>;
     changeBrandStatus(id: number, status: BrandStatus): Promise<boolean>;
     getBrandOwnersIds(brandId: number): Promise<number[]>;
+    getBrandOwners(brandId: number): Promise<IUser[]>;
     getBrandsOfUser(userId: number): Promise<IBrand[]>;
     findBrandByExactMatch(searchQuery: string): Promise<IBrand | null>;
     findBrandsByFuzzyMatch(searchQuery: string, similarityThreshold?: number): Promise<Array<{ brand: IBrand; similarity: number }>>;
@@ -102,6 +104,21 @@ class BrandRepository implements IBrandRepository {
         const query = `SELECT user_id FROM user_brands WHERE brand_id = $1;`;
         const res = await this.db.query(query, [brandId]);
         return res.rows.map((row: any) => row.user_id);
+    }
+
+    async getBrandOwners(brandId: number): Promise<IUser[]> {
+        const query = `
+            SELECT u.id, u.email, u.full_name
+            FROM users u
+            JOIN user_brands ub ON u.id = ub.user_id
+            WHERE ub.brand_id = $1;
+        `;
+        const res = await this.db.query(query, [brandId]);
+        return res.rows.map((row: any) => ({
+            id: row.id,
+            email: row.email,
+            full_name: row.full_name,
+        } as IUser));
     }
 
     async getBrandsOfUser(userId: number): Promise<IBrand[]> {
