@@ -15,6 +15,7 @@ import {imageProcessorService} from "@/lib/backend/services/simpleImageProcessor
 import { embeddingProcessorService } from "@/lib/backend/services/embeddingProcessor.service";
 import { categoryService } from "@/lib/backend/services/category.service";
 import { attributeService } from "@/lib/backend/services/attribute.service";
+import { normalizeSearchQuery, enrichQueryForEmbedding } from "@/lib/backend/services/queryPreprocessor";
 
 class ProductService {
 
@@ -105,11 +106,17 @@ class ProductService {
             }
         }
 
-        // Vector search using embeddings for semantic search
+        // Preprocess query for better search results
         let searchEmbedding: number[] = [];
+        let searchTextForFTS: string | undefined;
+
         if (params.search && !params.skipAI) {
-            searchEmbedding = await openAIService.createEmbedding(params.search);
-            console.log("Generated embedding for search query:", params.search);
+            const normalized = normalizeSearchQuery(params.search);
+            searchTextForFTS = normalized.forFTS;
+
+            const enrichedQuery = enrichQueryForEmbedding(normalized.forEmbedding);
+            searchEmbedding = await openAIService.createEmbedding(enrichedQuery);
+            console.log(`[Search] Raw: "${params.search}" → Normalized: "${normalized.forEmbedding}" → Enriched: "${enrichedQuery}"`);
         }
 
         if(params.excludeBrandPaused == undefined){
@@ -118,7 +125,7 @@ class ProductService {
 
         params.includeAttributes = true;
 
-        const products : IProduct[] = await productRepository.listProducts(params, searchEmbedding);
+        const products : IProduct[] = await productRepository.listProducts(params, searchEmbedding, searchTextForFTS);
         // TODO Agregar diferenciacion en el listing de si viene por el lado del comercio o del lado de listado de compra
         productsInteractionsService.addListOfProductViewInListingRelatedInteraction(products.map(p => p.id.toString())).then(r  =>{});
 
@@ -128,13 +135,13 @@ class ProductService {
         delete attributeParams.limit; // Remove limit to get all products
 
         // Use optimized method that fetches and aggregates attributes in SQL
-        const productAttributes: IProductAttributeDetail[] = await productRepository.getAttributesForFilters(attributeParams, searchEmbedding);
+        const productAttributes: IProductAttributeDetail[] = await productRepository.getAttributesForFilters(attributeParams, searchEmbedding, searchTextForFTS);
         const attributes = this.aggregateAttributesFromProductAttributes(productAttributes);
 
         // Calculate pagination values
         const pageSize = params.limit || products.length;
         const pageNum = params.page || 1;
-        const totalCount = await productRepository.countProducts(params, searchEmbedding);
+        const totalCount = await productRepository.countProducts(params, searchEmbedding, searchTextForFTS);
         const totalPages = Math.ceil(totalCount / pageSize);
         let totalBrandProducts: number | undefined;
         if (params.brandId) {
