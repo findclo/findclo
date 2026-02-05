@@ -96,8 +96,8 @@ class ProductsRepository {
         }
     }
 
-    public async listProducts(params: IListProductsParams, searchEmbedding?: number[]): Promise<IProduct[]> {
-        const { query, values } = this.constructListQuery(params, searchEmbedding);
+    public async listProducts(params: IListProductsParams, searchEmbedding?: number[], searchText?: string): Promise<IProduct[]> {
+        const { query, values } = this.constructListQuery(params, searchEmbedding, searchText);
         try {
             const res = await this.db.query(query, values);
             return this.mapProductRows(res.rows, params.includeCategories, params.includeAttributes);
@@ -107,8 +107,8 @@ class ProductsRepository {
         }
     }
 
-    public async countProducts(params: IListProductsParams, searchEmbedding?: number[]): Promise<number> {
-        const { query: listQuery, values } = this.constructListQuery(params, searchEmbedding);
+    public async countProducts(params: IListProductsParams, searchEmbedding?: number[], searchText?: string): Promise<number> {
+        const { query: listQuery, values } = this.constructListQuery(params, searchEmbedding, searchText);
 
         // Extract the WHERE clause and FROM clause from the list query
         // Remove the SELECT, GROUP BY, ORDER BY, LIMIT, and OFFSET parts
@@ -405,12 +405,20 @@ class ProductsRepository {
     }
 
 
-    private constructListQuery(params: IListProductsParams, searchEmbedding?: number[]): { query: string, values: any[] } {
+    private constructListQuery(params: IListProductsParams, searchEmbedding?: number[], searchText?: string): { query: string, values: any[] } {
         let query = `SELECT p.*, b.status as brand_status, b.name as brand_name, b.image as brand_image, b.websiteUrl as brand_websiteUrl, b.description as brand_description`;
 
-        // Add similarity score for semantic search
-        if (searchEmbedding && searchEmbedding.length > 0) {
-            query += `, (1 - (p.embedding <=> $${1}::vector)) AS similarity`;
+        const hasEmbedding = searchEmbedding && searchEmbedding.length > 0;
+        const hasSearchText = searchText && searchText.trim().length > 0;
+        const isHybridSearch = hasEmbedding && hasSearchText;
+
+        // Add similarity scores for search
+        if (hasEmbedding) {
+            query += `, (1 - (p.embedding <=> $1::vector)) AS similarity`;
+        }
+        if (isHybridSearch) {
+            // $1 = embedding, searchText placeholder will be assigned later
+            query += `, COALESCE(ts_rank(p.tsv, plainto_tsquery('spanish', $SEARCH_TEXT_PLACEHOLDER)), 0) AS text_score`;
         }
 
         // Add brand boost score for hybrid ranking
@@ -422,7 +430,7 @@ class ProductsRepository {
             query += `ELSE 0.0 END AS brand_boost`;
 
             // Calculate combined score for hybrid ranking
-            if (searchEmbedding && searchEmbedding.length > 0) {
+            if (hasEmbedding) {
                 query += `, (CASE `;
                 params.brandBoostScores.forEach((score, brandId) => {
                     query += `WHEN p.brand_id = ${brandId} THEN ${score} `;
@@ -510,24 +518,40 @@ class ProductsRepository {
         }
 
 
+        // Track the search text parameter index for hybrid scoring
+        let searchTextParamIndex: number | null = null;
+
         // Handle search with brand detection support
         if (params.search && params.search.trim().length > 0) {
-            if (searchEmbedding && searchEmbedding.length > 0) {
+            if (hasEmbedding) {
+                // Add search text parameter for hybrid FTS scoring
+                if (hasSearchText) {
+                    values.push(searchText);
+                    searchTextParamIndex = values.length;
+                }
+
                 // Adaptive filtering based on brand detection
                 if (params.isExactBrandMatch && params.detectedBrandIds && params.detectedBrandIds.length > 0) {
                     // EXACT BRAND MATCH: Strict filtering - show only detected brand products
                     conditions.push(`p.brand_id = ANY($${values.length + 1})`);
                     values.push(params.detectedBrandIds);
-                    // Still require valid embedding for semantic ranking within brand
                     conditions.push(`p.embedding IS NOT NULL`);
                 } else if (!params.isExactBrandMatch && params.detectedBrandIds && params.detectedBrandIds.length > 0) {
                     // FUZZY BRAND MATCH: Boosting - show brand products + semantically similar products
-                    conditions.push(`(p.brand_id = ANY($${values.length + 1}) OR ((1 - (p.embedding <=> $1)) >= 0.5 AND p.embedding IS NOT NULL))`);
+                    if (hasSearchText) {
+                        conditions.push(`(p.brand_id = ANY($${values.length + 1}) OR ((1 - (p.embedding <=> $1)) >= 0.35 AND p.embedding IS NOT NULL) OR p.tsv @@ plainto_tsquery('spanish', $${searchTextParamIndex}))`);
+                    } else {
+                        conditions.push(`(p.brand_id = ANY($${values.length + 1}) OR ((1 - (p.embedding <=> $1)) >= 0.35 AND p.embedding IS NOT NULL))`);
+                    }
                     values.push(params.detectedBrandIds);
                 } else {
-                    // NO BRAND MATCH: Pure semantic search
+                    // NO BRAND MATCH: Hybrid search - semantic OR text match
                     conditions.push(`p.embedding IS NOT NULL`);
-                    conditions.push(`(1 - (p.embedding <=> $1)) >= 0.5`);
+                    if (hasSearchText) {
+                        conditions.push(`((1 - (p.embedding <=> $1)) >= 0.35 OR p.tsv @@ plainto_tsquery('spanish', $${searchTextParamIndex}))`);
+                    } else {
+                        conditions.push(`(1 - (p.embedding <=> $1)) >= 0.35`);
+                    }
                 }
             } else {
                 // Fallback to text search when no embeddings
@@ -569,10 +593,18 @@ class ProductsRepository {
             query += searchByTsQuery;
         }
 
+        // Replace search text placeholder with actual parameter index
+        if (searchTextParamIndex) {
+            query = query.replace(/\$SEARCH_TEXT_PLACEHOLDER/g, `$${searchTextParamIndex}`);
+        }
+
         // Ordering: prioritize combined score when brand boosting is active
         if (params.brandBoostScores && params.brandBoostScores.size > 0) {
             query += ` ORDER BY combined_score DESC, p.id DESC`;
-        } else if (searchEmbedding && searchEmbedding.length > 0) {
+        } else if (isHybridSearch && searchTextParamIndex) {
+            // Hybrid score: 60% semantic + 40% text
+            query += ` ORDER BY ((1 - (p.embedding <=> $1::vector)) * 0.6 + COALESCE(ts_rank(p.tsv, plainto_tsquery('spanish', $${searchTextParamIndex})), 0) * 0.4) DESC, p.id DESC`;
+        } else if (hasEmbedding) {
             query += ` ORDER BY similarity DESC`;
         } else if (params.sort) {
             switch (params.sort) {
@@ -663,7 +695,7 @@ class ProductsRepository {
                  LEFT JOIN attribute_values av ON pa.attribute_value_id = av.id`;
     }
 
-    async getAttributesForFilters(params: IListProductsParams, searchEmbedding?: number[]): Promise<IProductAttributeDetail[]> {
+    async getAttributesForFilters(params: IListProductsParams, searchEmbedding?: number[], searchText?: string): Promise<IProductAttributeDetail[]> {
        // TODO: remove duplicate code from query
         let query = `
             SELECT
@@ -736,19 +768,36 @@ class ProductsRepository {
         }
 
         // Handle search with brand detection and semantic search
+        const hasEmbeddingForFilter = searchEmbedding && searchEmbedding.length > 0;
+        const hasSearchTextForFilter = searchText && searchText.trim().length > 0;
+
         if (params.search && params.search.trim().length > 0) {
-            if (searchEmbedding && searchEmbedding.length > 0) {
+            if (hasEmbeddingForFilter) {
+                let searchTextParamIndexFilter: number | null = null;
+                if (hasSearchTextForFilter) {
+                    values.push(searchText);
+                    searchTextParamIndexFilter = values.length;
+                }
+
                 // Adaptive filtering based on brand detection
                 if (params.isExactBrandMatch && params.detectedBrandIds && params.detectedBrandIds.length > 0) {
                     conditions.push(`p.brand_id = ANY($${values.length + 1})`);
                     values.push(params.detectedBrandIds);
                     conditions.push(`p.embedding IS NOT NULL`);
                 } else if (!params.isExactBrandMatch && params.detectedBrandIds && params.detectedBrandIds.length > 0) {
-                    conditions.push(`(p.brand_id = ANY($${values.length + 1}) OR ((1 - (p.embedding <=> $1)) >= 0.5 AND p.embedding IS NOT NULL))`);
+                    if (hasSearchTextForFilter) {
+                        conditions.push(`(p.brand_id = ANY($${values.length + 1}) OR ((1 - (p.embedding <=> $1)) >= 0.35 AND p.embedding IS NOT NULL) OR p.tsv @@ plainto_tsquery('spanish', $${searchTextParamIndexFilter}))`);
+                    } else {
+                        conditions.push(`(p.brand_id = ANY($${values.length + 1}) OR ((1 - (p.embedding <=> $1)) >= 0.35 AND p.embedding IS NOT NULL))`);
+                    }
                     values.push(params.detectedBrandIds);
                 } else {
                     conditions.push(`p.embedding IS NOT NULL`);
-                    conditions.push(`(1 - (p.embedding <=> $1)) >= 0.5`);
+                    if (hasSearchTextForFilter) {
+                        conditions.push(`((1 - (p.embedding <=> $1)) >= 0.35 OR p.tsv @@ plainto_tsquery('spanish', $${searchTextParamIndexFilter}))`);
+                    } else {
+                        conditions.push(`(1 - (p.embedding <=> $1)) >= 0.35`);
+                    }
                 }
             } else {
                 // Fallback to text search

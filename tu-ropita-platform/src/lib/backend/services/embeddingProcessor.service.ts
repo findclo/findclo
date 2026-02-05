@@ -91,18 +91,13 @@ class EmbeddingProcessorService implements IEmbeddingProcessorService {
             }
 
             const textForEmbedding = [
-                'Nombre producto: ',
                 product.name,
-                'Descripción: ',
                 product.description || '',
-                'Marca: ',
                 product.brand?.name || '',
-                'Categorías: ',
                 categories.map(category => category.name).join(', '),
-                'Atributos: ',
                 attributes.map(attr => `${attr.attribute_name}: ${attr.value}`).join(', ')
             ].filter(text => text && text.trim().length > 0)
-             .join(' ');
+             .join('. ');
 
             if (textForEmbedding.trim().length === 0) {
                 return false;
